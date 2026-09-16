@@ -62,7 +62,7 @@ export async function parsePdf(bytes: Uint8Array, opts: PdfOptions = {}): Promis
   const pdfjs = await loadPdfJs();
   const hash = await sha256Bytes(bytes);
   // pdf.js transfers the buffer to the worker; pass a copy so the caller keeps its bytes.
-  const task = pdfjs.getDocument({ data: bytes.slice(), useSystemFonts: true, isEvalSupported: false });
+  const task = pdfjs.getDocument({ data: bytes.slice(), useSystemFonts: true });
   const abort = () => void task.destroy();
   opts.signal?.addEventListener('abort', abort, { once: true });
   try {

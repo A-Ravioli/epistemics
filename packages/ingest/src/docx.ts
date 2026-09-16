@@ -46,7 +46,7 @@ export async function parseDocx(bytes: Uint8Array, opts: DocxOptions = {}): Prom
   const markdown = blocksToMarkdown(blocks);
   const { sections, firstH1 } = markdownToSections(markdown);
   return {
-    title: firstH1 ?? (opts.title ? basenameNoExt(opts.title) : '') ?? 'Untitled document',
+    title: firstH1 ?? ((opts.title && basenameNoExt(opts.title)) || 'Untitled document'),
     kind: 'docx',
     sections: sections.length ? sections : [{ headingPath: [], text: '' }],
     hash,
