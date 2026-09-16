@@ -175,3 +175,6 @@ export function result(state: DiagnosticState): DiagnosticResult {
   }
   return { knownConceptIds: state.conceptIds.filter((id) => known.has(id)), frontierDepth, probes: state.probes };
 }
+
+/** Alias of `result` with a less collision-prone name for barrel consumers. */
+export const diagnosticResult = result;

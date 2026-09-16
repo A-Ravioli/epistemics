@@ -101,14 +101,18 @@ describe('updateConceptStateAfterReceipt', () => {
 });
 
 describe('topologicalOrder', () => {
-  it('orders prerequisites first, keeping input order among ties', () => {
+  it('orders prerequisites first, preferring earliest input position among ready concepts', () => {
     const edges: ConceptEdge[] = [
       { from: 'b', to: 'c', kind: 'prereq' },
       { from: 'a', to: 'b', kind: 'prereq' },
       { from: 'a', to: 'd', kind: 'prereq' },
       { from: 'x', to: 'a', kind: 'encompasses', weight: 0.3 }, // not an ordering constraint
     ];
-    expect(topologicalOrder(['d', 'c', 'b', 'a', 'x'], edges)).toEqual(['a', 'x', 'd', 'b', 'c']);
+    // a must go first (x is later in input order); then d (index 0) before b (2); c after b; x last.
+    expect(topologicalOrder(['d', 'c', 'b', 'a', 'x'], edges)).toEqual(['a', 'd', 'b', 'c', 'x']);
+    // Already-sorted input is returned unchanged.
+    expect(topologicalOrder(['a', 'b', 'c', 'd', 'x'], edges)).toEqual(['a', 'b', 'c', 'd', 'x']);
+    expect(topologicalOrder([], edges)).toEqual([]);
   });
 
   it('ignores edges to concepts outside the set', () => {

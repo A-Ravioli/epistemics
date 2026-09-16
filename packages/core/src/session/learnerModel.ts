@@ -18,8 +18,8 @@ export const LEARNER_MODEL_MAX_FOCUS_CONCEPTS = 12;
 export const LEARNER_MODEL_MAX_MISCONCEPTIONS = 3;
 export const LEARNER_MODEL_MAX_OPEN_QUESTIONS = 4;
 export const LEARNER_MODEL_MAX_SUMMARY_CHARS = 400;
-export const MASTERED_THRESHOLD = 0.85;
-export const SHAKY_THRESHOLD = 0.5;
+export const LEARNER_MODEL_MASTERED_THRESHOLD = 0.85;
+export const LEARNER_MODEL_SHAKY_THRESHOLD = 0.5;
 
 function byId<T extends { id: string }>(a: T, b: T): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
@@ -61,8 +61,8 @@ export function summarizeLearnerModel(input: SummarizeLearnerModelInput): Learne
 export function renderLearnerModel(summary: LearnerModelSummary, focusConceptIds: string[]): string {
   const focus = new Set(focusConceptIds);
   const all = summary.concepts;
-  const mastered = all.filter((c) => c.mastery >= MASTERED_THRESHOLD).length;
-  const shaky = all.filter((c) => c.mastery < SHAKY_THRESHOLD && (c.successfulSessions > 0 || c.misconceptions.length > 0)).length;
+  const mastered = all.filter((c) => c.mastery >= LEARNER_MODEL_MASTERED_THRESHOLD).length;
+  const shaky = all.filter((c) => c.mastery < LEARNER_MODEL_SHAKY_THRESHOLD && (c.successfulSessions > 0 || c.misconceptions.length > 0)).length;
   const unseen = all.filter((c) => c.mastery === 0 && c.successfulSessions === 0).length;
   const withMisconceptions = all.filter((c) => c.misconceptions.length > 0).length;
 

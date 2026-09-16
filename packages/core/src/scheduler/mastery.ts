@@ -98,38 +98,42 @@ export function updateConceptStateAfterReceipt(state: ConceptState, receipt: Con
 }
 
 /**
- * Kahn topological order over prerequisite edges restricted to `concepts`. Stable: ties keep input order.
+ * Kahn topological order over prerequisite edges restricted to `concepts`. Deterministic: among the
+ * concepts whose prerequisites are all placed, the earliest in input order goes next.
  * Throws when the prerequisite graph has a cycle, naming the concepts involved.
  */
 export function topologicalOrder(concepts: string[], edges: ConceptEdge[]): string[] {
   const ids = new Set(concepts);
+  const index = new Map<string, number>();
   const indeg = new Map<string, number>();
   const out = new Map<string, string[]>();
-  for (const c of concepts) {
+  concepts.forEach((c, i) => {
+    if (!index.has(c)) index.set(c, i);
     indeg.set(c, 0);
     out.set(c, []);
-  }
+  });
   for (const e of edges) {
     // A self-loop (from === to) is left in: its node never reaches in-degree 0 and is reported as a cycle.
     if (e.kind !== 'prereq' || !ids.has(e.from) || !ids.has(e.to)) continue;
     out.get(e.from)!.push(e.to);
     indeg.set(e.to, (indeg.get(e.to) ?? 0) + 1);
   }
-  const ready: string[] = concepts.filter((c) => indeg.get(c) === 0);
+  const ready = new Set<string>([...indeg].filter(([, n]) => n === 0).map(([c]) => c));
   const order: string[] = [];
   const done = new Set<string>();
-  while (ready.length > 0) {
-    const c = ready.shift()!;
-    if (done.has(c)) continue;
-    done.add(c);
-    order.push(c);
-    for (const d of out.get(c)!) {
+  while (ready.size > 0) {
+    let c: string | undefined;
+    for (const cand of ready) if (c === undefined || index.get(cand)! < index.get(c)!) c = cand;
+    ready.delete(c!);
+    done.add(c!);
+    order.push(c!);
+    for (const d of out.get(c!)!) {
       const n = indeg.get(d)! - 1;
       indeg.set(d, n);
-      if (n === 0) ready.push(d);
+      if (n === 0) ready.add(d);
     }
   }
-  if (order.length !== concepts.length) {
+  if (order.length !== ids.size) {
     const stuck = concepts.filter((c) => !done.has(c));
     throw new Error(`Prerequisite cycle detected among concepts: ${stuck.join(', ')}`);
   }
