@@ -334,7 +334,7 @@ describe('lesson reducer', () => {
     expect(leak2.effects).toEqual([{ type: 'show_message', text: c1.script.hints[0] }]);
     expect(leak2.state.regenerations).toBe(0);
 
-    // At hint level 0 the canned hint is hints[0]; a clean tutor turn resets the counter.
+    // A clean tutor turn keeps the counter at zero.
     const fresh = reduceLesson(leak2.state, { type: 'tutor_turn', content: 'ok' }, shortLesson);
     expect(fresh.state.regenerations).toBe(0);
   });
