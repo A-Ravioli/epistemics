@@ -283,7 +283,7 @@ export function createAnthropicProvider(opts: AnthropicProviderOptions = {}): Ll
       const spent: Usage[] = [];
       const once = async (): Promise<T> => {
         const started = Date.now();
-        let msg: Awaited<ReturnType<typeof client.messages.parse<typeof params>>>;
+        let msg: Anthropic.Message & { parsed_output: unknown };
         try {
           msg = await withRetry(() => client.messages.parse(params, requestOptions(req)), req.signal);
         } catch (e) {
