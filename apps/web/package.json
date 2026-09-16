@@ -12,12 +12,14 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@epistemics/architect": "workspace:*",
     "@epistemics/core": "workspace:*",
     "@epistemics/db": "workspace:*",
     "@epistemics/llm": "workspace:*",
     "@epistemics/platform": "workspace:*",
     "@epistemics/ingest": "workspace:*",
     "@epistemics/ui": "workspace:*",
+    "pdfjs-dist": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router": "catalog:",

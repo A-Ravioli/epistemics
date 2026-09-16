@@ -153,6 +153,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@epistemics/architect':
+        specifier: workspace:*
+        version: link:../../packages/architect
       '@epistemics/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -171,6 +174,9 @@ importers:
       '@epistemics/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      pdfjs-dist:
+        specifier: 'catalog:'
+        version: 6.3.289
       react:
         specifier: 'catalog:'
         version: 19.3.0
