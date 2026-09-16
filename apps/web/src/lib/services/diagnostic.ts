@@ -13,17 +13,14 @@ import {
   type DiagnosticState,
   type Item,
 } from '@epistemics/core';
-import { activateCards, createSession, emptyConceptState, endSession, getCards, getConceptState, saveCards, studyDay as _unused, upsertConceptState } from '@epistemics/db';
+import { activateCards, createSession, emptyConceptState, endSession, getCards, getConceptState, saveCards, upsertConceptState } from '@epistemics/db';
 import { studyDay } from '@epistemics/core';
 import { createStore, type Store } from '../store.js';
 import { setDiagnosticDone } from '../settings.js';
 import { dayCfg, type CourseContext } from './context.js';
 import { findItem } from './courses.js';
 import { gradeAnswer, resolveGradeTarget, type Graded } from './grading.js';
-import { recomputeMastery } from './receipts.js';
-import { recordReceipt } from './receipts.js';
-
-void _unused;
+import { recomputeMastery, recordReceipt } from './receipts.js';
 
 export interface DiagnosticView {
   state: DiagnosticState;
@@ -60,7 +57,7 @@ export class DiagnosticRunner {
       const graded = await gradeAnswer(this.ctx.provider, target, answer.trim() || '(no answer)', { confidence, metadata: { sessionId: this.sessionId, courseId: this.ctx.course.id } });
       await recordReceipt(this.ctx, { sessionId: this.sessionId, itemId: probe.itemId, conceptId: probe.conceptId, answer, confidence, grade: graded.grade, rating: graded.rating, assisted: false });
       this.state = recordResult(this.state, probe.conceptId, graded.rating >= 3);
-      this.store.set((v) => ({ ...this.view(false), lastGrade: graded }));
+      this.store.set(() => ({ ...this.view(false), lastGrade: graded }));
       if (nextProbe(this.state) === null) await this.finish();
     } catch (e) {
       this.store.set((v) => ({ ...v, busy: false, error: e instanceof Error ? e.message : String(e) }));
@@ -95,6 +92,6 @@ export class DiagnosticRunner {
   private view(busy: boolean): DiagnosticView {
     const probe = nextProbe(this.state);
     const item = probe ? findItem(this.ctx.curriculum, probe.itemId)?.item : undefined;
-    return { state: this.state, probe, item, busy, done: this.state.done && probe === null && this.state.probes > 0 ? false : false };
+    return { state: this.state, probe, item, busy, done: false };
   }
 }
