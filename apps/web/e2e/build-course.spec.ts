@@ -65,7 +65,9 @@ test('build a course from uploaded material: pick a markdown file → outline �
   await page.getByTestId('continue-to-interview').click();
   await page.getByTestId('propose-outline').click();
   await expect(page.getByTestId('outline-review')).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByTestId('outline-review')).toContainText('grounded');
+  await expect(page.getByTestId('setup-screen')).toContainText('1 source · grounded');
+  // sources mode: the mock architect saw the source manifest and named the outline after it
+  await expect(page.getByTestId('outline-title')).toHaveValue(/from Field Notes on Thermodynamics/);
   await page.getByTestId('build-course').click();
   await expect(page.getByTestId('lesson-card')).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('lesson-unlocked')).toBeVisible();
