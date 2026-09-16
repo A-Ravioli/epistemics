@@ -242,10 +242,6 @@ const messagesRequest = (extra: Record<string, string> = {}) =>
     body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 10, stream: true, messages: [{ role: 'user', content: 'hi' }] }),
   });
 
-function nextCharge(register: (cb: (info: { usd: number; total: number; model?: string }) => void) => void) {
-  return new Promise<{ usd: number; total: number; model?: string }>((resolve) => register(resolve));
-}
-
 describe('proxy handler', () => {
   it('reports health', async () => {
     const { app } = createApp({ env: { ANTHROPIC_API_KEY: 'k' } });
@@ -256,19 +252,12 @@ describe('proxy handler', () => {
 
   it('rewrites the path, injects the key, strips client auth, and streams SSE back while metering', async () => {
     const { fetch, calls } = fakeFetch(() => sseResponse());
-    const charges: { usd: number; total: number; model?: string }[] = [];
+    let onCharge: (info: { usd: number; total: number; model?: string }) => void = () => {};
+    const charged = new Promise<{ usd: number; total: number; model?: string }>((r) => (onCharge = r));
     const { app, ledger } = createApp({
       fetch,
       env: { ANTHROPIC_API_KEY: 'sk-real', DAILY_BUDGET_USD: '1' },
-      onCharge: (info) => charges.push(info),
-    });
-
-    const charged = nextCharge((cb) => {
-      const orig = charges.push.bind(charges);
-      charges.push = (info) => {
-        cb(info);
-        return orig(info);
-      };
+      onCharge: (info) => onCharge(info),
     });
 
     const res = await app.request(messagesRequest());
