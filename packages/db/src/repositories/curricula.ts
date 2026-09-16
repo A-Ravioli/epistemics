@@ -3,9 +3,10 @@
  * version; `concepts`, `items` and `concept_edges` are denormalised projections rebuilt on every save so
  * the learner side can look up a concept/item by id without loading the whole pack.
  *
- * Note: `concepts.id` / `items.id` are global primary keys (stable ids). If a new curriculum version reuses
- * a concept id, the projection row is re-pointed at the newest saved version; the full JSON of every version
- * stays intact in `curricula`.
+ * Note: `concepts.id` / `items.id` are global primary keys (stable ids across versions), so the projection
+ * tables hold exactly one version per curriculum id: the most recently *saved* one. Saving any version
+ * replaces that curriculum's projection rows wholesale. The full JSON of every version stays intact in
+ * `curricula` (use `getCurriculum` for version-exact content).
  */
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { Concept, ConceptEdge, Curriculum, CurriculumManifest, Item } from '@epistemics/core';
@@ -48,9 +49,9 @@ export async function saveCurriculum(db: Db, curriculum: Curriculum, now: number
       target: [curricula.id, curricula.version],
       set: { title: m.title, subject: m.subject, contentHash: m.contentHash, manifestJson: toJson(m), curriculumJson: toJson(curriculum), updatedAt: now, deletedAt: null },
     }),
-    db.delete(concepts).where(and(eq(concepts.curriculumId, id), eq(concepts.curriculumVersion, version))),
-    db.delete(items).where(and(eq(items.curriculumId, id), eq(items.curriculumVersion, version))),
-    db.delete(conceptEdges).where(and(eq(conceptEdges.curriculumId, id), eq(conceptEdges.curriculumVersion, version))),
+    db.delete(concepts).where(eq(concepts.curriculumId, id)),
+    db.delete(items).where(eq(items.curriculumId, id)),
+    db.delete(conceptEdges).where(eq(conceptEdges.curriculumId, id)),
   );
 
   for (const { concept, unitId, lessonId } of iterateConcepts(curriculum)) {

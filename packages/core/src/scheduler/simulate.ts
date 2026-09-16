@@ -77,6 +77,7 @@ export function simulateLoad(
     const dayEnd = studyDayStart(dayAt + 36 * 3_600_000, dayCfg);
     let now = dayAt;
     let reviews = 0;
+    let reviewStateAnswers = 0;
     let newCards = 0;
     let debt = 0;
     let answers = 0;
@@ -93,10 +94,14 @@ export function simulateLoad(
     }
 
     const answer = (card: Card) => {
-      if (card.due > now) now = card.due; // wait out a learning step
+      // Wait out an intraday learning step, but never let the session clock cross the study-day boundary.
+      // Cards due later today are answered at the current time, as a learner would.
+      const isStep = (card.state === 1 || card.state === 3) && card.scheduledDays === 0;
+      if (isStep && card.due > now) now = Math.min(card.due, dayEnd - stepMs);
       const rating = rng() < pRecall(card, now) ? 3 : 1;
       const { card: next } = scheduler.applyRating(card, rating, now, { source: 'review', assisted: false });
       pool.set(next.id, next);
+      if (card.state === 2) reviewStateAnswers += 1;
       now += stepMs;
       answers += 1;
     };
@@ -111,7 +116,7 @@ export function simulateLoad(
         itemsByCard,
         retrievability: (c) => scheduler.retrievability(c, now),
         rng,
-        reviewsDoneToday: reviews,
+        reviewsDoneToday: reviewStateAnswers,
         newDoneToday: newCards,
         learnAheadMs: Math.max(0, dayEnd - now),
       });

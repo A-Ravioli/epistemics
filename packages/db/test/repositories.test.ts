@@ -57,6 +57,8 @@ describe('curricula', () => {
     await saveCurriculum(db, v2, NOW + 2); // idempotent
     expect((await getCurriculum(db, 'curr-1', 1))?.manifest.version).toBe(1);
     expect((await getItemsForConcept(db, 'c1')).map((i) => i.id)).toEqual(['i1']);
+    expect((await getEdges(db, 'curr-1', 1))).toEqual([]);
+    expect((await getEdges(db, 'curr-1', 2))).toHaveLength(2);
     expect((await listCurricula(db)).map((m) => m.version)).toEqual([2]);
   });
 });
@@ -226,7 +228,8 @@ describe('sources & chunks', () => {
     expect((await listSources(db, 'curr-1')).length).toBe(1);
     expect(await getChunksBySource(db, 'src-1')).toEqual(list);
     expect((await getChunksByIds(db, ['ch-2', 'ch-0', 'nope'])).map((c) => c.id)).toEqual(['ch-2', 'ch-0']);
-    expect((await searchChunks(db, ['src-1'], 'bayes conditional')).map((c) => c.id)).toEqual(['ch-2', 'ch-0']);
+    expect((await searchChunks(db, ['src-1'], 'bayes conditional')).map((c) => c.id)).toEqual(['ch-0', 'ch-2']);
+    expect((await searchChunks(db, ['src-1'], 'bayes')).map((c) => c.id)).toEqual(['ch-0', 'ch-2']);
     expect((await searchChunks(db, [], 'independent')).map((c) => c.id)).toEqual(['ch-1']);
     expect(await searchChunks(db, ['other'], 'bayes')).toEqual([]);
     expect(await searchChunks(db, [], '100% _x')).toEqual([]);
