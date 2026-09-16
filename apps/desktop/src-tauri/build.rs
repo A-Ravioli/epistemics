@@ -17,7 +17,11 @@ fn main() {
 fn embed_migrations() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
-    let migrations_dir = manifest_dir.join("../../../packages/db/migrations");
+    // `EPISTEMICS_MIGRATIONS_DIR` overrides the default location (used by CI and scratch builds).
+    println!("cargo:rerun-if-env-changed=EPISTEMICS_MIGRATIONS_DIR");
+    let migrations_dir = env::var_os("EPISTEMICS_MIGRATIONS_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| manifest_dir.join("../../../packages/db/migrations"));
     let migrations_dir = migrations_dir.canonicalize().unwrap_or(migrations_dir);
 
     println!("cargo:rerun-if-changed={}", migrations_dir.display());

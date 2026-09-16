@@ -8,7 +8,6 @@
  * body chunks, then `{ done: true }`. Errors reject the invoke promise.
  */
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { createDb } from '@epistemics/db';
 import { createTauriExecutor } from '@epistemics/db/tauri';
 import type { PickedFile, Platform, SecretsStore } from './index.js';
 
@@ -26,7 +25,6 @@ export interface TauriPlatform extends Platform {
 export async function createTauriPlatform(): Promise<TauriPlatform> {
   const exec = await createTauriExecutor();
   await exec.migrate();
-  createDb(exec); // warm the drizzle instance path; callers construct their own via createDb(platform.db)
   return {
     kind: 'tauri',
     db: exec,

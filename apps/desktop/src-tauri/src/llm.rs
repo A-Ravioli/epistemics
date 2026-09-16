@@ -15,26 +15,12 @@
 use std::collections::HashMap;
 
 use futures_util::StreamExt;
-use serde::Serialize;
 use tauri::ipc::Channel;
 use tauri::State;
 
 use crate::policy::{self, ANTHROPIC_KEY_NAME};
 use crate::secrets;
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(untagged)]
-pub enum LlmChunk {
-    Start { status: u16, headers: HashMap<String, String> },
-    Bytes(Vec<u8>),
-    Done { done: bool },
-}
-
-impl LlmChunk {
-    pub fn done() -> Self {
-        LlmChunk::Done { done: true }
-    }
-}
+pub use crate::wire::LlmChunk;
 
 /// Shared HTTP client (connection pool, TLS config) built once at startup.
 pub struct HttpState {
@@ -106,23 +92,4 @@ pub async fn llm_fetch(
     }
     channel.send(LlmChunk::done()).map_err(|e| format!("llm_fetch: channel closed: {e}"))?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn chunks_serialise_to_the_wire_shapes_js_expects() {
-        let start = LlmChunk::Start {
-            status: 200,
-            headers: HashMap::from([("content-type".to_string(), "text/event-stream".to_string())]),
-        };
-        assert_eq!(
-            serde_json::to_value(&start).unwrap(),
-            serde_json::json!({ "status": 200, "headers": { "content-type": "text/event-stream" } })
-        );
-        assert_eq!(serde_json::to_value(LlmChunk::Bytes(vec![1, 2, 255])).unwrap(), serde_json::json!([1, 2, 255]));
-        assert_eq!(serde_json::to_value(LlmChunk::done()).unwrap(), serde_json::json!({ "done": true }));
-    }
 }

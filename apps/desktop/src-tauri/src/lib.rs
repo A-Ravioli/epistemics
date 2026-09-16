@@ -6,6 +6,7 @@ pub mod llm;
 pub mod migrations;
 pub mod policy;
 pub mod secrets;
+pub mod wire;
 
 use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;

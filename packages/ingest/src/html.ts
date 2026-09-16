@@ -76,8 +76,8 @@ function domToBlocks(html: string): HtmlBlock[] {
 // Fallback tokenizer
 // ---------------------------------------------------------------------------
 
-const H_OPEN = '';
-const H_CLOSE = '';
+const H_OPEN = '\u0001';
+const H_CLOSE = '\u0002';
 
 function fallbackToBlocks(html: string): HtmlBlock[] {
   let s = html
