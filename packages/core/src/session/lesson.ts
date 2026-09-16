@@ -230,7 +230,7 @@ export function createLessonState(input: CreateLessonStateInput): LessonState {
 // Item ids for script-backed items (the app maps these to receipts)
 // ---------------------------------------------------------------------------
 
-export function scriptItemId(conceptId: string, kind: Exclude<LessonItemKind, 'consolidate'> | 'consolidate'): string {
+export function scriptItemId(conceptId: string, kind: LessonItemKind): string {
   return `${conceptId}#${kind}`;
 }
 
