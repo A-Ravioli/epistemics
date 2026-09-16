@@ -75,7 +75,7 @@ export function AppProvider({ children, fallback }: { children: ReactNode; fallb
 
     const make = (base: Omit<AppState, 'refreshCourses' | 'setActiveCourse' | 'reloadLlm' | 'ctx'>): AppState => {
       const ctx: CourseContext | undefined = base.active
-        ? { db: base.db, provider: base.llm.provider, course: base.active.course, curriculum: base.active.curriculum, scheduler: base.active.scheduler, now: () => Date.now() }
+        ? { db: base.db, provider: base.llm.provider, course: base.active.course, curriculum: base.active.curriculum, scheduler: base.active.scheduler, now: () => Date.now(), ledger: base.llm.ledger, dailyBudgetUsd: base.llmSettings.dailyBudgetUsd }
         : undefined;
       const s: AppState = {
         ...base,

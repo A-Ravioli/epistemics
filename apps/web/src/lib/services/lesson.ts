@@ -45,7 +45,7 @@ import {
   saveState,
   saveTurns,
 } from '@epistemics/db';
-import { buildCurriculumContext, buildTutorRequest, checkTurnShape, detectLeak, observe, type ChatMessage, type LeakReference } from '@epistemics/llm';
+import { budgetGuard, buildCurriculumContext, buildTutorRequest, checkTurnShape, detectLeak, modelForRole, observe, type ChatMessage, type LeakReference } from '@epistemics/llm';
 import { createStore, type Store } from '../store.js';
 import { addPendingRemediation, removePendingRemediation } from '../settings.js';
 import type { CourseContext } from './context.js';
@@ -402,9 +402,20 @@ export class LessonRunner {
     this.queue.push({ type: 'tutor_turn', content: text });
   }
 
+  /** Cost guard (DESIGN §7.3): degrade the tutor before stopping. Returns a model override or undefined. */
+  private tutorModel(): string | undefined {
+    const { ledger, dailyBudgetUsd, course } = this.ctx;
+    if (!ledger || !dailyBudgetUsd) return undefined;
+    const verdict = budgetGuard(ledger, dailyBudgetUsd, { role: 'tutor', courseId: course.id, currentModel: modelForRole('tutor') });
+    if (!verdict.allowed) throw new Error(`Daily LLM budget reached ($${verdict.spentUsd.toFixed(2)} of $${verdict.budgetUsd.toFixed(2)}). Raise it in Settings or continue tomorrow.`);
+    return verdict.degradeToModel;
+  }
+
   private async streamTutor(curriculumContext: string, control: NonNullable<LessonState['lastControl']>): Promise<string> {
     this.abort = new AbortController();
+    const model = this.tutorModel();
     const req = buildTutorRequest({
+      model,
       curriculumContext,
       learnerModelText: this.learnerModel,
       transcript: transcriptToChat(this.state),

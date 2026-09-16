@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { LlmRole } from '@epistemics/core';
 import { DEFAULT_MODELS } from '@epistemics/llm';
-import { Banner, Button, Card, Field, Spinner, Toggle, inputClass } from '@epistemics/ui';
+import { Banner, Button, Card, Field, Spinner, inputClass } from '@epistemics/ui';
 import { useApp } from '../../lib/app-state.js';
 import { API_KEY_SECRET } from '../../lib/llm.js';
 import { getLlmSettings, setLlmSettings, type LlmSettings } from '../../lib/settings.js';
@@ -211,7 +211,6 @@ export function SettingsScreen() {
           <Button variant="secondary" onClick={importDb} disabled={!canBackup}>Import backup</Button>
         </div>
         {!canBackup ? <p className="text-xs text-ink/60">Backup is available in the browser build (OPFS). On desktop, copy the database file directly.</p> : null}
-        <Toggle label="Verbose tutor" checked={false} onChange={() => undefined} />
       </Card>
     </div>
   );

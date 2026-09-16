@@ -50,6 +50,7 @@ export function ReviewScreen() {
       const again = await loadQueue(ctx, { queueFirstConceptIds: first });
       if (again.order.length === 0) {
         setFinished(true);
+        await setQueueFirst(ctx.db, ctx.course.id, []); // warm-up misses have been served
         if (again.queue.dueToday === 0) await markDayCleared(ctx.db, ctx.course.id, todayKey(ctx));
         if (sessionId.current) await endSession(ctx.db, sessionId.current, { reviews: done }, ctx.now());
       } else {
@@ -288,6 +289,3 @@ export function ReviewScreen() {
   );
 }
 
-export async function clearQueueFirst(ctx: ReturnType<typeof useCourse>): Promise<void> {
-  await setQueueFirst(ctx.db, ctx.course.id, []);
-}

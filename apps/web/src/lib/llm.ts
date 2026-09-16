@@ -7,7 +7,7 @@
  * Every call is logged to `llm_calls` through a UsageSink.
  */
 import type { Db } from '@epistemics/db';
-import { insertLlmCall } from '@epistemics/db';
+import { insertLlmCall, listLlmCalls } from '@epistemics/db';
 import { uuidv7 } from '@epistemics/core';
 import {
   combineSinks,
@@ -53,8 +53,22 @@ export function dbUsageSink(db: Db): UsageSink {
   };
 }
 
+/** Today's persisted calls, so the budget guard survives a reload. */
+async function preloadLedger(db: Db, ledger: UsageLedger): Promise<void> {
+  try {
+    const calls = await listLlmCalls(db, { sinceMs: ledger.startOfToday() });
+    ledger.load(calls.map((c) => ({
+      role: c.role, model: c.model, inputTokens: c.inputTokens, cacheRead: c.cacheRead, cacheWrite: c.cacheWrite,
+      outputTokens: c.outputTokens, costUsd: c.costUsd, latencyMs: c.latencyMs, sessionId: c.sessionId, courseId: c.courseId, at: c.createdAt,
+    })));
+  } catch (e) {
+    console.warn('[llm] could not preload usage ledger', e);
+  }
+}
+
 export async function buildProvider(platform: Platform, db: Db, settings: LlmSettings, opts: { mockDelayMs?: number } = {}): Promise<LlmRuntime> {
   const ledger = createUsageLedger();
+  await preloadLedger(db, ledger);
   const onUsage = combineSinks(ledger.record, dbUsageSink(db));
 
   if (settings.mode === 'anthropic') {
