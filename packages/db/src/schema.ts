@@ -1,4 +1,14 @@
-import { sqliteTable, text, integer, real, blob, index, primaryKey } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, customType, index, primaryKey } from 'drizzle-orm/sqlite-core';
+
+/**
+ * Raw bytes column. drizzle's `blob()` (buffer mode) maps values through Node's `Buffer`, which does not exist
+ * in the browser; every executor here already returns blobs as Uint8Array, so pass them through untouched.
+ */
+const bytes = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+  dataType: () => 'blob',
+  toDriver: (v) => v,
+  fromDriver: (v) => (v instanceof Uint8Array ? v : new Uint8Array(v as ArrayBufferLike)),
+});
 
 const ts = () => integer('created_at').notNull();
 const upd = () => integer('updated_at').notNull();
@@ -72,7 +82,7 @@ export const chunks = sqliteTable('chunks', {
   text: text('text').notNull(),
   tokenCount: integer('token_count').notNull(),
   hash: text('hash').notNull(),
-  embedding: blob('embedding'),                  // Float32Array bytes
+  embedding: bytes('embedding'),                 // Float32Array bytes
 }, (t) => [index('chunks_source').on(t.sourceId, t.ordinal)]);
 
 export const genCache = sqliteTable('gen_cache', {

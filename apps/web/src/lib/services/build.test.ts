@@ -98,8 +98,11 @@ describe('CurriculumBuilder', () => {
     expect(again.calls).toHaveLength(0);
     expect(cur2.manifest.contentHash).toBe(cur.manifest.contentHash);
     expect(cur2).toEqual(cur);
-    // every stage of the proposal (1) and the build (30) was a cache hit
-    expect(builder2.store.get().cached).toBe(1 + (1 + 4 + 1 + 8 + 8 + 8));
+    // every stage of the build was a cache hit (the store is reset when a build starts, so the proposal's event is not counted)
+    expect(builder2.store.get().cached).toBe(1 + 4 + 1 + 8 + 8 + 8);
+    // only the code-level stages (graph validate, freeze) ran; no provider-backed stage started
+    expect(builder2.store.get().started).toBe(2);
+    expect(builder2.store.get().log.filter((e) => e.event.status === 'start').map((e) => e.event.stage)).toEqual(['validate', 'freeze']);
   });
 
   it('ensureUnitsAhead builds the missing unit lazily, saves it and adds its cards; buildNextUnit then has nothing to do', async () => {

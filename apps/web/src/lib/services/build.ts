@@ -342,7 +342,8 @@ export class CurriculumBuilder {
    */
   async build(proposal: OutlineProposal, edited: OutlineOutput = proposal.outline): Promise<Curriculum> {
     this.controller = new AbortController();
-    this.patch({ phase: 'building', message: 'Building the first units', error: undefined });
+    // Fresh counters: the proposal's outline events must not be mistaken for build progress.
+    this.store.set({ ...initialProgress(), phase: 'building', message: 'Building the first units' });
     try {
       const outline = OutlineOutputSchema.parse(edited);
       const { spec } = proposal;
