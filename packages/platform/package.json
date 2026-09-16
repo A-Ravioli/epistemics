@@ -1,0 +1,15 @@
+{
+  "name": "@epistemics/platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts"  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": { "@epistemics/core": "workspace:*", "@epistemics/db": "workspace:*", "@tauri-apps/api": "catalog:", "@tauri-apps/plugin-dialog": "catalog:", "@tauri-apps/plugin-fs": "catalog:" },
+  "devDependencies": { "typescript": "catalog:", "vitest": "catalog:" }
+}
