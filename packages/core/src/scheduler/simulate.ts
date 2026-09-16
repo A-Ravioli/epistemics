@@ -26,7 +26,7 @@ export interface SimulateOptions {
   newPerDay?: number;
   /** Recall probability for a card's first exposure. Default 0.7. */
   pNew?: number;
-  /** Epoch ms of the first simulated day. Default 2026-01-05 10:00 UTC. */
+  /** Epoch ms of the first simulated session. Default 2026-01-05 10:00 UTC. */
   startAt?: number;
   seed?: number;
   secondsPerItem?: number;
@@ -36,10 +36,11 @@ export interface SimulateOptions {
 
 export interface SimulatedDay {
   day: string;
+  /** Answers on non-New cards, including same-day learning steps. */
   reviews: number;
   newCards: number;
   minutes: number;
-  /** Cards due today that did not fit under `reviewsPerDay`. */
+  /** Cards due at the start of the day that did not fit under `reviewsPerDay`. */
   debt: number;
 }
 
@@ -51,7 +52,7 @@ export function simulateLoad(
   opts: SimulateOptions = {},
 ): SimulatedDay[] {
   const rng = mulberry32(opts.seed ?? 1);
-  const newPerDay = opts.newPerDay ?? 0;
+  const newPerDay = Math.min(opts.newPerDay ?? 0, settings.maxNewItemsPerDay);
   const pNew = opts.pNew ?? 0.7;
   const secondsPerItem = opts.secondsPerItem ?? DEFAULT_SECONDS_PER_ITEM;
   const maxAnswers = opts.maxAnswersPerDay ?? 5_000;
@@ -59,118 +60,81 @@ export function simulateLoad(
   const dayCfg = { timezone: settings.timezone, dayStartHour: settings.dayStartHour };
   const startAt = opts.startAt ?? Date.UTC(2026, 0, 5, 10);
   const pRecall = opts.pRecall ?? ((c: Card, now: number) => (c.state === 0 ? pNew : scheduler.retrievability(c, now)));
+  const daySettings: CourseSettings = { ...settings, maxNewItemsPerDay: newPerDay };
 
   const pool = new Map<string, Card>();
-  for (const c of cards) pool.set(c.id, c);
   const itemsByCard = new Map<string, QueueItemInfo>();
-  for (const c of cards) itemsByCard.set(c.id, { conceptId: c.conceptId, type: 'recall' });
+  for (const c of cards) {
+    pool.set(c.id, c);
+    itemsByCard.set(c.id, { conceptId: c.conceptId, type: 'recall' });
+  }
   let synthetic = 0;
   const courseId = cards[0]?.courseId ?? 'sim';
 
   const out: SimulatedDay[] = [];
   for (let d = 0; d < days; d++) {
     const dayAt = startAt + d * DAY_MS;
+    const dayEnd = studyDayStart(dayAt + 36 * 3_600_000, dayCfg);
     let now = dayAt;
     let reviews = 0;
     let newCards = 0;
     let debt = 0;
     let answers = 0;
-    const shown = new Set<string>();
 
-    const answer = (card: Card) => {
-      const p = pRecall(card, now);
-      const rating = rng() < p ? 3 : 1;
-      const { card: next } = scheduler.applyRating(card, rating, now, { source: 'review', assisted: false });
-      pool.set(next.id, next);
-      now += stepMs;
-      answers += 1;
-    };
-
-    // Reviews and learning until nothing is due; intraday steps are answered as they come due today.
-    let first = true;
-    for (;;) {
-      const q = buildQueue({
-        cards: [...pool.values()],
-        now,
-        settings,
-        itemsByCard,
-        retrievability: (c) => scheduler.retrievability(c, now),
-        rng,
-        reviewsDoneToday: reviews,
-        newDoneToday: newCards,
-        learnAheadMs: DAY_MS,
-        recentlyShownConceptIds: shown,
-      });
-      if (first) {
-        debt = q.debt;
-        first = false;
-      }
-      const due = [...q.learning, ...q.reviews];
-      if (due.length === 0 || answers >= maxAnswers) break;
-      for (const c of due) {
-        if (answers >= maxAnswers) break;
-        // Learning cards not yet due: jump the clock to them (the learner waits out the step).
-        if (c.due > now) now = c.due;
-        answer(c);
-        reviews += 1;
-        shown.add(c.conceptId);
-      }
-      shown.clear();
-    }
-
-    // New cards: top the pool up with synthetic New cards, then let the gate decide how many to show.
-    const want = Math.min(newPerDay, settings.maxNewItemsPerDay);
-    let available = [...pool.values()].filter((c) => c.state === 0).length;
-    while (available < want) {
+    // Keep enough New cards in the pool for today's intake; synthetic cards get their own concept.
+    let available = 0;
+    for (const c of pool.values()) if (c.state === 0) available += 1;
+    while (available < newPerDay) {
       synthetic += 1;
       const c = scheduler.newCard(courseId, `sim-item-${synthetic}`, `sim-concept-${synthetic}`, now, `sim-card-${synthetic}`);
       pool.set(c.id, c);
       itemsByCard.set(c.id, { conceptId: c.conceptId, type: 'recall' });
       available += 1;
     }
-    if (want > 0) {
+
+    const answer = (card: Card) => {
+      if (card.due > now) now = card.due; // wait out a learning step
+      const rating = rng() < pRecall(card, now) ? 3 : 1;
+      const { card: next } = scheduler.applyRating(card, rating, now, { source: 'review', assisted: false });
+      pool.set(next.id, next);
+      now += stepMs;
+      answers += 1;
+    };
+
+    // Answer whatever the queue offers until it is empty: due learning/reviews first, then gated new cards
+    // (which in turn spawn same-day learning steps that are picked up on the next build).
+    for (let build = 0; answers < maxAnswers; build++) {
       const q = buildQueue({
         cards: [...pool.values()],
         now,
-        settings: { ...settings, maxNewItemsPerDay: want },
+        settings: daySettings,
         itemsByCard,
         retrievability: (c) => scheduler.retrievability(c, now),
         rng,
         reviewsDoneToday: reviews,
-        learnAheadMs: 0,
+        newDoneToday: newCards,
+        learnAheadMs: Math.max(0, dayEnd - now),
       });
-      for (const c of q.newCards) {
-        answer(c);
-        newCards += 1;
-      }
-      // Their same-day learning steps.
-      for (let guard = 0; guard < 10; guard++) {
-        const steps = buildQueue({
-          cards: [...pool.values()],
-          now,
-          settings,
-          itemsByCard,
-          retrievability: (c) => scheduler.retrievability(c, now),
-          rng,
-          reviewsDoneToday: reviews,
-          learnAheadMs: DAY_MS,
-        }).learning.filter((c) => c.scheduledDays === 0 && c.due < studyDayStart(dayAt + 36 * 3_600_000, dayCfg));
-        if (steps.length === 0) break;
-        for (const c of steps) {
-          if (c.due > now) now = c.due;
+      if (build === 0) debt = q.debt;
+      const due = [...q.learning, ...q.reviews];
+      if (due.length > 0) {
+        for (const c of due) {
+          if (answers >= maxAnswers) break;
           answer(c);
           reviews += 1;
         }
+      } else if (q.newCards.length > 0) {
+        for (const c of q.newCards) {
+          if (answers >= maxAnswers) break;
+          answer(c);
+          newCards += 1;
+        }
+      } else {
+        break;
       }
     }
 
-    out.push({
-      day: studyDay(dayAt, dayCfg),
-      reviews,
-      newCards,
-      minutes: Math.ceil((answers * secondsPerItem) / 60),
-      debt,
-    });
+    out.push({ day: studyDay(dayAt, dayCfg), reviews, newCards, minutes: Math.ceil((answers * secondsPerItem) / 60), debt });
   }
   return out;
 }
