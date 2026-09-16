@@ -76,8 +76,9 @@ export function buildTutorRequest(input: TutorInput): LlmRequest {
     ],
     messages,
     effort: input.effort ?? 'medium',
-    maxTokens: input.maxTokens ?? 1024,
   };
+  // max_tokens must also cover adaptive thinking, so leave the provider default (4096) unless overridden
+  if (input.maxTokens !== undefined) req.maxTokens = input.maxTokens;
   if (input.model) req.model = input.model;
   if (input.metadata) req.metadata = input.metadata;
   if (input.signal) req.signal = input.signal;
