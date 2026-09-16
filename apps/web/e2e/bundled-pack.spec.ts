@@ -26,5 +26,8 @@ test('bundled probability pack: shelf → enrol → setup → today', async ({ p
   await expect(page.getByTestId('review-summary')).toContainText('Nothing due');
   // the map renders one node per concept
   await page.goto('/#/map');
+  await expect(page.getByTestId('map-node').first()).toBeVisible({ timeout: 30_000 });
   expect(await page.getByTestId('map-node').count()).toBeGreaterThan(3);
+  await page.getByTestId('map-node').first().click();
+  await expect(page.getByTestId('concept-detail')).toBeVisible();
 });
