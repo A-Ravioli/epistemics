@@ -10,6 +10,8 @@ export type Effort = 'low' | 'medium' | 'high';
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';   // 'system' inside messages = mid-conversation control message
   content: string;
+  /** Put a cache breakpoint after this message (used for the learner-model message that opens a tutor call). */
+  cache?: boolean;
 }
 
 export interface CacheableBlock { text: string; cache?: boolean }
@@ -75,3 +77,35 @@ export function costUsd(model: string, u: { inputTokens: number; outputTokens: n
 }
 
 export type UsageSink = (call: Usage & { role: LlmRole; sessionId?: string; courseId?: string }) => void;
+
+/** Default output caps per role. Architect and item writer emit whole curricula / item banks. */
+export const DEFAULT_MAX_TOKENS: Record<LlmRole, number> = {
+  tutor: 4096, student: 4096, observer: 2048, grader: 2048, leakcheck: 2048, itemwriter: 16000, architect: 16000,
+};
+
+export function defaultMaxTokens(role: LlmRole, structured: boolean): number {
+  if (role === 'architect' || role === 'itemwriter') return 16000;
+  return structured ? 2048 : (DEFAULT_MAX_TOKENS[role] ?? 4096);
+}
+
+export type LlmErrorKind = 'refusal' | 'rate_limit' | 'connection' | 'status' | 'parse' | 'aborted' | 'unknown';
+
+/** Error raised by providers. `kind` lets callers decide between retry, degrade and surface. */
+export class LlmError extends Error {
+  readonly kind: LlmErrorKind;
+  readonly status?: number;
+  readonly retryable: boolean;
+  constructor(kind: LlmErrorKind, message: string, opts: { status?: number; retryable?: boolean; cause?: unknown } = {}) {
+    super(message, opts.cause !== undefined ? { cause: opts.cause } : undefined);
+    this.name = 'LlmError';
+    this.kind = kind;
+    if (opts.status !== undefined) this.status = opts.status;
+    this.retryable = opts.retryable ?? (kind === 'rate_limit' || kind === 'connection');
+  }
+}
+
+/** Build a Usage record from raw token counts. */
+export function makeUsage(model: string, tokens: { inputTokens: number; outputTokens: number; cacheRead?: number; cacheWrite?: number }, latencyMs: number): Usage {
+  const t = { inputTokens: tokens.inputTokens, outputTokens: tokens.outputTokens, cacheRead: tokens.cacheRead ?? 0, cacheWrite: tokens.cacheWrite ?? 0 };
+  return { ...t, costUsd: costUsd(model, t), latencyMs, model };
+}

@@ -110,12 +110,8 @@ export function topologicalOrder(concepts: string[], edges: ConceptEdge[]): stri
     out.set(c, []);
   }
   for (const e of edges) {
-    if (e.kind !== 'prereq' || !ids.has(e.from) || !ids.has(e.to) || e.from === e.to) {
-      if (e.kind === 'prereq' && e.from === e.to && ids.has(e.from)) {
-        throw new Error(`Prerequisite cycle detected among concepts: ${e.from}`);
-      }
-      continue;
-    }
+    // A self-loop (from === to) is left in: its node never reaches in-degree 0 and is reported as a cycle.
+    if (e.kind !== 'prereq' || !ids.has(e.from) || !ids.has(e.to)) continue;
     out.get(e.from)!.push(e.to);
     indeg.set(e.to, (indeg.get(e.to) ?? 0) + 1);
   }
@@ -133,7 +129,6 @@ export function topologicalOrder(concepts: string[], edges: ConceptEdge[]): stri
       if (n === 0) ready.push(d);
     }
   }
-  // Re-sort by input order to keep determinism independent of edge order.
   if (order.length !== concepts.length) {
     const stuck = concepts.filter((c) => !done.has(c));
     throw new Error(`Prerequisite cycle detected among concepts: ${stuck.join(', ')}`);
