@@ -16,7 +16,7 @@ export function normalizeText(text: string): string {
   return text
     .replace(/\r\n?/g, '\n')
     .split('\n')
-    .map((l) => l.replace(/[ \t ]+/g, ' ').trim())
+    .map((l) => l.replace(/[ \t\u00a0]+/g, ' ').trim())
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();

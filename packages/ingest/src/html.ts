@@ -110,7 +110,7 @@ function fallbackToBlocks(html: string): HtmlBlock[] {
 }
 
 function squeeze(s: string): string {
-  return s.replace(/[\s ]+/g, ' ').trim();
+  return s.replace(/[\s\u00a0]+/g, ' ').trim();
 }
 
 // ---------------------------------------------------------------------------
