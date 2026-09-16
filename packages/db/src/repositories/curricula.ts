@@ -36,8 +36,6 @@ export async function saveCurriculum(db: Db, curriculum: Curriculum, now: number
   const m = curriculum.manifest;
   const id = m.id;
   const version = m.version;
-  const scope = (t: { curriculumId: ConceptRow['curriculumId'] extends string ? typeof concepts.curriculumId : never }) => t;
-  void scope;
 
   const queries: Parameters<typeof batchAll>[1] = [];
   queries.push(
