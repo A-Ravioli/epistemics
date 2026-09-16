@@ -840,8 +840,6 @@ function onGrade(
       }
       return { state: s, effects };
     }
-    case 'pretest':
-      return { state: s, effects };
   }
 }
 
