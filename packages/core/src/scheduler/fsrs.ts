@@ -141,6 +141,12 @@ export function createScheduler(params: SchedulerParams): Scheduler {
     const card = fromFsrsCard(base, item.card);
     // A provisional (diagnostic-seeded) card is confirmed by its first real review; demoted on Again.
     card.provisional = false;
+    // ts-fsrs enforces hard < good < easy by adding a day after applying maximum_interval, which can
+    // overshoot the cap by up to two days. The exam cap is a hard limit here.
+    if (card.state === 2 && card.scheduledDays > fsrsParams.maximum_interval) {
+      card.scheduledDays = fsrsParams.maximum_interval;
+      card.due = now + card.scheduledDays * DAY_MS;
+    }
     const log: ReviewLogDraft = {
       cardId: base.id,
       courseId: base.courseId,
