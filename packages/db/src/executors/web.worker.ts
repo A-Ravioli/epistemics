@@ -111,7 +111,7 @@ async function handle(req: WorkerRequest): Promise<unknown> {
 
 const ready = (async () => {
   try {
-    sqlite3 = await sqlite3InitModule({ print: () => {}, printErr: (s: string) => console.error('[sqlite-wasm]', s) });
+    sqlite3 = await sqlite3InitModule();
     await openDatabase();
     post({ type: 'status', ok: true, storage, sqliteVersion: sqlite3.version.libVersion });
   } catch (e) {

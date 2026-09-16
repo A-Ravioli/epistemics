@@ -10,6 +10,8 @@ import type { WorkerRequest, WorkerResponse, WorkerStatus } from './web.worker.j
 
 export const DB_LOCK_NAME = 'epistemics-db';
 
+type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
+
 export class DbLockedError extends Error {
   override readonly name = 'DbLockedError';
   constructor() {
@@ -43,7 +45,7 @@ export async function createWebExecutor(opts: WebExecutorOptions = {}): Promise<
 
   worker.onmessage = (ev: MessageEvent<WorkerResponse | WorkerStatus>) => {
     const m = ev.data;
-    if ('type' in m && m.type === 'status') { statusResolve(m); return; }
+    if ('type' in m) { statusResolve(m); return; }
     const p = pending.get(m.id);
     if (!p) return;
     pending.delete(m.id);
@@ -57,7 +59,7 @@ export async function createWebExecutor(opts: WebExecutorOptions = {}): Promise<
     statusResolve({ type: 'status', ok: false, error: err.message });
   };
 
-  function request<T>(req: Omit<WorkerRequest, 'id'>, transfer?: Transferable[]): Promise<T> {
+  function request<T>(req: DistributiveOmit<WorkerRequest, 'id'>, transfer?: Transferable[]): Promise<T> {
     const id = nextId++;
     return new Promise<T>((resolve, reject) => {
       pending.set(id, { resolve: resolve as (v: unknown) => void, reject });
