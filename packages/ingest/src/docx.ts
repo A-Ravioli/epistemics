@@ -1,3 +1,4 @@
+/// <reference path="./ambient.d.ts" />
 /**
  * DOCX parsing via mammoth: convertToHtml → blocks → markdown-ish text with
  * `#` headings → sections. The browser bundle (`mammoth/mammoth.browser`) is

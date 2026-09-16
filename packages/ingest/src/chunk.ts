@@ -14,8 +14,8 @@
  */
 import { sha256, stableId } from '@epistemics/core';
 import type { Chunk } from '@epistemics/core';
-import { PAGE_BREAK, type ParsedDoc, type ParsedSection } from './types.js';
-import { estimateTokens, splitParagraphs } from './util.js';
+import type { ParsedDoc, ParsedSection } from './types.js';
+import { estimateTokens } from './util.js';
 
 export interface ChunkOptions {
   targetTokens?: number;
@@ -215,8 +215,3 @@ function tailText(paras: Para[], tokens: number): string {
   }
   return picked.join(' ');
 }
-
-export { PAGE_BREAK };
-
-/** Split text into paragraphs (exported for tests and for callers that pre-process). */
-export { splitParagraphs };

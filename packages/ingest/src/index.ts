@@ -23,7 +23,7 @@ export { parseDocx } from './docx.js';
 export type { DocxOptions, DocxParseResult } from './docx.js';
 export { htmlToBlocks, blocksToSections, blocksToMarkdown } from './html.js';
 export type { HtmlBlock } from './html.js';
-export { sha256Bytes, estimateTokens, normalizeText } from './util.js';
+export { sha256Bytes, estimateTokens, normalizeText, splitParagraphs } from './util.js';
 
 export interface IngestFile {
   name: string;
