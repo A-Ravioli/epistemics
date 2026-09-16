@@ -37,9 +37,13 @@ describe('composeCheckpoint', () => {
     expect(prevConcepts).toContain('c2');
     expect(prevConcepts).not.toContain('c4');
     for (const i of fromPrev) expect(['discriminate', 'apply']).toContain(i.type);
-    // apply/analyze preferred for the unit's first picks
-    const firstPicks = ['c6', 'c7', 'c8'].map((c) => fromUnit.find((i) => i.conceptId === c)!);
-    for (const i of firstPicks) expect(['apply', 'analyze']).toContain(i.bloom);
+    // apply/analyze preferred: every unit concept's apply/analyze items are chosen before any understand item
+    for (const c of unit2Concepts) {
+      const picked = fromUnit.filter((i) => i.conceptId === c);
+      const higher = picked.filter((i) => i.bloom === 'apply' || i.bloom === 'analyze').length;
+      const available = unit2.lessons.flatMap((l) => l.concepts).find((k) => k.id === c)!.items.filter((i) => i.bloom === 'apply' || i.bloom === 'analyze').length;
+      expect(higher).toBe(Math.min(available, picked.length));
+    }
     // no duplicates
     expect(new Set(items.map((i) => i.id)).size).toBe(items.length);
   });
@@ -48,8 +52,8 @@ describe('composeCheckpoint', () => {
     const a = composeCheckpoint({ unit: unit1, previousUnits: [], conceptMastery: new Map(), size: 12, rng: seededRng(1) });
     const b = composeCheckpoint({ unit: unit1, previousUnits: [], conceptMastery: new Map(), size: 12, rng: seededRng(1) });
     expect(a.map((i) => i.id)).toEqual(b.map((i) => i.id));
-    // unit1 has 8 eligible items in total; size is capped by availability
-    expect(a.length).toBe(8);
+    // unit1 has 9 eligible items in total; size is capped by availability
+    expect(a.length).toBe(9);
     expect(a.every((i) => ['c1', 'c2', 'c3', 'c4', 'c5'].includes(i.conceptId))).toBe(true);
   });
 });
