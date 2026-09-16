@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * Node executor on the built-in `node:sqlite` (Node ≥ 22.5). Synchronous under the hood, exposed as async.
  * Used by tests, the server, and CLI tooling. Rows are returned as arrays in column order via
