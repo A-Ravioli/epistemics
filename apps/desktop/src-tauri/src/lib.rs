@@ -24,8 +24,12 @@ fn open_data_dir(app: tauri::AppHandle) -> Result<String, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let sql = tauri_plugin_sql::Builder::default();
+    #[cfg(feature = "rust-migrations")]
+    let sql = sql.add_migrations(migrations::DB_URL, migrations::all());
+
     tauri::Builder::default()
-        .plugin(tauri_plugin_sql::Builder::default().add_migrations(migrations::DB_URL, migrations::all()).build())
+        .plugin(sql.build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())

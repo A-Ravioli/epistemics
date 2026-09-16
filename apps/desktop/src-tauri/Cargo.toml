@@ -12,6 +12,13 @@ publish = false
 name = "epistemics_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+default = []
+# Register packages/db/migrations/*.sql with tauri-plugin-sql so Rust applies them on `Database.load`.
+# Off by default: packages/db applies the same files itself (see src/migrations.rs), and applying
+# them twice fails on the second CREATE TABLE. Enable only if the JS side stops running migrations on Tauri.
+rust-migrations = []
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

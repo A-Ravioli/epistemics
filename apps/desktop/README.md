@@ -45,7 +45,7 @@ Icons in `src-tauri/icons/` are a generated placeholder set (PNG, ICO, ICNS). Re
 |---|---|
 | SQLite database | `<app config dir>/epistemics.db`, which `tauri-plugin-sql` resolves to `~/Library/Application Support/dev.epistemics.app/` (macOS), `~/.config/dev.epistemics.app/` (Linux), `%APPDATA%\dev.epistemics.app\` (Windows). The `open_data_dir` command reveals it. |
 | API keys | The OS keychain, service `dev.epistemics.app`, one entry per key name (`anthropic_api_key`, ...). macOS Keychain, Windows Credential Manager, Linux Secret Service. |
-| Migrations | `packages/db/migrations/*.sql` (drizzle-kit output), embedded at compile time by `src-tauri/build.rs` and registered for `sqlite:epistemics.db`. Applied on first `Database.load`; the plugin tracks versions in `_sqlx_migrations`. Set `EPISTEMICS_MIGRATIONS_DIR` to point the build at another directory. |
+| Migrations | Applied by `packages/db` (`applyMigrations`, `_migrations` table) on every platform, Tauri included. `src-tauri/build.rs` also embeds `packages/db/migrations/*.sql` so Rust can apply them instead: build with `--features rust-migrations` to register them with `tauri-plugin-sql` (then stop applying them from JS, or every `CREATE TABLE` runs twice). `EPISTEMICS_MIGRATIONS_DIR` overrides the directory the build reads. |
 | Webview permissions | `src-tauri/capabilities/default.json`: `core:default`, `sql` (load/select/execute/close), `dialog` (open/save/message), `fs` (app config/data dirs recursively, plus any path picked through a dialog), `opener`. |
 
 ## Commands (`invoke` from JS)
