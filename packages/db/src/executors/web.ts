@@ -35,7 +35,7 @@ export interface WebExecutorOptions {
 }
 
 export async function createWebExecutor(opts: WebExecutorOptions = {}): Promise<WebExecutor> {
-  const releaseLock = opts.skipLock ? () => {} : await acquireLock();
+  const releaseLock = opts.skipLock ? async () => {} : await acquireLock();
   const worker = opts.worker ?? new Worker(new URL('./web.worker.ts', import.meta.url), { type: 'module' });
 
   let nextId = 1;
@@ -70,7 +70,7 @@ export async function createWebExecutor(opts: WebExecutorOptions = {}): Promise<
   const s = await status;
   if (!s.ok) {
     worker.terminate();
-    releaseLock();
+    await releaseLock();
     throw new Error(`Could not open the database: ${s.error}`);
   }
 
@@ -99,28 +99,32 @@ export async function createWebExecutor(opts: WebExecutorOptions = {}): Promise<
     async close() {
       try { await request<void>({ type: 'close' }); } finally {
         worker.terminate();
-        releaseLock();
+        await releaseLock();
       }
     },
   };
   return exec;
 }
 
-/** Hold the single-owner lock until the returned function is called. Throws DbLockedError if another tab has it. */
-async function acquireLock(): Promise<() => void> {
+/**
+ * Hold the single-owner lock until the returned function is called; that function resolves once the lock is
+ * actually released (so a re-open right after `close()` succeeds). Throws DbLockedError if another tab has it.
+ */
+async function acquireLock(): Promise<() => Promise<void>> {
   const locks = (globalThis.navigator as Navigator | undefined)?.locks;
-  if (!locks) return () => {};
-  let release!: () => void;
-  const held = new Promise<void>((r) => { release = r; });
+  if (!locks) return async () => {};
+  let releaseHeld!: () => void;
+  const held = new Promise<void>((r) => { releaseHeld = r; });
+  let lockDone: Promise<void> = Promise.resolve();
   const acquired = await new Promise<boolean>((resolve, reject) => {
-    locks.request(DB_LOCK_NAME, { ifAvailable: true }, async (lock) => {
+    lockDone = locks.request(DB_LOCK_NAME, { ifAvailable: true }, async (lock) => {
       if (!lock) { resolve(false); return; }
       resolve(true);
       await held;
-    }).catch(reject);
+    }).catch((e: unknown) => { reject(e instanceof Error ? e : new Error(String(e))); });
   });
   if (!acquired) throw new DbLockedError();
-  return release;
+  return async () => { releaseHeld(); await lockDone; };
 }
 
 /** Convenience wrappers for callers holding a plain DbExecutor. */

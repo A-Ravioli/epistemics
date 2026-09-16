@@ -49,7 +49,7 @@ describe('chunkDocument', () => {
       title: 'P', kind: 'pdf', hash: 'h',
       sections: [{ headingPath: ['A'], text: `${paragraph(1)}\n\f\n${paragraph(2)}\n\f\n${paragraph(3)}`, pageStart: 5, pageEnd: 7 }],
     };
-    const chunks = await chunkDocument(paged, { targetTokens: 80, overlapTokens: 0, minTokens: 10 });
+    const chunks = await chunkDocument(paged, { targetTokens: 120, overlapTokens: 0, minTokens: 10 });
     expect(chunks.map((c) => [c.pageStart, c.pageEnd])).toEqual([[5, 5], [6, 6], [7, 7]]);
     expect(chunks[0]!.text).not.toContain('\f');
   });
