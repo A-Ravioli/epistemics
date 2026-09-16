@@ -2,6 +2,7 @@
  * Bundled packs (content/packs/*.epistemics.json, bundled by Vite through import.meta.glob so the same
  * build works in the browser and inside the Tauri static bundle) plus import/export via platform.files.
  */
+import { isUnitBuilt } from '@epistemics/architect';
 import { CurriculumSchema, type Curriculum, type CurriculumManifest } from '@epistemics/core';
 import type { Db } from '@epistemics/db';
 import { getCurriculum, listCurricula, saveCurriculum } from '@epistemics/db';
@@ -68,6 +69,11 @@ export async function importPacks(db: Db, platform: Platform): Promise<{ install
 export async function exportPack(db: Db, platform: Platform, id: string, version: number): Promise<void> {
   const c = await getCurriculum(db, id, version);
   if (!c) throw new Error('Curriculum not found');
+  // Only a fully built curriculum is a valid pack (core's schema needs ≥1 concept per lesson).
+  if (!c.units.every(isUnitBuilt) || !CurriculumSchema.safeParse(c).success) {
+    const left = c.units.filter((u) => !isUnitBuilt(u)).length;
+    throw new Error(`This curriculum is not fully built yet (${left} unit${left === 1 ? '' : 's'} to go). Build the remaining units before exporting.`);
+  }
   const slug = c.manifest.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || c.manifest.id;
   await platform.files.saveText(`${slug}.epistemics.json`, JSON.stringify(c, null, 2));
 }

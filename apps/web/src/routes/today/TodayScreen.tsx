@@ -1,27 +1,63 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { Banner, Button, Card, EmptyState, Meter, Pill, Spinner, Stat } from '@epistemics/ui';
-import { useCourse, useQuery } from '../../lib/app-state.js';
+import { useApp, useCourse, useQuery } from '../../lib/app-state.js';
 import { minutes, plural } from '../../lib/format.js';
 import { setGateOverrideDay } from '../../lib/settings.js';
+import { CurriculumBuilder, curriculumKey, unitBuilds, unitsToPrepare } from '../../lib/services/build.js';
 import { loadToday, type TodayModel } from '../../lib/services/today.js';
+import { useStore } from '../../lib/store.js';
+import { describeEvent } from '../setup/BuildProgressView.js';
 import { WarmupCard } from './WarmupCard.js';
+
+/**
+ * Lazy generation (DESIGN §8.1 step 7): when the curriculum has unbuilt units within two of the learner's
+ * current one, build them in the background and reload the course once they are saved.
+ */
+function useUnitsAhead(currentUnitOrdinal: number | undefined) {
+  const app = useApp();
+  const ctx = useCourse();
+  const builds = useStore(unitBuilds);
+  const [error, setError] = useState<string | undefined>();
+  const status = builds[curriculumKey(ctx.course.curriculumId, ctx.course.curriculumVersion)];
+  useEffect(() => {
+    if (currentUnitOrdinal === undefined) return;
+    if (!unitsToPrepare(ctx.curriculum, currentUnitOrdinal).length) return;
+    const builder = new CurriculumBuilder(ctx.db, ctx.provider);
+    builder
+      .ensureUnitsAhead(ctx.course, currentUnitOrdinal)
+      .then((built) => (built ? app.refreshCourses() : undefined))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+  }, [app, ctx, currentUnitOrdinal]);
+  return { status, error };
+}
 
 export function TodayScreen() {
   const ctx = useCourse();
   const location = useLocation();
   const notice = (location.state as { notice?: string } | null)?.notice;
-  const q = useQuery(() => loadToday(ctx), [ctx.course.id, ctx.course.updatedAt]);
+  const q = useQuery(() => loadToday(ctx), [ctx.course.id, ctx.course.updatedAt, ctx.curriculum]);
+  const ahead = useUnitsAhead(q.data?.currentUnitOrdinal);
 
   if (q.error) return <Banner tone="bad">{q.error}</Banner>;
   if (!q.data) return <Spinner label="Building today" />;
   const t = q.data;
+  const unitIndex = ahead.status ? [...ctx.curriculum.units].sort((a, b) => a.ordinal - b.ordinal).findIndex((u) => u.ordinal === ahead.status!.unit) : -1;
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <header className="flex items-baseline justify-between">
         <h1 className="text-xl font-semibold">Today</h1>
-        <span className="text-sm text-ink/60">{t.day}</span>
+        <span className="flex items-center gap-3 text-sm text-ink/60">
+          {ahead.status ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs text-accent" data-testid="unit-build-pill" title={ahead.status.event ? describeEvent(ahead.status.event) : undefined}>
+              <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+              Preparing unit {unitIndex + 1}: {ahead.status.unitTitle}…
+            </span>
+          ) : null}
+          {t.day}
+        </span>
       </header>
+      {ahead.error ? <Banner tone="warn">Could not prepare the next unit: {ahead.error}</Banner> : null}
       {notice ? <Banner tone="warn" data-testid="today-notice">{notice}</Banner> : null}
       {t.openLesson ? (
         <Card className="flex items-center justify-between">
