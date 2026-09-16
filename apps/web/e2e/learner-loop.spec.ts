@@ -26,8 +26,9 @@ test.describe.serial('learner loop with the mock tutor', () => {
     await page.getByTestId('back-to-today').click();
     await expect(page.getByTestId('review-summary')).toContainText('due', { timeout: 15_000 });
     await expect(page.getByTestId('start-reviews')).toBeVisible();
-    // the gate is now closed
-    await expect(page.getByTestId('lock-reason')).toBeVisible();
+    // the gate is now closed: no lesson is offered as unlocked (the next lesson also waits on prerequisite mastery)
+    await expect(page.getByTestId('lesson-unlocked')).toHaveCount(0);
+    await expect(page.getByTestId('start-lesson')).toHaveCount(0);
   });
 
   test('review: rate a card and the queue shrinks', async () => {
