@@ -37,7 +37,21 @@ export const KEYS = {
   clearedDays: (courseId: string) => `clearedDays:${courseId}`,
   overrides: (courseId: string) => `overrides:${courseId}`,
   diagnosticDone: (courseId: string) => `diagnosticDone:${courseId}`,
+  builtCurricula: 'builtCurricula',
 } as const;
+
+/** Curricula built by the learner in this app (the Shelf's "built by you" list), newest last. */
+export interface BuiltCurriculumRef { id: string; version: number; at: number }
+
+export async function getBuiltCurricula(db: Db): Promise<BuiltCurriculumRef[]> {
+  return (await getSetting<BuiltCurriculumRef[]>(db, KEYS.builtCurricula)) ?? [];
+}
+
+export async function addBuiltCurriculum(db: Db, id: string, version: number, at: number = Date.now()): Promise<void> {
+  const cur = await getBuiltCurricula(db);
+  if (cur.some((r) => r.id === id && r.version === version)) return;
+  await setSetting(db, KEYS.builtCurricula, [...cur, { id, version, at }]);
+}
 
 export async function getLlmSettings(db: Db): Promise<LlmSettings> {
   const stored = await getSetting<Partial<LlmSettings>>(db, KEYS.llm);

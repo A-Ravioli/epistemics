@@ -20,7 +20,13 @@ import {
   type UsageSink,
 } from '@epistemics/llm';
 import type { Platform } from '@epistemics/platform';
+import { createArchitectMockResponder } from './architect-mock.js';
 import type { LlmSettings } from './settings.js';
+
+/** Demo provider: the built-in tutor/grader heuristics plus schema-valid Architect outputs so builds run without a key. */
+function mockProvider(onUsage: UsageSink, delayMs: number): LlmProvider {
+  return createMockProvider({ onUsage, delayMs, respond: createArchitectMockResponder() });
+}
 
 export const API_KEY_SECRET = 'anthropic_api_key';
 
