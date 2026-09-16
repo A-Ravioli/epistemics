@@ -2,7 +2,7 @@
  * The Today read-model (DESIGN §3.2): queue summary, next lesson with its lock reason, checkpoint
  * availability, teach-back suggestions and the reviews-cleared streak.
  */
-import { nextAvailableLesson, studyDay, DAY_MS, type Lesson, type Unit } from '@epistemics/core';
+import { nextAvailableLesson, studyDay, DAY_MS, type Curriculum, type Lesson, type Unit } from '@epistemics/core';
 import { listConceptStates, listSessions } from '@epistemics/db';
 import { getClearedDays, getGateOverrideDay, getPendingRemediation, getQueueFirst, markDayCleared } from '../settings.js';
 import { dayCfg, type CourseContext } from './context.js';
@@ -16,6 +16,8 @@ export interface TodayModel {
   warmup?: WarmupOffer;
   nextLesson: Lesson | null;
   nextUnit?: Unit;
+  /** Ordinal of the unit the learner is in; the Today screen keeps units generated two ahead of it. */
+  currentUnitOrdinal: number;
   lessonLocked: boolean;
   lockReason?: string;
   overrideUsedToday: boolean;
@@ -26,6 +28,19 @@ export interface TodayModel {
   teachback: { conceptId: string; name: string; mastery: number }[];
   streak: number;
   openLesson?: { lessonId: string; title: string };
+}
+
+/** The curriculum restricted to lessons that have concepts (built units). */
+export function builtOnly(curriculum: Curriculum): Curriculum {
+  return { ...curriculum, units: curriculum.units.map((u) => ({ ...u, lessons: u.lessons.filter((l) => l.concepts.length > 0) })) };
+}
+
+/** The ordinal of the unit the learner is currently in: the next lesson's unit, else the last unit with a completed lesson. */
+export function currentUnitOrdinal(curriculum: Curriculum, nextUnit: Unit | undefined, completed: Set<string>): number {
+  if (nextUnit) return nextUnit.ordinal;
+  const units = [...curriculum.units].sort((a, b) => a.ordinal - b.ordinal);
+  for (let i = units.length - 1; i >= 0; i--) if (units[i]!.lessons.some((l) => completed.has(l.id))) return units[i]!.ordinal;
+  return units[0]?.ordinal ?? 0;
 }
 
 export async function completedLessons(ctx: CourseContext): Promise<Set<string>> {
@@ -57,7 +72,8 @@ export async function loadToday(ctx: CourseContext): Promise<TodayModel> {
   const states = await listConceptStates(ctx.db, ctx.course.id);
   const mastery = new Map(states.map((s) => [s.conceptId, s.mastery]));
   const completed = await completedLessons(ctx);
-  const nextLesson = nextAvailableLesson(ctx.curriculum, mastery, completed);
+  // Lessons of units that are not generated yet (lazy build, DESIGN §8.1 step 7) have no concepts and must never be offered.
+  const nextLesson = nextAvailableLesson(builtOnly(ctx.curriculum), mastery, completed);
   const nextUnit = nextLesson ? ctx.curriculum.units.find((u) => u.lessons.some((l) => l.id === nextLesson.id)) : undefined;
   const overrideDay = await getGateOverrideDay(ctx.db, ctx.course.id);
   const overrideUsedToday = overrideDay === day;
@@ -111,6 +127,7 @@ export async function loadToday(ctx: CourseContext): Promise<TodayModel> {
     warmup: await warmupOffer(ctx),
     nextLesson,
     nextUnit,
+    currentUnitOrdinal: currentUnitOrdinal(ctx.curriculum, nextUnit, completed),
     lessonLocked,
     lockReason,
     overrideUsedToday,

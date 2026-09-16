@@ -101,7 +101,7 @@ export async function buildProvider(platform: Platform, db: Db, settings: LlmSet
       mode: 'mock',
       ledger,
       note: 'No Anthropic API key configured; using the demo tutor.',
-      provider: createMockProvider({ onUsage, delayMs: opts.mockDelayMs ?? 12 }),
+      provider: mockProvider(onUsage, opts.mockDelayMs ?? 12),
     };
   }
 
@@ -113,5 +113,5 @@ export async function buildProvider(platform: Platform, db: Db, settings: LlmSet
     };
   }
 
-  return { mode: 'mock', ledger, provider: createMockProvider({ onUsage, delayMs: opts.mockDelayMs ?? 12 }) };
+  return { mode: 'mock', ledger, provider: mockProvider(onUsage, opts.mockDelayMs ?? 12) };
 }
