@@ -61,10 +61,10 @@ export function validateGraph(conceptIds: string[], edges: ConceptEdge[]): Graph
   let kept = [...seen.values()];
   for (const kind of ['prereq', 'encompasses'] as const) {
     const ofKind = kept.filter((e) => e.kind === kind);
-    const { edges: acyclic, dropped: cyc } = breakCycles(ofKind);
+    const { dropped: cyc } = breakCycles(ofKind);
     dropped.push(...cyc);
     const cycSet = new Set(cyc);
-    kept = kept.filter((e) => e.kind !== kind || !cycSet.has(e)).filter((e) => e.kind !== kind || acyclic.includes(e));
+    kept = kept.filter((e) => !cycSet.has(e));
   }
 
   const order = topoOrder(conceptIds, kept.filter((e) => e.kind === 'prereq'));

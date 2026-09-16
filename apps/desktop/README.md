@@ -55,14 +55,15 @@ Icons in `src-tauri/icons/` are a generated placeholder set (PNG, ICO, ICNS). Re
 | `secret_get` | `{ key }` | `string \| null` |
 | `secret_set` | `{ key, value }` | `void` |
 | `secret_delete` | `{ key }` | `void` (missing entry is not an error) |
-| `llm_fetch` | `{ url, method, headers, body?, channel }` | `void`; the response arrives on `channel` |
+| `llm_fetch` | `{ url, method, headers, body: number[] \| null, channel, requestId }` | `void`; the response arrives on `channel`; rejects with `llm_fetch: aborted` if cancelled |
+| `llm_fetch_abort` | `{ requestId }` | `boolean` (whether a request was still running; unknown ids are a no-op) |
 | `open_data_dir` | none | the directory path it opened |
 
 Key names are limited to `[a-z0-9_.-]{1,64}`; anything else is rejected before touching the keychain.
 
 ### How `llm_fetch` keeps the key out of the webview
 
-1. JS constructs the request as it would for `fetch` and passes it with a `Channel`.
+1. JS constructs the request as it would for `fetch`, encodes the body as raw bytes, and passes it with a `Channel` and a random `requestId` (used by `llm_fetch_abort` for `AbortSignal` and stream cancellation).
 2. `policy::check_request` (pure Rust, unit-tested) parses the URL and refuses anything whose host is
    not `api.anthropic.com`, `localhost` or `127.0.0.1`; remote hosts must be `https`, loopback may be
    `http` (Ollama). Only `anthropic-version`, `anthropic-beta`, `content-type` and `accept` are

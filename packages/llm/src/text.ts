@@ -6,8 +6,8 @@ const STOPWORDS = new Set([
   'being', 'am', 'do', 'does', 'did', 'has', 'have', 'had', 'not', 'no', 'yes', 'can', 'could', 'would', 'should', 'will',
   'shall', 'may', 'might', 'must', 'i', 'you', 'he', 'she', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your',
   'his', 'our', 'their', 'what', 'which', 'who', 'whom', 'when', 'where', 'why', 'how', 'all', 'any', 'each', 'some',
-  'more', 'most', 'other', 'such', 'only', 'own', 'same', 'very', 'just', 'also', 'there', 'here', 'because', 'about',
-  'up', 'down', 'out', 'off', 'again', 'both', 'between', 'through', 'while', 'after', 'before', 'one', 'two', 'per',
+  'more', 'most', 'such', 'only', 'own', 'very', 'just', 'also', 'there', 'here', 'because', 'about',
+  'up', 'down', 'out', 'off', 'again', 'between', 'through', 'while', 'after', 'before', 'per',
 ]);
 
 /** Lowercase, strip diacritics and punctuation, collapse whitespace. */
@@ -28,8 +28,14 @@ export function words(text: string): string[] {
   return n ? n.split(' ') : [];
 }
 
+/** Very light stemming so "events"/"event", "changes"/"change" compare equal. */
+export function stem(w: string): string {
+  if (w.length > 3 && w.endsWith('s') && !/(ss|us|is)$/.test(w)) return w.slice(0, -1);
+  return w;
+}
+
 export function contentWords(text: string): string[] {
-  return words(text).filter((w) => !STOPWORDS.has(w) && w.length > 1);
+  return words(text).filter((w) => !STOPWORDS.has(w) && w.length > 1).map(stem);
 }
 
 export function isStopword(w: string): boolean {

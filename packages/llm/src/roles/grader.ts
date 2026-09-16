@@ -88,7 +88,8 @@ export function gradeExact(answer: string, exact: string, rubric: RubricCriterio
 /** True when a first sample should be escalated to three (DESIGN §6.2). */
 export function needsConsensus(r: Pick<GradeResult, 'score' | 'confidence'>): boolean {
   if (r.confidence < CONSENSUS_CONFIDENCE) return true;
-  return RATING_BOUNDARIES.some((b) => Math.abs(r.score - b) <= CONSENSUS_MARGIN + 1e-9);
+  // strictly inside the margin, on 3-decimal rounding (0.90 vs 0.95 is exactly 0.05 away: not borderline)
+  return RATING_BOUNDARIES.some((b) => Math.round(Math.abs(r.score - b) * 1000) / 1000 < CONSENSUS_MARGIN);
 }
 
 function median(xs: number[]): number {

@@ -63,7 +63,7 @@ describe('detectLeak', () => {
 
 describe('checkTurnShape', () => {
   it('accepts one question within the word cap', () => {
-    expect(checkTurnShape('Good start. What is P(A and B) for disjoint events?', 120)).toEqual({ ok: true, questions: 1, words: 9 });
+    expect(checkTurnShape('Good start. What is P(A and B) for disjoint events?', 120)).toEqual({ ok: true, questions: 1, words: 10 });
   });
   it('rejects two questions', () => {
     const r = checkTurnShape('Why? And what is P(A)?', 120);

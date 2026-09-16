@@ -39,6 +39,8 @@ describe('grader', () => {
     expect(needsConsensus({ score: 0.42, confidence: 0.95 })).toBe(true);
     expect(needsConsensus({ score: 0.95, confidence: 0.95 })).toBe(true);
     expect(needsConsensus({ score: 0.6, confidence: 0.95 })).toBe(false);
+    expect(needsConsensus({ score: 0.35, confidence: 0.95 })).toBe(false); // exactly 0.05 away
+    expect(needsConsensus({ score: 0.36, confidence: 0.95 })).toBe(true);
   });
 
   it('borderline first sample triggers three samples: median score, majority per criterion', async () => {
