@@ -52,9 +52,11 @@ pub async fn llm_fetch(
     url: String,
     method: String,
     headers: HashMap<String, String>,
-    body: Option<String>,
+    body: Option<Vec<u8>>,
     channel: Channel<LlmChunk>,
+    request_id: Option<String>,
 ) -> Result<(), String> {
+    let _ = request_id; // reserved for llm_fetch_abort bookkeeping
     let checked = policy::check_request(&url, &method, &headers).map_err(|e| e.to_string())?;
 
     let mut req = state
@@ -91,5 +93,14 @@ pub async fn llm_fetch(
         channel.send(LlmChunk::Bytes(bytes.to_vec())).map_err(|e| format!("llm_fetch: channel closed: {e}"))?;
     }
     channel.send(LlmChunk::done()).map_err(|e| format!("llm_fetch: channel closed: {e}"))?;
+    Ok(())
+}
+
+/// Abort hook for the JS transport. Cancellation is driven from the JS side by dropping the
+/// channel; the request future ends when the next `channel.send` fails. This command exists so
+/// the transport can call it unconditionally without an "unknown command" error.
+#[tauri::command]
+pub async fn llm_fetch_abort(request_id: Option<String>) -> Result<(), String> {
+    let _ = request_id;
     Ok(())
 }

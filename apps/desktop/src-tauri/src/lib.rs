@@ -39,6 +39,7 @@ pub fn run() {
             secrets::secret_set,
             secrets::secret_delete,
             llm::llm_fetch,
+            llm::llm_fetch_abort,
             open_data_dir,
         ])
         .run(tauri::generate_context!())
