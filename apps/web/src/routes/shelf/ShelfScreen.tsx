@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { getCurriculum } from '@epistemics/db';
 import type { Curriculum, CurriculumManifest } from '@epistemics/core';
-import { Banner, Button, Card, EmptyState, ErrorBanner, PageHeader, Pill, Skeleton, Tabs } from '@epistemics/ui';
+import { Banner, Button, Card, EmptyState, ErrorBanner, Page, PageHeader, Pill, Skeleton, Tabs } from '@epistemics/ui';
 import { useApp, useQuery } from '../../lib/app-state.js';
 import { dateShort } from '../../lib/format.js';
 import { CurriculumBuilder, builtUnitCount, curriculumKey, isFullyBuilt, unitBuilds, unitStatus } from '../../lib/services/build.js';
@@ -120,9 +120,10 @@ export function ShelfScreen() {
   const loading = (label: string) => <Card><Skeleton lines={3} label={label} /></Card>;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <Page>
       <PageHeader
         title="Shelf"
+        crumbs={[{ label: 'My courses' }]}
         description="Courses are built from packs: a versioned curriculum of units, lessons, concepts and review questions."
         actions={
           <>
@@ -189,8 +190,8 @@ export function ShelfScreen() {
             {app.courses.map((c) => (
               <Card key={c.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 text-sm font-medium">{c.title}{app.active?.course.id === c.id ? <Pill tone="accent">active</Pill> : null}</div>
-                  <div className="text-xs text-muted">{c.goals.purpose}{c.goals.examDate ? ` · exam ${dateShort(c.goals.examDate)}` : ''} · {c.goals.weeklyMinutes} min/week · since {dateShort(c.createdAt)}</div>
+                  <div className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">{c.title}{app.active?.course.id === c.id ? <Pill tone="accent">active</Pill> : null}</div>
+                  <div className="mt-0.5 text-xs text-muted">{c.goals.purpose}{c.goals.examDate ? ` · exam ${dateShort(c.goals.examDate)}` : ''} · {c.goals.weeklyMinutes} min/week · since {dateShort(c.createdAt)}</div>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   {app.active?.course.id !== c.id ? <Button variant="secondary" onClick={() => app.setActiveCourse(c.id)}>Make active</Button> : <Link to="/today"><Button>Open Today</Button></Link>}
@@ -200,7 +201,7 @@ export function ShelfScreen() {
           </div>
         )
       ) : null}
-    </div>
+    </Page>
   );
 }
 
@@ -209,9 +210,9 @@ function PackCard({ pack, onEnrol, busy }: { pack: Curriculum; onEnrol: () => vo
   return (
     <Card className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" data-testid="pack-card">
       <div className="min-w-0">
-        <div className="text-base font-medium">{m.title}</div>
-        <div className="text-xs text-muted">{m.subject} · {m.level} · v{m.version}{m.licence ? ` · ${m.licence}` : ''}</div>
-        <p className="mt-1 text-sm text-ink/80">{m.description}</p>
+        <div className="text-[15px] font-semibold">{m.title}</div>
+        <div className="mt-0.5 text-xs text-muted">{m.subject} · {m.level} · v{m.version}{m.licence ? ` · ${m.licence}` : ''}</div>
+        <p className="mt-1.5 text-sm leading-relaxed">{m.description}</p>
         <Counts pack={pack} />
       </div>
       <Button onClick={onEnrol} disabled={busy} data-testid="enrol" className="shrink-0" title="Create a course from this pack">{busy ? 'Enrolling…' : 'Enrol'}</Button>
@@ -227,11 +228,11 @@ function BuiltCard({ curriculum: c, building, onEnrol, onExport, onBuildNext }: 
   return (
     <Card className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" data-testid="built-card">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2 text-base font-medium">{m.title}{full ? <Pill tone="good">fully built</Pill> : <Pill tone="warn" title="Later units are generated as you approach them">{built}/{c.units.length} units built</Pill>}</div>
-        <div className="text-xs text-muted">{m.subject} · {m.level} · v{m.version} · {gen} · {dateShort(m.createdAt)}</div>
+        <div className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">{m.title}{full ? <Pill tone="good">fully built</Pill> : <Pill tone="warn" title="Later units are generated as you approach them">{built}/{c.units.length} units built</Pill>}</div>
+        <div className="mt-0.5 text-xs text-muted">{m.subject} · {m.level} · v{m.version} · {gen} · {dateShort(m.createdAt)}</div>
         <Counts pack={c} />
         <div className="text-xs text-muted">{c.sources.length ? `grounded in ${c.sources.length} source${c.sources.length === 1 ? '' : 's'} you uploaded` : 'from the subject name only'}</div>
-        {building ? <div className="mt-1 text-xs text-accent" data-testid="built-building" role="status">Building the next unit…</div> : null}
+        {building ? <div className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-blue-fg" data-testid="built-building" role="status"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" aria-hidden="true" />Building the next unit…</div> : null}
       </div>
       <div className="flex shrink-0 flex-wrap gap-2 sm:flex-col sm:items-stretch">
         {!full ? <Button variant="secondary" size="sm" onClick={() => void onBuildNext()} disabled={building}>Build next unit</Button> : null}
@@ -246,9 +247,9 @@ function ManifestCard({ manifest: m, onEnrol, onExport }: { manifest: Curriculum
   return (
     <Card className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" data-testid="library-card">
       <div className="min-w-0">
-        <div className="text-base font-medium">{m.title}</div>
-        <div className="text-xs text-muted">{m.subject} · {m.level} · v{m.version} · {m.generator.name}</div>
-        <p className="mt-1 text-sm text-ink/80">{m.description}</p>
+        <div className="text-[15px] font-semibold">{m.title}</div>
+        <div className="mt-0.5 text-xs text-muted">{m.subject} · {m.level} · v{m.version} · {m.generator.name}</div>
+        <p className="mt-1.5 text-sm leading-relaxed">{m.description}</p>
       </div>
       <div className="flex shrink-0 gap-2">
         <Button variant="secondary" size="sm" onClick={() => void onExport()} title="Save as .epistemics.json">Export</Button>

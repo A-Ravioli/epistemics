@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router';
-import { Pill } from '@epistemics/ui';
+import { IconButton, ListRow, Pill, navRowClass, type IconName } from '@epistemics/ui';
 
-export type NavItem = readonly [to: string, label: string];
+export interface NavItem {
+  readonly to: string;
+  readonly label: string;
+  readonly meta: string;
+  readonly icon: IconName;
+}
 
 /**
- * Primary navigation: a sidebar from the `md` breakpoint up, a sticky top bar with a disclosure menu below it.
- * Both render the same links so the route list in App.tsx stays the single source of truth.
+ * Primary navigation: the left panel of the surface from the `md` breakpoint up, a sticky top bar with a
+ * disclosure menu below it. Both render the same rows so the route list in App.tsx stays the single source of truth.
  */
 export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[]; courseTitle?: string; tutorMode: string }) {
   const [open, setOpen] = useState(false);
@@ -15,55 +20,51 @@ export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[
   const demo = tutorMode === 'mock';
 
   const links = (onPick?: () => void) =>
-    nav.map(([to, label]) => (
-      <NavLink
-        key={to}
-        to={to}
-        onClick={onPick}
-        className={({ isActive }) => `rounded-md px-2 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${isActive ? 'bg-ink text-paper' : 'hover:bg-mist'}`}
-      >
-        {label}
+    nav.map((item) => (
+      <NavLink key={item.to} to={item.to} onClick={onPick} className={({ isActive }) => navRowClass(isActive)}>
+        {({ isActive }) => <ListRow title={item.label} meta={item.meta} icon={item.icon} active={isActive} />}
       </NavLink>
     ));
 
+  const tutorNote = demo ? (
+    <div data-testid="mock-banner" className="rounded-[12px] bg-yellow-bg px-3 py-2 text-xs leading-snug text-yellow-fg" title="A deterministic stand-in tutor. Choose a real model in Settings.">
+      <span className="font-semibold">Demo tutor</span> (mock model)
+    </div>
+  ) : (
+    <div className="px-3 text-xs text-muted">Tutor: {tutorMode}</div>
+  );
+
   return (
     <>
-      <aside className="hidden w-52 shrink-0 flex-col gap-1 border-r border-line bg-mist/40 p-3 md:flex" aria-label="Primary">
-        <div className="mb-1 px-2 text-base font-semibold tracking-tight">Epistemics</div>
-        <div className="mb-3 truncate px-2 text-xs text-muted" title={courseTitle}>{courseTitle ?? 'No course yet'}</div>
-        <nav className="flex flex-col gap-1" aria-label="Screens">{links()}</nav>
-        <div className="mt-auto space-y-2 px-1 text-[11px] text-muted">
-          {demo ? (
-            <div data-testid="mock-banner" className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100" title="A deterministic stand-in tutor. Choose a real model in Settings.">Demo tutor (mock model)</div>
-          ) : (
-            <div>Tutor: {tutorMode}</div>
-          )}
+      <aside className="panel hidden w-[232px] shrink-0 flex-col border-r border-hairline p-3 md:flex" aria-label="Primary">
+        <div className="mb-4 px-3 pt-2">
+          <div className="text-[15px] font-semibold leading-tight tracking-[-0.01em]">Epistemics</div>
+          <div className="mt-0.5 truncate text-xs text-muted" title={courseTitle}>{courseTitle ?? 'No course yet'}</div>
         </div>
+        <nav className="flex flex-col gap-0.5" aria-label="Screens">{links()}</nav>
+        <div className="mt-auto pt-4">{tutorNote}</div>
       </aside>
 
-      <div className="sticky top-0 z-30 border-b border-line bg-paper md:hidden">
-        <div className="flex items-center justify-between gap-3 px-4 py-2">
+      <div className="panel sticky top-0 z-30 border-b border-hairline md:hidden">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5">
           <div className="min-w-0">
-            <div className="text-base font-semibold leading-tight tracking-tight">Epistemics</div>
+            <div className="text-[15px] font-semibold leading-tight tracking-[-0.01em]">Epistemics</div>
             <div className="truncate text-xs text-muted" title={courseTitle}>{courseTitle ?? 'No course yet'}</div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {demo ? <Pill tone="warn" title="Demo tutor (mock model)">Demo</Pill> : null}
-            <button
-              type="button"
-              className="rounded-md border border-line px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            <IconButton
+              icon={open ? 'x' : 'menu'}
+              label={open ? 'Close menu' : 'Open menu'}
               aria-expanded={open}
               aria-controls="mobile-nav"
-              aria-label={open ? 'Close menu' : 'Open menu'}
               onClick={() => setOpen((o) => !o)}
               data-testid="menu-toggle"
-            >
-              {open ? 'Close' : 'Menu'}
-            </button>
+            />
           </div>
         </div>
         {open ? (
-          <nav id="mobile-nav" className="flex flex-col gap-1 border-t border-line p-2" aria-label="Screens" data-testid="mobile-nav">
+          <nav id="mobile-nav" className="flex flex-col gap-0.5 border-t border-hairline p-2" aria-label="Screens" data-testid="mobile-nav">
             {links(() => setOpen(false))}
           </nav>
         ) : null}
