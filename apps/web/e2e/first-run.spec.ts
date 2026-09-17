@@ -14,22 +14,27 @@ async function horizontalOverflow(page: Page): Promise<{ doc: number; win: numbe
   });
 }
 
-// First launch: Today explains the app in two sentences and its one primary button leads to the Shelf,
-// where the no-course banner explains enrol / build / import. Protected screens fall back to the same state.
-test('first run: empty Today explains the app and leads to the Shelf', async ({ page }) => {
+// Today with no course: one sentence, one primary button back into the first-run flow, and a quiet link
+// to the Shelf for anyone who would rather browse. Protected screens fall back to the same state.
+test('first run: empty Today says what the app does and leads back into the flow', async ({ page }) => {
   await page.goto('/#/today');
   const first = page.getByTestId('first-run');
   await expect(first).toBeVisible();
   await expect(first).toContainText('tutor');
   await expect(first).toContainText('reviews');
   await expect(first.getByRole('button')).toHaveCount(1);
+
+  // the quiet second path is still there for anyone who wants to browse first
   await page.getByTestId('first-run-shelf').click();
   await expect(page.getByRole('heading', { name: 'Shelf' })).toBeVisible();
   await expect(page.getByTestId('shelf-no-course')).toBeVisible();
   await expect(page.getByTestId('pack-card').first()).toBeVisible({ timeout: 30_000 });
+
   // a protected screen without a course lands on the same first-run state
   await page.goto('/#/progress');
   await expect(page.getByTestId('first-run')).toBeVisible();
+  await page.getByTestId('first-run-start').click();
+  await expect(page.getByTestId('step-subject')).toBeVisible();
 });
 
 test.describe('narrow viewport', () => {

@@ -1,22 +1,24 @@
 import { test, expect } from '@playwright/test';
 
-test('first launch asks for a tutor, then the window shows its three panes', async ({ page }) => {
+test('first launch asks what to learn, then the window shows its three panes', async ({ page }) => {
   await page.goto('/');
-  // the provider screen owns the whole window: no sidebar, no inspector, one decision
+  // the first-run flow owns the whole window: no sidebar, no inspector, one question at a time
   await expect(page.getByTestId('welcome-screen')).toBeVisible();
-  await expect(page.getByTestId('provider-claude')).toBeVisible();
-  await page.getByTestId('welcome-skip').click();
+  await expect(page.getByTestId('step-subject')).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Primary' })).toHaveCount(0);
+
+  // walk out of it without choosing a course: Today falls back to its no-course state
+  await page.goto('/#/today');
 
   // the shell: toolbar, sidebar, content
   await expect(page.getByTestId('toolbar')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Today' })).toBeVisible();
   await expect(page.getByTestId('mock-banner')).toBeVisible();
-  // no course yet: Today shows the first-run state with one primary action leading to the Shelf
   await expect(page.getByTestId('first-run')).toBeVisible();
 
-  // and it is not asked for again on this device
-  await page.goto('/');
-  await expect(page.getByTestId('first-run')).toBeVisible();
+  // and its one button leads back into the flow
+  await page.getByTestId('first-run-start').click();
+  await expect(page.getByTestId('step-subject')).toBeVisible();
 });
 
 test('the toolbar search opens the command palette and goes where it is told', async ({ page }) => {

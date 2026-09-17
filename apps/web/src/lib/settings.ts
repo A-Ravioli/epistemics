@@ -40,6 +40,8 @@ export const KEYS = {
   overrides: (courseId: string) => `overrides:${courseId}`,
   diagnosticDone: (courseId: string) => `diagnosticDone:${courseId}`,
   builtCurricula: 'builtCurricula',
+  /** First-run draft and completion (docs/ONBOARDING.md); account-scoped, so it syncs. */
+  onboarding: 'onboarding',
   /** Device-local sync configuration; the `sync` prefix keeps it out of the outbox push (packages/sync tables.ts). */
   sync: 'sync',
 } as const;

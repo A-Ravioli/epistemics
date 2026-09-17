@@ -223,9 +223,10 @@ function TodayBody() {
  */
 function Agenda({ t, primary, lessonsTotal }: { t: TodayModel; primary: PrimaryKey; lessonsTotal: number }) {
   const navigate = useNavigate();
+  const { llm } = useApp();
   const q = t.queue.queue;
   const due = t.queue.order.length;
-  const cards: { key: PrimaryKey | 'sofar'; title: string; time?: string; body: React.ReactNode; to?: string; testId?: string }[] = [];
+  const cards: { key: PrimaryKey | 'sofar' | 'tutor'; title: string; time?: string; body: React.ReactNode; to?: string; testId?: string }[] = [];
   cards.push({
     key: 'review',
     title: 'Reviews',
@@ -268,6 +269,16 @@ function Agenda({ t, primary, lessonsTotal }: { t: TodayModel; primary: PrimaryK
     });
   }
   if (t.teachback.length) cards.push({ key: 'teachback', title: 'Teach back', to: `/teachback/${t.teachback[0]!.conceptId}`, body: `${t.teachback.map((c) => `${c.name} (${(c.mastery * 100).toFixed(0)}%)`).join(', ')} — explaining a half-known concept is the fastest way to finish it.` });
+  // The same deferred tutor the ledger carries below `lg`; never both (DESIGN-SYSTEM §6).
+  if (llm.mode === 'mock') {
+    cards.push({
+      key: 'tutor',
+      title: 'Tutor',
+      testId: 'tutor-line',
+      to: '/settings',
+      body: 'The demo stand-in — it cannot really teach. Pick a real one.',
+    });
+  }
   cards.push({
     key: 'sofar',
     title: 'So far',
@@ -283,7 +294,7 @@ function Agenda({ t, primary, lessonsTotal }: { t: TodayModel; primary: PrimaryK
           title={c.title}
           time={c.time}
           selected={c.key === primary}
-          icon={c.key === 'sofar' ? 'chart' : 'check-square'}
+          icon={c.key === 'sofar' ? 'chart' : c.key === 'tutor' ? 'spark' : 'check-square'}
           {...(c.to ? { onClick: () => navigate(c.to!) } : {})}
         >
           {c.body}
@@ -317,10 +328,27 @@ function Ledger({ t, primary, lessonIsNext, lessonsTotal, onRefresh }: { t: Toda
             {primary !== 'teachback' ? <Link to={`/teachback/${t.teachback[0]!.conceptId}`} className="font-medium text-accent underline-offset-2 hover:underline">Teach</Link> : null}
           </Line>
         ) : null}
+        <TutorLine />
         <Line label="So far">
           {plural(t.streak, 'day')} in a row with every review cleared · {t.completedLessonIds.size} of {lessonsTotal} lessons done · {plural(t.queue.cards.length, 'card')} in rotation
         </Line>
       </section>
+  );
+}
+
+/**
+ * The first run lets the tutor question be deferred (docs/ONBOARDING.md §6), so the deferral is carried
+ * here rather than lost: the demo tutor works on every screen but cannot actually teach, and a learner
+ * about to start a lesson is the one who needs told.
+ */
+function TutorLine() {
+  const { llm } = useApp();
+  if (llm.mode !== 'mock') return null;
+  return (
+    <Line label="Tutor" testId="tutor-line">
+      The demo stand-in: every screen works, but it says the same thing in every phase and cannot really teach.{' '}
+      <Link to="/settings" className="font-medium text-accent underline-offset-2 hover:underline" data-testid="tutor-line-settings">Pick a real one</Link>
+    </Line>
   );
 }
 

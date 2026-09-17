@@ -461,3 +461,34 @@ export class CurriculumBuilder {
 export function isUnitBuildInFlight(curriculumId: string, version: number): boolean {
   return inflight.has(curriculumKey(curriculumId, version));
 }
+
+// ---------------------------------------------------------------------------
+// Outlining ahead of the learner (docs/ONBOARDING.md §3, step 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * The one place in the first run with real latency is the one place nothing is asked of the learner, so
+ * onboarding starts the outline as soon as it knows the subject and lets the commitment step run over the
+ * top of it. The Setup screen claims the in-flight request instead of starting a second one.
+ */
+let outlineAhead: { key: string; promise: Promise<OutlineProposal> } | undefined;
+
+const specKey = (spec: BuildSpec) => JSON.stringify([spec.subject.trim().toLowerCase(), spec.level, spec.goals ?? '', [...spec.sourceIds].sort()]);
+
+export function startOutlineAhead(builder: CurriculumBuilder, spec: BuildSpec): void {
+  const key = specKey(spec);
+  if (outlineAhead?.key === key) return;
+  const promise = builder.proposeOutline(spec);
+  // Nothing may await this before the Setup screen claims it, and a rejection here is not an app error:
+  // Setup re-runs the request and shows the failure with a retry.
+  promise.catch(() => undefined);
+  outlineAhead = { key, promise };
+}
+
+/** The outline already in flight for this spec, if onboarding started one. Claiming it clears it. */
+export function takeOutlineAhead(spec: BuildSpec): Promise<OutlineProposal> | undefined {
+  if (!outlineAhead || outlineAhead.key !== specKey(spec)) return undefined;
+  const { promise } = outlineAhead;
+  outlineAhead = undefined;
+  return promise;
+}

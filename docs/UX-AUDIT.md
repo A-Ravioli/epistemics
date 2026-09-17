@@ -35,6 +35,11 @@ Deferred (not fixed here):
 
 ### First launch (no course)
 
+*Superseded.* The fixes below were the right ones for the flow as it then stood, but the first run has since
+been redesigned end to end — see [ONBOARDING.md](ONBOARDING.md), which supersedes this section and the
+first-launch half of the Setup one. What remains true: Today is the home, and a protected screen without a
+course falls back to it.
+
 *Before:* `/today` redirected to the Shelf with a banner "Enrol in a course to get started"; sidebar said "No course yet"; four tabs; nothing said what the app does. At 390 px the header buttons and tabs overflowed by ~150 px.
 
 | Friction | Severity | Fix |

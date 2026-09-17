@@ -132,7 +132,10 @@ A screen fills the header and the inspector with `useScreenChrome(() => ({ heade
 The deps are what the slots read; a value re-made every render (a handler, `navigate`) must not be listed.
 
 Two screens take the whole window and have none of this: a checkpoint and a diagnostic (sat without help),
-and the first-launch provider screen, which also strips the toolbar down to the window buttons.
+and the first run ([ONBOARDING.md](ONBOARDING.md)), which also strips the toolbar down to the window
+buttons. The first run is one column of steps, each a heading, a question and one accent action — the same
+rules as every other screen, with the sidebar and the inspector removed because there is nothing yet to
+navigate to.
 
 **Browser and desktop.** The browser build floats the sheet on the wallpaper with a margin, rounded corners
 and a shadow, and draws three decorative stoplight dots at the left of the toolbar so a tab still reads as
