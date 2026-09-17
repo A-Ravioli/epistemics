@@ -10,7 +10,7 @@ Retrieve before you are taught and again after; space every review on a memory m
 
 ## Status
 
-Implemented and tested (298 unit tests, 5 Playwright flows, Rust crate compiles in CI):
+Implemented and tested (320 unit tests, 13 Playwright flows, Rust crate compiles in CI):
 
 - **Core** (`packages/core`): FSRS-6 scheduler wrapper, review queue with the review-debt gate and recovery mode, sibling burying, concept mastery with successive relearning, prerequisite gating, fractional implicit credit, load simulator, calibration; the lesson state machine (PRIME → PROBE → DEVELOP → CONSOLIDATE → EXTEND → CHECK → WRAP) with an enforced hint ladder, checkpoint composer, adaptive diagnostic, teach-back, learner model.
 - **LLM** (`packages/llm`): Anthropic provider on the official SDK (streaming, structured outputs, prompt caching, effort), Ollama provider, deterministic mock provider; tutor, observer, blind grader with consensus deferral, teach-back student, answer-leak detector, warm-up grader; versioned prompt files; usage ledger and budget guard.
@@ -20,8 +20,9 @@ Implemented and tested (298 unit tests, 5 Playwright flows, Rust crate compiles 
 - **Web app** (`apps/web`): Today, Review, Lesson, Checkpoint, Diagnostic, Teach-back, Course map, Shelf, Setup, Progress, Settings.
 - **Desktop** (`apps/desktop`): Tauri 2 shell with OS-keychain secrets and a Rust `llm_fetch` command so the API key never enters the webview.
 - **Server** (`apps/server`): Hono passthrough proxy for the browser build with a per-day USD budget.
+- **Sync** (`packages/sync`, `supabase/`): optional cross-device sync through Supabase. Sign in on the Account screen and every review, lesson, course and generated curriculum syncs between the web app and the desktop app with last-writer-wins per row; the app keeps working offline. A Supabase edge function can hold the Anthropic key and enforce a per-user daily budget. Setup in [supabase/README.md](supabase/README.md); protocol in [docs/SYNC.md](docs/SYNC.md).
 
-See [docs/DESIGN.md](docs/DESIGN.md) for the design, [docs/PLAN.md](docs/PLAN.md) for the phased plan, and [docs/research/](docs/research/) for the evidence base.
+See [docs/UX-AUDIT.md](docs/UX-AUDIT.md) for the screen-by-screen UX audit, [docs/DESIGN.md](docs/DESIGN.md) for the design, [docs/PLAN.md](docs/PLAN.md) for the phased plan, and [docs/research/](docs/research/) for the evidence base.
 
 ## Run it
 
@@ -40,6 +41,8 @@ Open Settings and choose an LLM mode:
 - **Ollama**: a local model at `http://localhost:11434` (reduced quality).
 
 Then Shelf → enrol in the probability pack (or Setup → build a course from a subject or your own files) → Today.
+
+To sync between devices: create a Supabase project, apply `supabase/migrations`, and enter the project URL and anon key on the Account screen (or set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`). See [supabase/README.md](supabase/README.md).
 
 Desktop:
 
@@ -69,6 +72,8 @@ packages/llm    providers, roles, prompts, usage
 packages/ingest document parsing, chunking, embeddings
 packages/architect  curriculum generation pipeline
 packages/ui     shared components
+packages/sync   Supabase push/pull engine
+supabase/       Postgres schema with RLS, edge-function LLM proxy
 content/        starter packs and prompt files
 docs/           design, plan, research
 ```
