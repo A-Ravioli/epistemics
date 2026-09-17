@@ -123,7 +123,6 @@ export function ShelfScreen() {
     <Page>
       <PageHeader
         title="Shelf"
-        crumbs={[{ label: 'My courses' }]}
         description="Courses are built from packs: a versioned curriculum of units, lessons, concepts and review questions."
         actions={
           <>

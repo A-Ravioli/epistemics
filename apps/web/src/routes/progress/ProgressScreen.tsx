@@ -25,7 +25,7 @@ export function ProgressScreen() {
 
   return (
     <Page>
-      <PageHeader title="Progress" crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: 'Progress' }]} description="Only unaided results count toward mastery; everything here is measured that way." />
+      <PageHeader title="Progress" description="Only unaided results count toward mastery; everything here is measured that way." />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Mastered" value={`${p.mastered}/${p.total}`} hint={`concepts fully learned; ${p.started} started`} tone={p.mastered > 0 ? 'good' : 'neutral'} />
         <Stat label="Unaided pass" value={pct(p.unassistedRate)} hint="share of checks passed with no help; this is what counts" />
@@ -120,7 +120,7 @@ export function ProgressScreen() {
               <thead><tr className="text-left font-medium text-muted"><th className="py-1.5">role</th><th>calls</th><th>input tokens</th><th>cache reads</th><th>output tokens</th><th>cost</th><th>avg latency</th></tr></thead>
               <tbody>
                 {p.cost.byRole.map((r) => (
-                  <tr key={r.role} className="border-t border-hairline"><td className="py-1.5">{r.role}</td><td>{r.calls}</td><td>{r.inputTokens}</td><td>{r.cacheRead}</td><td>{r.outputTokens}</td><td>{usd(r.costUsd)}</td><td>{Math.round(r.avgLatencyMs)} ms</td></tr>
+                  <tr key={r.role} className=""><td className="py-1.5">{r.role}</td><td>{r.calls}</td><td>{r.inputTokens}</td><td>{r.cacheRead}</td><td>{r.outputTokens}</td><td>{usd(r.costUsd)}</td><td>{Math.round(r.avgLatencyMs)} ms</td></tr>
                 ))}
               </tbody>
             </table>

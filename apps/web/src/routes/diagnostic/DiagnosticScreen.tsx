@@ -55,7 +55,7 @@ export function DiagnosticScreen() {
             <span className="text-[13px] font-medium">How sure are you?</span>
             <ConfidenceButtons value={confidence} onChange={setConfidence} disabled={v.busy} hotkeys={false} />
           </div>
-          <div className="flex flex-wrap items-center gap-3 border-t border-hairline pt-4">
+          <div className="flex flex-wrap items-center gap-3 pt-4">
             <Button onClick={() => confidence && runner.submit(answer, confidence)} disabled={!canSubmit} title={confidence === undefined ? 'Pick how sure you are first' : undefined}>Submit</Button>
             <Button variant="ghost" onClick={() => runner.submit("I don't know", 1)} disabled={v.busy}>I don't know</Button>
             {v.busy ? <Spinner label="Grading" /> : confidence === undefined ? <span className="text-xs text-muted">Pick a confidence to submit.</span> : null}

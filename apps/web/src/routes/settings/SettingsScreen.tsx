@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import type { LlmRole } from '@epistemics/core';
 import { DEFAULT_MODELS } from '@epistemics/llm';
-import { Banner, Button, Card, ChoiceGroup, Divider, ErrorBanner, Field, Page, PageHeader, SectionTitle, SegmentedGroup, Spinner, inputClass } from '@epistemics/ui';
+import { Banner, Button, Card, ChoiceGroup, ErrorBanner, Field, Page, PageHeader, SectionTitle, SegmentedGroup, Spinner, inputClass } from '@epistemics/ui';
 import { useApp } from '../../lib/app-state.js';
 import { API_KEY_SECRET } from '../../lib/llm.js';
 import { getLlmSettings, setLlmSettings, type LlmSettings } from '../../lib/settings.js';
@@ -24,7 +24,6 @@ function Section({ id, title, description, children }: { id: string; title: stri
         <SectionTitle>{title}</SectionTitle>
         <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{description}</p>
       </div>
-      <Divider />
       {children}
     </Card>
   );
@@ -221,7 +220,7 @@ export function SettingsScreen() {
 
   return (
     <Page width="sm">
-      <PageHeader title="Settings" crumbs={[{ label: 'Settings' }]} description="Three groups: the tutor (which model talks to you), scheduling (how much review each day), and your data." />
+      <PageHeader title="Settings" description="Three groups: the tutor (which model talks to you), scheduling (how much review each day), and your data." />
       {saved ? <Banner tone="good" data-testid="settings-saved">{saved}</Banner> : null}
       {error ? <ErrorBanner message={error} /> : null}
 
@@ -238,7 +237,7 @@ export function SettingsScreen() {
           ]}
         />
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={saveLlm} disabled={busy} data-testid="save-llm">Save tutor settings</Button>
+          <Button variant="secondary" onClick={saveLlm} disabled={busy} data-testid="save-llm">Save tutor settings</Button>
           {busy ? <Spinner /> : null}
           <span className="text-xs text-muted">In use now: {app.llm.mode}{app.llm.note ? ` (${app.llm.note})` : ''}</span>
         </div>
@@ -255,7 +254,7 @@ export function SettingsScreen() {
               <Field label="New cards per day, at most" hint="Caps how many freshly learned cards join the rotation."><input type="number" min={0} className={inputClass} value={maxNew} onChange={(e) => setMaxNew(Number(e.target.value))} /></Field>
             </div>
             <p className="text-xs text-muted">Timezone {course.settings.timezone}; a study day starts at {course.settings.dayStartHour}:00. Tutor scaffolding: {course.scaffolding} (set from your background at enrolment).</p>
-            <Button onClick={saveCourse} disabled={busy}>Save scheduling</Button>
+            <Button variant="secondary" onClick={saveCourse} disabled={busy}>Save scheduling</Button>
           </>
         ) : null}
       </Section>

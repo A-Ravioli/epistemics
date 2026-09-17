@@ -20,7 +20,7 @@ export function Dialog({ open, onClose, title, children, footer }: { open: boole
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4 backdrop-blur-[2px]" onClick={onClose} role="presentation">
-      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded-surface border border-hairline-soft bg-surface p-6 shadow-window" onClick={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded-surface bg-surface p-6 shadow-window" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-4 type-title">{title}</h2>
         <div className="space-y-3 text-[15px]">{children}</div>
         {footer ? <div className="mt-6 flex justify-end gap-2">{footer}</div> : null}
@@ -43,7 +43,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: 
           role="tab"
           aria-selected={t.id === value}
           onClick={() => onChange(t.id)}
-          className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-[background-color,box-shadow,color] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${t.id === value ? 'bg-surface font-medium text-ink shadow-raised' : 'text-muted hover:text-ink'}`}
+          className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-[background-color,box-shadow,color] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${t.id === value ? 'bg-surface font-medium text-ink' : 'text-muted hover:text-ink'}`}
         >
           {t.label}
         </button>
@@ -59,7 +59,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: 
 export function Stat({ label, value, hint, tone = 'neutral' }: { label: string; value: ReactNode; hint?: ReactNode; tone?: 'neutral' | 'good' | 'warn' | 'bad' }) {
   const tones = { neutral: 'text-ink', good: 'text-green-fg', warn: 'text-yellow-fg', bad: 'text-red-fg' } as const;
   return (
-    <div className="min-w-0 rounded-card border border-hairline-soft bg-surface p-4 shadow-raised">
+    <div className="min-w-0">
       <div className="text-[13px] font-medium text-muted">{label}</div>
       <div className={`mt-1 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums ${tones[tone]}`}>{value}</div>
       {hint ? <div className="mt-2 text-xs leading-snug text-muted">{hint}</div> : null}
@@ -211,12 +211,12 @@ export function Toggle({ label, checked, onChange, description, disabled, testId
 export function Disclosure({ summary, children, defaultOpen = false, testId }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean; testId?: string }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="overflow-hidden rounded-input bg-nested" data-testid={testId}>
-      <button type="button" onClick={() => setOpen(!open)} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium transition-[background-color] duration-150 ease-out hover:bg-fill focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-expanded={open}>
+    <div className="min-w-0" data-testid={testId}>
+      <button type="button" onClick={() => setOpen(!open)} className="flex w-full items-center justify-between gap-2 py-1 text-left text-sm font-medium text-muted transition-colors duration-150 ease-out hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-expanded={open}>
         <span className="min-w-0">{summary}</span>
         <Icon name="chevron-down" className={`text-muted transition-transform duration-150 ease-out ${open ? 'rotate-180' : ''}`} />
       </button>
-      {open ? <div className="border-t border-hairline px-4 pb-3.5 pt-3 text-sm">{children}</div> : null}
+      {open ? <div className="pt-2 text-sm text-muted">{children}</div> : null}
     </div>
   );
 }
@@ -245,14 +245,10 @@ export function Explainer({ storageKey, title, children, testId }: { storageKey:
     }
   };
   return (
-    <aside className="rounded-card bg-blue-bg p-4 text-sm text-blue-fg" data-testid={testId ?? `explainer-${storageKey}`} aria-label={title}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <div className="font-semibold">{title}</div>
-          <div className="space-y-1 leading-relaxed">{children}</div>
-        </div>
-        <button type="button" onClick={dismiss} aria-label={`Dismiss: ${title}`} data-testid="explainer-dismiss" className="shrink-0 rounded-full border border-current/20 px-3 py-1 text-xs font-medium transition-[background-color] duration-150 ease-out hover:bg-surface/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Got it</button>
-      </div>
+    <aside className="text-[13px] leading-relaxed text-muted" data-testid={testId ?? `explainer-${storageKey}`} aria-label={title}>
+      <span className="font-medium text-ink">{title}</span>{' '}
+      <span>{children}</span>{' '}
+      <button type="button" onClick={dismiss} aria-label={`Dismiss: ${title}`} data-testid="explainer-dismiss" className="whitespace-nowrap font-medium text-accent underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">Got it</button>
     </aside>
   );
 }

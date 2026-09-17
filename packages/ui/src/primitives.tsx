@@ -6,13 +6,13 @@ import { Icon, type IconName } from './Icon.js';
 // ---------------------------------------------------------------------------
 
 /**
- * Actions are pills. There is one filled accent button per screen — the thing we want done — and
- * everything else is a raised white pill (`secondary`) or plain text on a hover fill (`ghost`).
+ * Actions are pills, and they are the only filled things on a screen. One accent button — the thing we
+ * want done — and everything else is a flat grey pill (`secondary`) or plain text on a hover fill (`ghost`).
  */
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-on-accent shadow-accent hover:bg-accent-hover disabled:opacity-40 disabled:shadow-none',
-  secondary: 'border border-hairline-soft bg-surface text-ink shadow-raised hover:bg-fill disabled:opacity-50 disabled:shadow-none',
+  primary: 'bg-accent text-on-accent hover:bg-accent-hover disabled:opacity-40',
+  secondary: 'bg-fill text-ink hover:bg-fill-strong disabled:opacity-50',
   ghost: 'bg-transparent text-ink hover:bg-fill disabled:opacity-50',
   danger: 'bg-red-bg text-red-fg hover:opacity-90 disabled:opacity-50',
 };
@@ -30,14 +30,12 @@ export function Button({ variant = 'primary', size = 'md', className = '', type 
 }
 
 /**
- * Round icon button. Toolbar glyphs are `ghost` (nothing but the icon until you hover); `raised` gives the
- * white chip used where the button sits on a busy or coloured surface. With `caption`, a tiny label sits under it.
+ * Round icon button: nothing but the glyph until you hover. `raised` gives it a standing fill where it has
+ * to be findable at a glance. With `caption`, a tiny label sits under it.
  */
 export function IconButton({ label, icon, caption, size = 'md', tone = 'ghost', className = '', children, ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; icon?: IconName; caption?: string; size?: 'md' | 'sm'; tone?: 'ghost' | 'raised' }) {
   const dim = size === 'sm' ? 'h-8 w-8' : 'h-9 w-9';
-  const skin = tone === 'raised'
-    ? 'border border-hairline-soft bg-surface text-ink shadow-raised hover:bg-fill'
-    : 'bg-transparent text-muted hover:bg-fill hover:text-ink';
+  const skin = tone === 'raised' ? 'bg-fill text-ink hover:bg-fill-strong' : 'bg-transparent text-muted hover:bg-fill hover:text-ink';
   const chip = (
     <button
       type="button"
@@ -62,23 +60,21 @@ export function IconButton({ label, icon, caption, size = 'md', tone = 'ghost', 
 // Surfaces
 // ---------------------------------------------------------------------------
 
-/** Opaque card on the translucent pane; `nested` is the quieter fill used inside another card; `interactive` lifts on hover. */
+/**
+ * A block of content. Not a box: no border, no shadow, no fill — space and a heading do the grouping.
+ * `nested` gives the one soft fill we allow, for a passage that is quoted rather than written by the page.
+ */
 export function Card({ className = '', nested = false, interactive = false, ...rest }: HTMLAttributes<HTMLDivElement> & { nested?: boolean; interactive?: boolean }) {
-  return <div className={`min-w-0 rounded-card p-4 sm:p-5 ${nested ? 'bg-nested' : 'border border-hairline-soft bg-surface shadow-raised'} ${interactive ? 'liftable' : ''} ${className}`} {...rest} />;
-}
-
-/** Hairline rule between regions. Hairlines separate; they never outline a control. */
-export function Divider({ className = '' }: { className?: string }) {
-  return <hr className={`border-0 border-t border-hairline ${className}`} />;
+  return <div className={`min-w-0 ${nested ? 'rounded-card bg-nested p-4' : ''} ${interactive ? 'cursor-pointer' : ''} ${className}`} {...rest} />;
 }
 
 export function SectionTitle({ children, className = '', as: Tag = 'h2' }: { children: ReactNode; className?: string; as?: 'h2' | 'h3' }) {
   return <Tag className={`type-heading ${className}`}>{children}</Tag>;
 }
 
-/** Tiny uppercase label for a group of things (a panel section, a phase, a card eyebrow). */
+/** Quiet label above a group of things (a panel section, a phase, a card eyebrow). */
 export function Eyebrow({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`text-[11px] font-semibold uppercase tracking-[0.08em] text-muted ${className}`}>{children}</div>;
+  return <div className={`text-[13px] font-medium text-muted ${className}`}>{children}</div>;
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +215,7 @@ export function ChoiceGroup<T extends string>({ options, value, onChange, label,
 
 export function EmptyState({ title, body, action, testId }: { title: string; body?: ReactNode; action?: ReactNode; testId?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-card bg-nested p-6 text-center sm:p-10" data-testid={testId}>
+    <div className="flex flex-col items-center justify-center gap-3 py-8 text-center" data-testid={testId}>
       <p className="type-heading">{title}</p>
       {body ? <div className="max-w-md text-sm text-muted">{body}</div> : null}
       {action}
@@ -305,7 +301,7 @@ export function Stepper({ steps, current, label = 'Steps', className = '' }: { s
       {steps.map((s, i) => {
         const state = i < current ? 'done' : i === current ? 'current' : 'todo';
         return (
-          <li key={s} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${state === 'current' ? 'bg-surface font-medium text-ink shadow-raised' : state === 'done' ? 'text-green-fg' : 'text-muted'}`} aria-current={state === 'current' ? 'step' : undefined}>
+          <li key={s} className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${state === 'current' ? 'bg-surface font-medium text-ink' : state === 'done' ? 'text-green-fg' : 'text-muted'}`} aria-current={state === 'current' ? 'step' : undefined}>
             {state === 'done' ? <Icon name="check" size={12} /> : <span className="tabular-nums">{i + 1}</span>}
             <span>{s}</span>
           </li>
@@ -326,10 +322,7 @@ export interface SegmentedOption<T extends string | number> {
   ariaLabel?: string;
 }
 
-/**
- * Rounded pill group for one-of-N choices (confidence, rating, theme): a grey track, the selected
- * segment a raised white pill. Buttons carry `aria-pressed`.
- */
+/** Rounded pill group for one-of-N choices (confidence, rating, theme): a grey track, the selected segment white. */
 export function SegmentedGroup<T extends string | number>({ options, value, onChange, disabled, label, className = '', size = 'md', testId }: { options: SegmentedOption<T>[]; value?: T; onChange: (v: T) => void; disabled?: boolean; label: string; className?: string; size?: 'md' | 'sm'; testId?: string }) {
   return (
     <div role="group" aria-label={label} className={`inline-flex max-w-full flex-wrap gap-0.5 rounded-full bg-fill p-1 ${className}`} data-testid={testId}>
@@ -344,7 +337,7 @@ export function SegmentedGroup<T extends string | number>({ options, value, onCh
             aria-pressed={selected}
             aria-label={o.ariaLabel}
             title={o.title}
-            className={`flex min-w-0 flex-col items-center justify-center rounded-full transition-[background-color,box-shadow,color] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50 ${size === 'sm' ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'} ${selected ? 'bg-surface font-medium text-ink shadow-raised' : 'text-muted hover:text-ink'}`}
+            className={`flex min-w-0 flex-col items-center justify-center rounded-full transition-[background-color,box-shadow,color] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50 ${size === 'sm' ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'} ${selected ? 'bg-surface font-medium text-ink' : 'text-muted hover:text-ink'}`}
           >
             <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
               {o.hotkey ? <Kbd className="hidden sm:inline-block">{o.hotkey}</Kbd> : null}
@@ -367,15 +360,12 @@ export function navRowClass(active: boolean): string {
   return `block rounded-control px-3 py-2 transition-[background-color] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${active ? 'bg-fill-strong' : 'hover:bg-fill'}`;
 }
 
-/** Two-line nav row body: icon, title and a small muted meta line. */
-export function ListRow({ title, meta, icon, active = false }: { title: ReactNode; meta?: ReactNode; icon?: IconName; active?: boolean }) {
+/** Nav row body: an icon and the screen's name. `meta` is a tooltip, not a second line. */
+export function ListRow({ title, meta, icon, active = false }: { title: ReactNode; meta?: string; icon?: IconName; active?: boolean }) {
   return (
-    <span className="flex items-center gap-3">
-      {icon ? <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-surface text-ink shadow-raised' : 'text-muted'}`}><Icon name={icon} /></span> : null}
-      <span className="min-w-0 flex-1">
-        <span className={`block truncate text-sm leading-tight ${active ? 'font-semibold text-ink' : 'font-medium text-ink'}`}>{title}</span>
-        {meta ? <span className="block truncate text-xs leading-tight text-muted">{meta}</span> : null}
-      </span>
+    <span className="flex items-center gap-2.5" title={meta}>
+      {icon ? <span className={`shrink-0 ${active ? 'text-ink' : 'text-muted'}`}><Icon name={icon} /></span> : null}
+      <span className={`min-w-0 flex-1 truncate text-sm leading-tight ${active ? 'font-semibold text-ink' : 'text-ink'}`}>{title}</span>
     </span>
   );
 }

@@ -60,12 +60,11 @@ function CheckpointView({ runner }: { runner: CheckpointRunner }) {
     return (
       <Page width="sm" data-testid="checkpoint-done">
         <PageHeader
-          crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: 'Checkpoint result' }]}
           title={v.unit.title}
           description={`${passed} of ${entries.length} concepts passed. A concept passes at 80% or more; each pass counts as one spaced retrieval, and each miss gets a short repair lesson before the next unit.`}
         />
         <Card>
-          <ul className="divide-y divide-hairline text-sm">
+          <ul className="space-y-2 text-sm">
             {entries.map(([id, r]) => (
               <li key={id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
                 <span className="min-w-0 truncate">{findConcept(ctx.curriculum, id)?.concept.name ?? id}</span>
@@ -73,7 +72,7 @@ function CheckpointView({ runner }: { runner: CheckpointRunner }) {
               </li>
             ))}
           </ul>
-          <div className="mt-5 border-t border-hairline pt-4"><Link to="/today" className="inline-block"><Button data-testid="checkpoint-back">Back to Today</Button></Link></div>
+          <div className="mt-5 pt-4"><Link to="/today" className="inline-block"><Button data-testid="checkpoint-back">Back to Today</Button></Link></div>
         </Card>
       </Page>
     );
@@ -104,7 +103,7 @@ function CheckpointView({ runner }: { runner: CheckpointRunner }) {
             <span className="text-[13px] font-medium">How sure are you?</span>
             <ConfidenceButtons value={confidence} onChange={setConfidence} disabled={v.busy} hotkeys={false} />
           </div>
-          <div className="flex flex-wrap items-center gap-3 border-t border-hairline pt-4">
+          <div className="flex flex-wrap items-center gap-3 pt-4">
             <Button onClick={() => confidence && runner.submit(answer, confidence)} disabled={!canSubmit} title={blocker ?? undefined} data-testid="checkpoint-submit">Submit</Button>
             {v.busy ? <Spinner label="Grading blind" /> : blocker ? <span className="text-xs text-muted">{blocker} to submit.</span> : null}
             <Button variant="ghost" onClick={() => runner.finishEarly()} disabled={v.busy} title="Unanswered questions count as misses" className="ml-auto">Finish early</Button>

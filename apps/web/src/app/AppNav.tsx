@@ -27,25 +27,25 @@ export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[
     ));
 
   const tutorNote = demo ? (
-    <div data-testid="mock-banner" className="rounded-input bg-yellow-bg px-3 py-2 text-xs leading-snug text-yellow-fg" title="A deterministic stand-in tutor. Choose a real model in Settings.">
-      <span className="font-semibold">Demo tutor</span> (mock model)
+    <div data-testid="mock-banner" className="px-3 text-[13px] leading-snug text-muted" title="A deterministic stand-in tutor. Choose a real model in Settings.">
+      <span className="font-medium text-ink">Demo tutor</span> (mock model)
     </div>
   ) : (
-    <div className="px-3 text-xs text-muted">Tutor: {tutorMode}</div>
+    <div className="px-3 text-[13px] text-muted">Tutor: {tutorMode}</div>
   );
 
   return (
     <>
-      <aside className="pane-nav hidden w-[240px] shrink-0 flex-col border-r border-hairline-soft p-3 md:flex" aria-label="Primary">
+      <aside className="pane-nav hidden w-[220px] shrink-0 flex-col p-3 md:flex" aria-label="Primary">
         <div className="mb-5 px-3 pt-2">
           <div className="type-heading">Epistemics</div>
-          <div className="mt-0.5 truncate text-xs text-muted" title={courseTitle}>{courseTitle ?? 'No course yet'}</div>
+          <div className="mt-0.5 truncate text-[13px] text-muted" title={courseTitle}>{courseTitle ?? 'No course yet'}</div>
         </div>
         <nav className="flex flex-col gap-0.5" aria-label="Screens">{links()}</nav>
         <div className="mt-auto pt-4">{tutorNote}</div>
       </aside>
 
-      <div className="pane-nav sticky top-0 z-30 border-b border-hairline-soft backdrop-blur-xl md:hidden">
+      <div className="pane-nav sticky top-0 z-30 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5">
           <div className="min-w-0">
             <div className="type-heading">Epistemics</div>
@@ -64,7 +64,7 @@ export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[
           </div>
         </div>
         {open ? (
-          <nav id="mobile-nav" className="flex flex-col gap-0.5 border-t border-hairline-soft p-2" aria-label="Screens" data-testid="mobile-nav">
+          <nav id="mobile-nav" className="flex flex-col gap-0.5 -soft p-2" aria-label="Screens" data-testid="mobile-nav">
             {links(() => setOpen(false))}
           </nav>
         ) : null}

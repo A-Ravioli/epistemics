@@ -34,7 +34,7 @@ export function WrapPanel({ view, runner }: { view: LessonView; runner: LessonRu
       <div role="log" aria-live="polite">
         {view.streaming !== null ? <ChatBubble role="tutor" streaming>{view.streaming}</ChatBubble> : tutorCheck ? <ChatBubble role="tutor">{tutorCheck.content}</ChatBubble> : <Spinner label="Checking your summary" />}
       </div>
-      <div className="border-t border-hairline pt-4">
+      <div className="pt-4">
         <SectionTitle as="h3">How well will it stick?</SectionTitle>
         <p className="mt-1 text-sm leading-relaxed text-muted">For each concept, how likely is it that you can still explain it in a week? Your guess is compared with what actually happens; that trains your sense of what you know.</p>
       </div>

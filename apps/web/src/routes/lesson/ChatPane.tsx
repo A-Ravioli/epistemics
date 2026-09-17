@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Confidence, LessonPhase } from '@epistemics/core';
 import { Button, ChatBubble, ConfidenceButtons, Explainer, Kbd, Spinner } from '@epistemics/ui';
 import type { LessonRunner, LessonView } from '../../lib/services/lesson.js';
-import { PHASE_LABEL } from './LessonHeader.js';
 
 const BUSY_LABEL = { tutor: 'The tutor is writing…', observer: 'Reading your answer…', grading: 'Grading blind…', saving: 'Saving…' } as const;
 
@@ -61,7 +60,7 @@ export function ChatPane({ view, runner, above }: { view: LessonView; runner: Le
           {above}
           <div data-testid="chat-log" role="log" aria-live="polite" aria-label="Lesson conversation">
             {view.messages.map((m) => (
-              <ChatBubble key={m.key} role={m.role} streaming={m.streaming} meta={m.role === 'tutor' && m.phase ? PHASE_LABEL[m.phase] : undefined}>
+              <ChatBubble key={m.key} role={m.role} streaming={m.streaming}>
                 {m.content}
               </ChatBubble>
             ))}
@@ -72,14 +71,14 @@ export function ChatPane({ view, runner, above }: { view: LessonView; runner: Le
           </div>
         </div>
       </div>
-      <div className="shrink-0 border-t border-hairline-soft bg-surface/70 px-4 py-3 backdrop-blur-xl md:px-8 md:py-4">
+      <div className="shrink-0 px-4 pb-4 pt-2 md:px-8">
         <div className="mx-auto w-full max-w-[680px] space-y-3">
           {needsConfidence ? (
             <Explainer storageKey="confidence" title="Why say how sure you are?">
               <p>You commit before you find out. A lucky guess then does not count as knowing, and a confident miss gets extra attention: that is how the app tells the two apart.</p>
             </Explainer>
           ) : null}
-          <div className="rounded-card bg-fill p-3 transition-[box-shadow,background-color] duration-150 ease-out focus-within:bg-surface focus-within:ring-2 focus-within:ring-accent">
+          <div className="rounded-card bg-fill p-3 transition-colors duration-150 ease-out">
             {needsConfidence ? (
               <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span className="text-[13px] font-medium">How sure are you?</span>
@@ -90,7 +89,7 @@ export function ChatPane({ view, runner, above }: { view: LessonView; runner: Le
             <textarea
               id="lesson-input"
               ref={input}
-              className="min-h-20 w-full resize-y bg-transparent px-1 py-1 text-[15px] leading-relaxed text-ink placeholder:text-muted focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              className="min-h-20 w-full resize-y bg-transparent px-1 py-1 text-[15px] leading-relaxed text-ink outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-60"
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
@@ -104,7 +103,7 @@ export function ChatPane({ view, runner, above }: { view: LessonView; runner: Le
               data-testid="lesson-input"
               aria-describedby="lesson-input-help"
             />
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hairline-soft pt-2">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
               <span id="lesson-input-help" className="text-[11px] text-muted">
                 Answer the question above; this is not a chat. <Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd> sends.
                 {sendBlocker && !disabled ? <span className="ml-1 text-yellow-fg" data-testid="send-blocker">{sendBlocker}.</span> : null}
