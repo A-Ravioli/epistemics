@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { Banner, Button, Card, Disclosure, ErrorBanner, Meter, PageHeader, Pill, Skeleton, Stat } from '@epistemics/ui';
+import { Banner, Button, Card, Disclosure, ErrorBanner, IconButton, Meter, Page, PageHeader, Pill, SectionTitle, Skeleton, Stat, type PillTone } from '@epistemics/ui';
 import { useApp, useCourse, useQuery } from '../../lib/app-state.js';
 import { minutes, plural } from '../../lib/format.js';
 import { setGateOverrideDay } from '../../lib/settings.js';
@@ -45,6 +45,16 @@ interface Primary {
   hero?: { title: string; body: string; to?: string; label?: string; testId?: string };
 }
 
+const PRIMARY_KIND: Record<PrimaryKey, { label: string; tone: PillTone }> = {
+  resume: { label: 'Lesson in progress', tone: 'accent' },
+  review: { label: 'Reviews', tone: 'accent' },
+  lesson: { label: 'Lesson', tone: 'good' },
+  remediation: { label: 'Repair', tone: 'warn' },
+  checkpoint: { label: 'Checkpoint', tone: 'purple' },
+  teachback: { label: 'Teach it back', tone: 'lime' },
+  done: { label: 'Done for today', tone: 'neutral' },
+};
+
 /** The one thing to do next, in the order DESIGN §3.2 lists the day. */
 function primaryAction(t: TodayModel): Primary {
   const due = t.queue.order.length;
@@ -58,12 +68,15 @@ function primaryAction(t: TodayModel): Primary {
   return { key: 'done', hero: { title: 'All clear', body: 'Every lesson is complete or waiting on a prerequisite. The map shows what is next.' } };
 }
 
-/** The eyebrow that marks the single card holding the screen's only primary button. */
-function NextUp() {
-  return <div className="mb-1 text-xs font-medium uppercase tracking-wide text-accent">Next up</div>;
+/** The header row that marks the single card holding the screen's only primary button. */
+function NextUpHeader({ kind }: { kind: PrimaryKey }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <Pill tone={PRIMARY_KIND[kind].tone}>{PRIMARY_KIND[kind].label}</Pill>
+      <span className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Next up</span>
+    </div>
+  );
 }
-
-const NEXT_CARD = 'border-accent/50 ring-1 ring-accent/30';
 
 export function TodayScreen() {
   const { ctx } = useApp();
@@ -74,18 +87,19 @@ export function TodayScreen() {
 function TodayBody() {
   const ctx = useCourse();
   const location = useLocation();
+  const navigate = useNavigate();
   const notice = (location.state as { notice?: string } | null)?.notice;
   const q = useQuery(() => loadToday(ctx), [ctx.course.id, ctx.course.updatedAt, ctx.curriculum]);
   const ahead = useUnitsAhead(q.data?.currentUnitOrdinal);
 
-  if (q.error) return <div className="mx-auto max-w-3xl"><ErrorBanner title="Could not load today" message={q.error} onRetry={q.refresh} /></div>;
+  if (q.error) return <Page><ErrorBanner title="Could not load today" message={q.error} onRetry={q.refresh} /></Page>;
   if (!q.data) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4" data-testid="today-loading">
+      <Page data-testid="today-loading">
         <PageHeader title="Today" />
         <Card><Skeleton lines={3} label="Building today" /></Card>
         <Card><Skeleton lines={2} /></Card>
-      </div>
+      </Page>
     );
   }
   const t = q.data;
@@ -94,19 +108,23 @@ function TodayBody() {
   const lessonsTotal = ctx.curriculum.units.reduce((a, u) => a + u.lessons.length, 0);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4" data-testid="today-screen">
+    <Page data-testid="today-screen">
       <PageHeader
         title="Today"
+        crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title }, { label: 'Today' }]}
+        actions={<IconButton icon="gear" label="Settings" onClick={() => navigate('/settings')} />}
         description={ctx.course.title}
         meta={
           <span className="flex flex-wrap items-center gap-3">
-            {ahead.status ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs text-accent" data-testid="unit-build-pill" title={ahead.status.event ? describeEvent(ahead.status.event) : undefined}>
-                <span className="h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden="true" />
-                Preparing unit {unitIndex + 1}: {ahead.status.unitTitle}…
-              </span>
-            ) : null}
             <time dateTime={t.day}>{t.day}</time>
+            {ahead.status ? (
+              <Pill tone="accent" title={ahead.status.event ? describeEvent(ahead.status.event) : undefined}>
+                <span data-testid="unit-build-pill" className="inline-flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" aria-hidden="true" />
+                  Preparing unit {unitIndex + 1}: {ahead.status.unitTitle}…
+                </span>
+              </Pill>
+            ) : null}
           </span>
         }
       />
@@ -114,17 +132,18 @@ function TodayBody() {
       {notice ? <Banner tone="warn" data-testid="today-notice">{notice}</Banner> : null}
 
       {primary.hero ? (
-        <Card className={NEXT_CARD} data-testid="next-up">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <NextUp />
-              <h2 className="text-base font-semibold">{primary.hero.title}</h2>
-              <p className="mt-1 text-sm text-muted">{primary.hero.body}</p>
-            </div>
+        <Card className="p-5 sm:p-7" data-testid="next-up">
+          <div className="flex items-center justify-between gap-3">
+            <Pill tone={PRIMARY_KIND[primary.key].tone}>{PRIMARY_KIND[primary.key].label}</Pill>
+            <span className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Next up</span>
+          </div>
+          <h2 className="mt-4 text-[22px] font-semibold leading-tight tracking-[-0.02em] sm:text-[24px]">{primary.hero.title}</h2>
+          <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-muted">{primary.hero.body}</p>
+          <div className="mt-5">
             {primary.hero.to && primary.hero.label ? (
-              <Link to={primary.hero.to} className="shrink-0"><Button className="w-full sm:w-auto" data-testid={primary.hero.testId}>{primary.hero.label}</Button></Link>
+              <Link to={primary.hero.to} className="inline-block w-full sm:w-auto"><Button className="w-full sm:w-auto" data-testid={primary.hero.testId}>{primary.hero.label}</Button></Link>
             ) : (
-              <Link to="/map" className="shrink-0"><Button variant="secondary" className="w-full sm:w-auto">Course map</Button></Link>
+              <Link to="/map" className="inline-block w-full sm:w-auto"><Button variant="secondary" className="w-full sm:w-auto">Course map</Button></Link>
             )}
           </div>
         </Card>
@@ -139,7 +158,7 @@ function TodayBody() {
         <Stat label="Lessons done" value={t.completedLessonIds.size} hint={`of ${lessonsTotal} in this course`} />
         <Stat label="Active cards" value={t.queue.cards.length} hint="questions in your review rotation" />
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -157,9 +176,9 @@ function sections(t: TodayModel, primary: PrimaryKey, refresh: () => Promise<voi
     all.push({
       key: 'remediation',
       node: (
-        <ListCard next={primary === 'remediation'} title="Repair loops" body="Short lessons (work it out → say it in your own words → check) for concepts that did not pass.">
+        <ListCard next={primary === 'remediation'} kind="remediation" title="Repair loops" body="Short lessons (work it out → say it in your own words → check) for concepts that did not pass.">
           {t.remediation.map((r, i) => (
-            <li key={r.conceptId} className="flex items-center justify-between gap-3 text-sm">
+            <li key={r.conceptId} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="min-w-0 truncate">{r.name}</span>
               <Link to={`/lesson/remediation:${r.conceptId}`}>
                 <Button variant={primary === 'remediation' && i === 0 ? 'primary' : 'secondary'} size="sm" data-testid={i === 0 ? 'start-remediation' : undefined}>Start</Button>
@@ -175,17 +194,19 @@ function sections(t: TodayModel, primary: PrimaryKey, refresh: () => Promise<voi
     all.push({
       key: 'checkpoint',
       node: (
-        <Card className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${next ? NEXT_CARD : ''}`} data-testid="checkpoint-card">
-          <div className="min-w-0">
-            {next ? <NextUp /> : null}
-            <h2 className="text-base font-semibold">Checkpoint: {t.checkpoint.unit.title}</h2>
-            <p className="mt-1 text-xs text-muted">{t.checkpoint.ready ? 'Ready. 8-15 questions without the tutor; feedback comes at the end.' : `Not yet: ${t.checkpoint.reason} It opens once every concept in the unit has been recalled on two different days.`}</p>
+        <Card data-testid="checkpoint-card">
+          {next ? <NextUpHeader kind="checkpoint" /> : null}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <SectionTitle>Checkpoint: {t.checkpoint.unit.title}</SectionTitle>
+              <p className="mt-1 text-[13px] leading-relaxed text-muted">{t.checkpoint.ready ? 'Ready. 8-15 questions without the tutor; feedback comes at the end.' : `Not yet: ${t.checkpoint.reason} It opens once every concept in the unit has been recalled on two different days.`}</p>
+            </div>
+            {t.checkpoint.ready ? (
+              <Link to={`/checkpoint/${t.checkpoint.unit.id}`} className="shrink-0"><Button variant={next ? 'primary' : 'secondary'} size={next ? 'md' : 'sm'} data-testid="start-checkpoint">Start checkpoint</Button></Link>
+            ) : (
+              <Pill tone="neutral">Locked</Pill>
+            )}
           </div>
-          {t.checkpoint.ready ? (
-            <Link to={`/checkpoint/${t.checkpoint.unit.id}`} className="shrink-0"><Button variant={next ? 'primary' : 'secondary'} size={next ? 'md' : 'sm'} data-testid="start-checkpoint">Start checkpoint</Button></Link>
-          ) : (
-            <Pill tone="neutral">Locked</Pill>
-          )}
         </Card>
       ),
     });
@@ -194,9 +215,9 @@ function sections(t: TodayModel, primary: PrimaryKey, refresh: () => Promise<voi
     all.push({
       key: 'teachback',
       node: (
-        <ListCard next={primary === 'teachback'} title="Teach it back" body="Concepts you half know (60-85% mastery): explaining them to a curious student is the fastest way to finish the job.">
+        <ListCard next={primary === 'teachback'} kind="teachback" title="Teach it back" body="Concepts you half know (60-85% mastery): explaining them to a curious student is the fastest way to finish the job.">
           {t.teachback.map((c, i) => (
-            <li key={c.conceptId} className="flex items-center justify-between gap-3 text-sm">
+            <li key={c.conceptId} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="min-w-0 truncate">{c.name} <span className="text-xs text-muted">mastery {(c.mastery * 100).toFixed(0)}%</span></span>
               <Link to={`/teachback/${c.conceptId}`}>
                 <Button variant={primary === 'teachback' && i === 0 ? 'primary' : 'secondary'} size="sm" data-testid={i === 0 ? 'start-teachback' : undefined}>Teach</Button>
@@ -210,13 +231,13 @@ function sections(t: TodayModel, primary: PrimaryKey, refresh: () => Promise<voi
   return [...all.filter((x) => x.key === primary), ...all.filter((x) => x.key !== primary)];
 }
 
-function ListCard({ title, body, children, next = false }: { title: string; body: string; children: ReactNode; next?: boolean }) {
+function ListCard({ title, body, children, next = false, kind }: { title: string; body: string; children: ReactNode; next?: boolean; kind: PrimaryKey }) {
   return (
-    <Card className={next ? NEXT_CARD : ''}>
-      {next ? <NextUp /> : null}
-      <h2 className="text-base font-semibold">{title}</h2>
-      <p className="mt-1 text-xs text-muted">{body}</p>
-      <ul className="mt-2 space-y-1.5">{children}</ul>
+    <Card>
+      {next ? <NextUpHeader kind={kind} /> : null}
+      <SectionTitle>{title}</SectionTitle>
+      <p className="mt-1 text-[13px] leading-relaxed text-muted">{body}</p>
+      <ul className="mt-2 divide-y divide-hairline">{children}</ul>
     </Card>
   );
 }
@@ -233,13 +254,13 @@ function ReviewCard({ t, next }: { t: TodayModel; next: boolean }) {
         : `${plural(q.dueToday, 'card')} due; the rest are held back (sibling cards of one you just saw, or beyond today's cap).`
       : `${plural(total, 'card')} due (${q.learning.length} still being learned, ${q.reviews.length} to refresh), about ${minutes(t.queue.minutes)}.`;
   return (
-    <Card className={next ? NEXT_CARD : ''} data-testid="review-card">
+    <Card data-testid="review-card">
+      {next ? <NextUpHeader kind="review" /> : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          {next ? <NextUp /> : null}
-          <h2 className="text-base font-semibold">Review queue</h2>
-          <p className="mt-1 text-sm text-muted" data-testid="review-summary">{summary}</p>
-          {next ? <p className="mt-1 text-sm text-muted">Reviews come first: clearing them is what unlocks the next lesson.</p> : null}
+          <SectionTitle>Review queue</SectionTitle>
+          <p className="mt-1 text-sm leading-relaxed text-muted" data-testid="review-summary">{summary}</p>
+          {next ? <p className="mt-1 text-sm leading-relaxed text-muted">Reviews come first: clearing them is what unlocks the next lesson.</p> : null}
         </div>
         {total > 0 ? (
           <Link to="/review" className="shrink-0"><Button variant={next ? 'primary' : 'secondary'} size={next ? 'md' : 'sm'} data-testid="start-reviews">Start reviews</Button></Link>
@@ -247,7 +268,7 @@ function ReviewCard({ t, next }: { t: TodayModel; next: boolean }) {
           <Pill tone="good">Clear</Pill>
         )}
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 border-t border-hairline pt-4 sm:grid-cols-2">
         <Meter label="Done today" value={t.queue.reviewsDoneToday} max={t.queue.reviewsDoneToday + total} tone="accent" hint="answered so far / due today" />
         <Meter
           label="Review debt"
@@ -271,8 +292,8 @@ function LessonCard({ t, next, onOverride }: { t: TodayModel; next: boolean; onO
   if (!t.nextLesson) {
     return (
       <Card data-testid="lesson-card">
-        <h2 className="text-base font-semibold">Next lesson</h2>
-        <p className="mt-1 text-sm text-muted">None available: every lesson is either complete or waiting on a prerequisite you have not mastered yet. Keep reviewing; the <Link to="/map" className="underline">map</Link> shows what is blocking.</p>
+        <SectionTitle>Next lesson</SectionTitle>
+        <p className="mt-1 text-sm leading-relaxed text-muted">None available: every lesson is either complete or waiting on a prerequisite you have not mastered yet. Keep reviewing; the <Link to="/map" className="text-accent underline underline-offset-2">map</Link> shows what is blocking.</p>
       </Card>
     );
   }
@@ -292,17 +313,17 @@ function LessonCard({ t, next, onOverride }: { t: TodayModel; next: boolean; onO
     }
   };
   return (
-    <Card className={next ? NEXT_CARD : ''} data-testid="lesson-card">
+    <Card data-testid="lesson-card">
+      {next ? <NextUpHeader kind="lesson" /> : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          {next ? <NextUp /> : null}
-          <h2 className="text-base font-semibold">Next lesson{t.nextUnit ? <span className="text-sm font-normal text-muted"> · {t.nextUnit.title}</span> : null}</h2>
-          <div className="mt-1 text-base">{lesson.title}</div>
+          <SectionTitle>Next lesson{t.nextUnit ? <span className="font-normal text-muted"> · {t.nextUnit.title}</span> : null}</SectionTitle>
+          <div className="mt-1 text-[17px] leading-snug">{lesson.title}</div>
           <div className="mt-1 text-xs text-muted">{plural(lesson.concepts.length, 'concept')}: {lesson.concepts.map((c) => c.name).join(', ')}</div>
           {t.lessonLocked ? (
-            <p className="mt-2 text-sm text-amber-800 dark:text-amber-200" data-testid="lock-reason">Locked: {t.lockReason}</p>
+            <p className="mt-2 text-sm text-yellow-fg" data-testid="lock-reason">Locked: {t.lockReason}</p>
           ) : (
-            <p className="mt-2 text-sm text-emerald-800 dark:text-emerald-200" data-testid="lesson-unlocked">Unlocked: reviews are clear and prerequisites are met.</p>
+            <p className="mt-2 text-sm text-green-fg" data-testid="lesson-unlocked">Unlocked: reviews are clear and prerequisites are met.</p>
           )}
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
@@ -318,7 +339,7 @@ function LessonCard({ t, next, onOverride }: { t: TodayModel; next: boolean; onO
       </div>
       {error ? <ErrorBanner className="mt-3" message={error} onRetry={override} /> : null}
       {t.lessonLocked ? (
-        <div className="mt-3">
+        <div className="mt-4">
           <Disclosure summary="Why reviews first?" testId="gate-explainer">
             <p>Memory fades on a schedule. Each card is due at the moment you are about to forget it, and answering it then is what makes it stick. New lessons add more cards, so the app asks you to clear what is due before adding to the pile.</p>
             <p className="mt-2">You can override the gate once a day (for example before a lecture on the topic). Overrides are logged on the Progress screen. There is no permanent off switch.</p>

@@ -1,5 +1,5 @@
 import type { OutlineOutput, ProgressEvent } from '@epistemics/architect';
-import { Banner, Card, Pill, Progress, Spinner } from '@epistemics/ui';
+import { Banner, Card, Pill, Progress, SectionTitle, Spinner } from '@epistemics/ui';
 import type { BuildProgress } from '../../lib/services/build.js';
 
 const STAGE_LABEL: Record<ProgressEvent['stage'], string> = {
@@ -26,7 +26,7 @@ export function BuildProgressView({ progress, outline, unitsToBuild, label }: { 
   return (
     <Card className="space-y-3" data-testid="build-progress">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">{label ?? 'Building your course'}</h2>
+        <SectionTitle>{label ?? 'Building your course'}</SectionTitle>
         {progress.phase === 'building' || progress.phase === 'outlining' ? <Spinner label={progress.message ?? 'Working'} /> : null}
         {progress.phase === 'done' ? <Pill tone="good">Built</Pill> : null}
       </div>
@@ -35,7 +35,7 @@ export function BuildProgressView({ progress, outline, unitsToBuild, label }: { 
         {finished} of ~{expected} stages · {progress.cached} instant from cache
       </div>
       {progress.event ? (
-        <div className="text-sm" data-testid="build-current">
+        <div className="rounded-input bg-nested px-3 py-2 text-sm" data-testid="build-current">
           {progress.event.status === 'start' ? 'Now: ' : progress.event.status === 'cached' ? 'Instant: ' : 'Done: '}
           {describeEvent(progress.event, outline)}
         </div>
@@ -44,7 +44,7 @@ export function BuildProgressView({ progress, outline, unitsToBuild, label }: { 
         <ul className="space-y-0.5 text-xs text-muted">
           {recent.map((e, i) => (
             <li key={`${e.at}-${i}`} className="flex gap-2">
-              <span className="w-14 shrink-0">{e.event.status === 'cached' ? 'instant' : e.event.status}</span>
+              <span className="w-14 shrink-0 font-medium">{e.event.status === 'cached' ? 'instant' : e.event.status}</span>
               <span className="truncate">{describeEvent(e.event, outline)}</span>
             </li>
           ))}

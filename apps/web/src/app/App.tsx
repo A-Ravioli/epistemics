@@ -14,30 +14,32 @@ import { SetupScreen } from '../routes/setup/SetupScreen.js';
 import { ProgressScreen } from '../routes/progress/ProgressScreen.js';
 import { SettingsScreen } from '../routes/settings/SettingsScreen.js';
 import { AccountScreen } from '../routes/account/AccountScreen.js';
-import { AppNav } from './AppNav.js';
+import { AppNav, type NavItem } from './AppNav.js';
 import { ErrorBoundary } from './ErrorBoundary.js';
 
-const nav = [
-  ['/today', 'Today'],
-  ['/shelf', 'Shelf'],
-  ['/map', 'Map'],
-  ['/progress', 'Progress'],
-  ['/settings', 'Settings'],
-  ['/account', 'Account'],
-] as const;
+const nav: readonly NavItem[] = [
+  { to: '/today', label: 'Today', meta: 'Your next step', icon: 'today' },
+  { to: '/shelf', label: 'Shelf', meta: 'Courses and packs', icon: 'shelf' },
+  { to: '/map', label: 'Map', meta: 'Prerequisite graph', icon: 'map' },
+  { to: '/progress', label: 'Progress', meta: 'Mastery and calibration', icon: 'chart' },
+  { to: '/settings', label: 'Settings', meta: 'Tutor, scheduling, data', icon: 'gear' },
+  { to: '/account', label: 'Account', meta: 'Sign in and sync', icon: 'user' },
+];
 
 function Boot({ error }: { error?: string }) {
   return (
-    <div className="flex h-full items-center justify-center p-6">
-      {error ? (
-        <Card className="max-w-lg" role="alert">
-          <h1 className="text-lg font-semibold">Epistemics could not start</h1>
-          <p className="mt-2 text-sm text-muted">{error}</p>
-          <Button className="mt-4" onClick={() => window.location.reload()}>Reload</Button>
-        </Card>
-      ) : (
-        <Spinner label="Opening your library" />
-      )}
+    <div className="h-full p-0 md:p-4">
+      <div className="surface flex h-full items-center justify-center p-6">
+        {error ? (
+          <Card className="max-w-lg" role="alert">
+            <h1 className="text-[17px] font-semibold">Epistemics could not start</h1>
+            <p className="mt-2 text-sm text-muted">{error}</p>
+            <Button className="mt-4" onClick={() => window.location.reload()}>Reload</Button>
+          </Card>
+        ) : (
+          <Spinner label="Opening your library" />
+        )}
+      </div>
     </div>
   );
 }
@@ -63,13 +65,13 @@ function Shell() {
     }
   }, []);
   return (
-    <div className="flex h-full flex-col md:flex-row">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-paper focus:px-3 focus:py-2 focus:text-sm focus:ring-2 focus:ring-accent">Skip to content</a>
-      {!focused ? <AppNav nav={nav} courseTitle={app.active?.course.title} tutorMode={app.llm.mode} /> : null}
-      <main id="main" className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden" tabIndex={-1}>
-        {app.storageNote ? <Banner tone="warn" className="m-4 mb-0">{app.storageNote}</Banner> : null}
-        {app.llm.note ? <Banner tone="info" className="m-4 mb-0">{app.llm.note}</Banner> : null}
-        <div className="p-4 md:p-6">
+    <div className="h-full p-0 md:p-4">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-6 focus:z-50 focus:rounded-control focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:shadow-chip focus:ring-2 focus:ring-accent">Skip to content</a>
+      <div className="surface flex h-full flex-col overflow-hidden md:flex-row">
+        {!focused ? <AppNav nav={nav} courseTitle={app.active?.course.title} tutorMode={app.llm.mode} /> : null}
+        <main id="main" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden" tabIndex={-1}>
+          {app.storageNote ? <Banner tone="warn" className="mx-4 mt-4 shrink-0 md:mx-8">{app.storageNote}</Banner> : null}
+          {app.llm.note ? <Banner tone="info" className="mx-4 mt-4 shrink-0 md:mx-8">{app.llm.note}</Banner> : null}
           <ErrorBoundary key={location.pathname} onReset={() => navigate('/today')}>
             <Routes>
               <Route path="/" element={<Navigate to="/today" replace />} />
@@ -84,12 +86,12 @@ function Shell() {
               <Route path="/shelf" element={<ShelfScreen />} />
               <Route path="/setup" element={<SetupScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
-            <Route path="/account" element={<AccountScreen />} />
+              <Route path="/account" element={<AccountScreen />} />
               <Route path="*" element={<Navigate to="/today" replace />} />
             </Routes>
           </ErrorBoundary>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, ChatBubble, Spinner, inputClass } from '@epistemics/ui';
+import { Button, Card, ChatBubble, SectionTitle, Spinner, inputClass } from '@epistemics/ui';
 import type { LessonRunner, LessonView } from '../../lib/services/lesson.js';
 
 const MIN_SUMMARY = 20;
@@ -15,8 +15,8 @@ export function WrapPanel({ view, runner }: { view: LessonView; runner: LessonRu
   if (view.inputMode === 'summary') {
     return (
       <Card className="space-y-3" data-testid="wrap-summary">
-        <h2 className="text-base font-semibold">Wrap up: write a summary</h2>
-        <p className="text-sm text-muted">Three to five sentences on what this lesson taught, in your own words and without looking anything up. The tutor checks it for errors.</p>
+        <SectionTitle>Wrap up: write a summary</SectionTitle>
+        <p className="text-sm leading-relaxed text-muted">Three to five sentences on what this lesson taught, in your own words and without looking anything up. The tutor checks it for errors.</p>
         <label htmlFor="summary-input" className="sr-only">Your summary</label>
         <textarea id="summary-input" className={`${inputClass} min-h-32`} value={summary} onChange={(e) => setSummary(e.target.value)} disabled={busy} data-testid="summary-input" placeholder="What did this lesson teach, and why does it hold?" />
         <div className="flex flex-wrap items-center gap-3">
@@ -29,18 +29,20 @@ export function WrapPanel({ view, runner }: { view: LessonView; runner: LessonRu
   }
 
   return (
-    <Card className="space-y-3" data-testid="wrap-jol">
-      <h2 className="text-base font-semibold">The tutor's check of your summary</h2>
+    <Card className="space-y-4" data-testid="wrap-jol">
+      <SectionTitle>The tutor's check of your summary</SectionTitle>
       <div role="log" aria-live="polite">
         {view.streaming !== null ? <ChatBubble role="tutor" streaming>{view.streaming}</ChatBubble> : tutorCheck ? <ChatBubble role="tutor">{tutorCheck.content}</ChatBubble> : <Spinner label="Checking your summary" />}
       </div>
-      <h3 className="text-base font-semibold">How well will it stick?</h3>
-      <p className="text-sm text-muted">For each concept, how likely is it that you can still explain it in a week? Your guess is compared with what actually happens; that trains your sense of what you know.</p>
+      <div className="border-t border-hairline pt-4">
+        <SectionTitle as="h3">How well will it stick?</SectionTitle>
+        <p className="mt-1 text-sm leading-relaxed text-muted">For each concept, how likely is it that you can still explain it in a week? Your guess is compared with what actually happens; that trains your sense of what you know.</p>
+      </div>
       <div className="space-y-2">
         {view.lesson.concepts.map((c) => (
-          <label key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm sm:flex-nowrap">
+          <label key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-input bg-nested px-3 py-2 text-sm sm:flex-nowrap">
             <span className="w-full truncate sm:w-48">{c.name}</span>
-            <input type="range" min={0} max={100} value={Math.round((jol[c.id] ?? 0.5) * 100)} onChange={(e) => setJol({ ...jol, [c.id]: Number(e.target.value) / 100 })} className="min-w-0 flex-1 accent-accent" aria-label={`Predicted recall for ${c.name}`} />
+            <input type="range" min={0} max={100} value={Math.round((jol[c.id] ?? 0.5) * 100)} onChange={(e) => setJol({ ...jol, [c.id]: Number(e.target.value) / 100 })} className="min-w-0 flex-1 accent-primary" aria-label={`Predicted recall for ${c.name}`} />
             <span className="w-10 text-right tabular-nums">{Math.round((jol[c.id] ?? 0.5) * 100)}%</span>
           </label>
         ))}

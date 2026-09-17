@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import type { OutlineOutput } from '@epistemics/architect';
 import type { CourseGoals, Curriculum } from '@epistemics/core';
 import { getCurriculum } from '@epistemics/db';
-import { Banner, Button, Card, ErrorBanner, Field, PageHeader, Pill, Skeleton, Spinner, Stepper, Tabs, inputClass } from '@epistemics/ui';
+import { Banner, Button, Card, ErrorBanner, Field, IconButton, Page, PageHeader, PanelSection, Pill, Skeleton, Spinner, Stepper, Tabs, Workspace, inputClass } from '@epistemics/ui';
 import { useApp, useQuery } from '../../lib/app-state.js';
 import { plural } from '../../lib/format.js';
 import { CurriculumBuilder, INITIAL_UNITS, type BuildSpec, type IngestedSource, type OutlineProposal } from '../../lib/services/build.js';
@@ -138,17 +138,43 @@ export function SetupScreen() {
 
   // --- shelf mode needs its pack ---
   if (mode === 'shelf') {
-    if (packQ.error) return <ErrorBanner title="Could not load the pack" message={packQ.error} onRetry={packQ.refresh} />;
-    if (!packQ.data) return packQ.loading ? <div className="mx-auto max-w-2xl"><Card><Skeleton lines={3} label="Loading pack" /></Card></div> : <ErrorBanner title="Pack not found on the shelf" message="It may have been removed." onRetry={() => navigate('/shelf')} retryLabel="Back to the Shelf" />;
+    if (packQ.error) return <Page width="sm"><ErrorBanner title="Could not load the pack" message={packQ.error} onRetry={packQ.refresh} /></Page>;
+    if (!packQ.data) return <Page width="sm">{packQ.loading ? <Card><Skeleton lines={3} label="Loading pack" /></Card> : <ErrorBanner title="Pack not found on the shelf" message="It may have been removed." onRetry={() => navigate('/shelf')} retryLabel="Back to the Shelf" />}</Page>;
   }
   const title = mode === 'shelf' ? `Set up: ${packQ.data?.manifest.title ?? ''}` : step === 'source' ? 'Start a course' : `Set up: ${outline?.title ?? (subject.trim() || 'new course')}`;
   const canContinue = mode === 'subject' ? subject.trim().length > 1 : sources.length > 0 && subject.trim().length > 0;
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-4" data-testid="setup-screen" data-step={step}>
+  const outlineMeta = step === 'outline' && outline ? (
+    <div>
+      <PanelSection title="Outline">
+        <div className="flex flex-wrap gap-1.5">
+          <Pill tone="accent">{plural(outline.units.length, 'unit')}</Pill>
+          <Pill tone="neutral">{plural(outline.units.reduce((a, u) => a + u.lessons.length, 0), 'lesson')}</Pill>
+          <Pill tone={sources.length ? 'good' : 'neutral'}>{sources.length ? `${plural(sources.length, 'source')} · grounded` : 'subject only'}</Pill>
+        </div>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted">Builds {Math.min(INITIAL_UNITS, outline.units.length)} of {outline.units.length} units now; later units are generated two ahead of you.</p>
+      </PanelSection>
+      <PanelSection title="What you can change">
+        <ul className="space-y-1.5 text-[13px] leading-snug text-muted">
+          <li>Rename the course, any unit or lesson.</li>
+          <li>Reorder units with the arrows.</li>
+          <li>Drop lessons or units you do not need.</li>
+        </ul>
+      </PanelSection>
+      {sources.length ? (
+        <PanelSection title="Sources">
+          <ul className="space-y-1 text-[13px] text-muted">{sources.map((x) => <li key={x.source.id} className="truncate">{x.source.title}</li>)}</ul>
+        </PanelSection>
+      ) : null}
+    </div>
+  ) : undefined;
+
+  const page = (
+    <Page width="sm" data-testid="setup-screen" data-step={step}>
       <PageHeader
         title={title}
-        back={<Link to="/shelf" className="hover:underline" data-testid="setup-back">← Shelf</Link>}
+        crumbs={[{ label: 'Shelf', to: '/shelf' }, { label: title }]}
+        actions={<IconButton icon="back" label="Back to the Shelf" onClick={() => navigate('/shelf')} data-testid="setup-back" />}
         description={
           step === 'source' ? 'Pick a pack from the Shelf, name a subject, or upload your own material.'
             : step === 'interview' ? 'A few questions set how much you review, how far intervals may stretch, and how much help the tutor starts with.'
@@ -170,14 +196,14 @@ export function SetupScreen() {
               {sources.length ? (
                 <ul className="space-y-1" data-testid="source-list">
                   {sources.map((s) => (
-                    <li key={s.source.id} className="flex items-center justify-between rounded-md border border-line px-3 py-1.5 text-sm">
+                    <li key={s.source.id} className="flex items-center justify-between gap-2 rounded-input bg-nested px-3 py-2 text-sm">
                       <span>
                         <span className="font-medium">{s.source.title}</span>
                         <span className="ml-2 text-xs text-muted">
                           {s.source.kind.toUpperCase()}{s.source.pageCount ? ` · ${plural(s.source.pageCount, 'page')}` : ''} · {plural(s.chunkCount, 'chunk')} · ~{s.tokenCount.toLocaleString()} tokens
                         </span>
                       </span>
-                      <Button variant="ghost" onClick={() => setSources(sources.filter((x) => x.source.id !== s.source.id))} aria-label={`Remove ${s.source.title}`}>✕</Button>
+                      <IconButton size="sm" icon="x" onClick={() => setSources(sources.filter((x) => x.source.id !== s.source.id))} label={`Remove ${s.source.title}`} />
                     </li>
                   ))}
                 </ul>
@@ -198,7 +224,7 @@ export function SetupScreen() {
           {error ? <ErrorBanner message={error} /> : null}
           <div className="flex flex-wrap items-center gap-3">
             <Button onClick={() => { setError(undefined); setStep('interview'); }} disabled={!canContinue || busy} data-testid="continue-to-interview">Continue</Button>
-            <Link to="/shelf" className="text-sm text-muted hover:underline">Or pick a pack from the Shelf</Link>
+            <Link to="/shelf" className="text-sm text-muted underline-offset-2 hover:text-ink hover:underline">Or pick a pack from the Shelf</Link>
           </div>
         </Card>
       ) : null}
@@ -218,7 +244,7 @@ export function SetupScreen() {
             </Field>
           ) : null}
           <Field label={`Weekly time budget: ${interview.weekly} min`} hint="Lessons plus reviews. The forecast on Progress is measured against this.">
-            <input type="range" min={30} max={600} step={15} value={interview.weekly} onChange={(e) => patch({ weekly: Number(e.target.value) })} className="w-full accent-accent" />
+            <input type="range" min={30} max={600} step={15} value={interview.weekly} onChange={(e) => patch({ weekly: Number(e.target.value) })} className="w-full accent-primary" />
           </Field>
           <Field label="Prior background" hint="What you already know about the subject. Leave blank if new to it.">
             <textarea className={`${inputClass} min-h-20`} value={interview.background} onChange={(e) => patch({ background: e.target.value })} data-testid="background" />
@@ -232,14 +258,14 @@ export function SetupScreen() {
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={`Desired retention: ${(interview.retention * 100).toFixed(0)}%`} hint="Default 90%. Higher means more reviews.">
-              <input type="range" min={0.8} max={0.95} step={0.01} value={interview.retention} onChange={(e) => patch({ retention: Number(e.target.value) })} className="w-full accent-accent" />
+              <input type="range" min={0.8} max={0.95} step={0.01} value={interview.retention} onChange={(e) => patch({ retention: Number(e.target.value) })} className="w-full accent-primary" />
             </Field>
             <Field label="Reviews per day, at most" hint="Cards due beyond this become review debt.">
               <input type="number" min={20} max={500} className={inputClass} value={interview.reviewsPerDay} onChange={(e) => patch({ reviewsPerDay: Number(e.target.value) })} />
             </Field>
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={interview.diagnostic} onChange={(e) => patch({ diagnostic: e.target.checked })} className="h-4 w-4 accent-accent" data-testid="diagnostic-opt" />
+            <input type="checkbox" checked={interview.diagnostic} onChange={(e) => patch({ diagnostic: e.target.checked })} className="h-4 w-4 accent-primary" data-testid="diagnostic-opt" />
             Run a placement quiz first: skips lessons on concepts you already know (recommended if you have background)
           </label>
           {error ? <ErrorBanner message={error} onRetry={submitInterview} /> : null}
@@ -259,7 +285,7 @@ export function SetupScreen() {
 
       {step === 'outline' && outline ? (
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted lg:hidden">
             <Pill tone="accent">{plural(outline.units.length, 'unit')}</Pill>
             <Pill tone="neutral">{plural(outline.units.reduce((a, u) => a + u.lessons.length, 0), 'lesson')}</Pill>
             <Pill tone="neutral">{sources.length ? `${plural(sources.length, 'source')} · grounded` : 'subject only'}</Pill>
@@ -287,6 +313,8 @@ export function SetupScreen() {
           ) : null}
         </div>
       ) : null}
-    </div>
+    </Page>
   );
+
+  return outlineMeta ? <Workspace aside={outlineMeta} asideLabel="Outline summary">{page}</Workspace> : page;
 }
