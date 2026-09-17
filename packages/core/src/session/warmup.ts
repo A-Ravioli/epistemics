@@ -9,9 +9,11 @@ export const WARMUP_RATING: Rating = 3; // Good
 
 /** Free-recall prompt. Deliberately names no concepts (that would be a cue, not recall). */
 export function buildWarmupPrompt(lastLesson: Lesson): string {
+  // The surface supplies the heading, the time box and "order and polish do not matter"; saying any of it
+  // again here is the same instruction twice in one card.
   return (
-    `Warm-up (2-3 minutes). Write everything you remember from your last lesson, "${lastLesson.title}". ` +
-    'Key ideas, definitions, examples, anything at all, in your own words. Order and polish do not matter. ' +
+    `Write everything you remember from your last lesson, "${lastLesson.title}": ` +
+    'key ideas, definitions, examples, anything at all, in your own words. ' +
     'Do not look anything up; this is recall, not review.'
   );
 }

@@ -34,7 +34,7 @@ export function ProgressScreen() {
       </div>
 
       <Card className="space-y-2">
-        <h2 className="text-sm font-semibold">Pass rate by week: unaided vs with help</h2>
+        <h2 className="text-base font-semibold">Pass rate by week: unaided vs with help</h2>
         <p className="text-xs text-muted">The two lines should be close and both rising. A wide gap means you can do it with the tutor but not alone yet.</p>
         {p.trend.length === 0 ? <p className="text-sm text-muted">No graded attempts yet. Finish a lesson to see your first week.</p> : (
           <div className="space-y-2">
@@ -51,7 +51,7 @@ export function ProgressScreen() {
       </Card>
 
       <Card className="space-y-2">
-        <h2 className="text-sm font-semibold">How well you know what you know</h2>
+        <h2 className="text-base font-semibold">How well you know what you know</h2>
         <p className="text-sm text-muted">Based on {p.calibration.n} answers where you said how sure you were: {biasWord}. Brier score {p.calibration.brier.toFixed(3)} (0 is perfect, 0.25 is coin-flipping).</p>
         <div className="grid gap-2 sm:grid-cols-3">
           {p.bins.map((b) => (
@@ -65,7 +65,7 @@ export function ProgressScreen() {
       </Card>
 
       <Card className="space-y-2">
-        <h2 className="text-sm font-semibold">Confident misses</h2>
+        <h2 className="text-base font-semibold">Confident misses</h2>
         <p className="text-xs text-muted">Answers you were certain about and got wrong. These are the most valuable errors to look at: correcting a confident belief sticks best.</p>
         {p.highConfidenceErrors.length === 0 ? <p className="text-sm text-muted">None recorded. Good sign.</p> : (
           <ul className="space-y-2 text-sm">
@@ -82,7 +82,7 @@ export function ProgressScreen() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="space-y-2">
-          <h2 className="text-sm font-semibold">Reviews per day (last 30 study days)</h2>
+          <h2 className="text-base font-semibold">Reviews per day (last 30 study days)</h2>
           <p className="text-xs text-muted">Bar height is reviews answered; red marks cards you got wrong.</p>
           {p.debtHistory.length === 0 ? <p className="text-sm text-muted">No reviews yet.</p> : (
             <div className="flex h-32 items-end gap-1" role="img" aria-label={`Reviews per day for the last ${p.debtHistory.length} study days`}>
@@ -97,7 +97,7 @@ export function ProgressScreen() {
           {p.overrides.length ? <p className="text-xs text-muted">Gate overrides used: {p.overrides.length} (latest {p.overrides.slice(-3).join(', ')})</p> : null}
         </Card>
         <Card className="space-y-2">
-          <h2 className="text-sm font-semibold">Expected load, next 14 days</h2>
+          <h2 className="text-base font-semibold">Expected load, next 14 days</h2>
           <p className="text-xs text-muted">How many cards will come due each day if you keep going. Amber days exceed your daily cap.</p>
           {p.forecast.length === 0 ? <p className="text-sm text-muted">No active cards yet.</p> : (
             <div className="flex h-32 items-end gap-1" role="img" aria-label="Forecast load per day for the next 14 days">
@@ -114,7 +114,7 @@ export function ProgressScreen() {
 
       {p.cost.byRole.length ? (
         <Card>
-          <h2 className="text-sm font-semibold">Cost by tutor role (this month, all courses)</h2>
+          <h2 className="text-base font-semibold">Cost by tutor role (this month, all courses)</h2>
           <div className="overflow-x-auto">
             <table className="mt-2 w-full min-w-[32rem] text-xs">
               <thead><tr className="text-left text-muted"><th className="py-1">role</th><th>calls</th><th>input tokens</th><th>cache reads</th><th>output tokens</th><th>cost</th><th>avg latency</th></tr></thead>

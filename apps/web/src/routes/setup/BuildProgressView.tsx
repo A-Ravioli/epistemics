@@ -26,7 +26,7 @@ export function BuildProgressView({ progress, outline, unitsToBuild, label }: { 
   return (
     <Card className="space-y-3" data-testid="build-progress">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">{label ?? 'Building your course'}</h2>
+        <h2 className="text-base font-semibold">{label ?? 'Building your course'}</h2>
         {progress.phase === 'building' || progress.phase === 'outlining' ? <Spinner label={progress.message ?? 'Working'} /> : null}
         {progress.phase === 'done' ? <Pill tone="good">Built</Pill> : null}
       </div>

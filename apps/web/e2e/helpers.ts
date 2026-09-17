@@ -31,6 +31,8 @@ async function answer(page: Page, text: string, confidence?: 'Guess' | 'Fairly s
   await page.getByTestId('send').click();
 }
 
+const panel = (page: Page) => page.getByTestId('side-panel');
+
 /** Drive the first lesson of the tiny pack from PRIME to completion with the mock tutor. */
 export async function completeFirstLesson(page: Page): Promise<void> {
   const A = TINY.answers;
@@ -39,17 +41,26 @@ export async function completeFirstLesson(page: Page): Promise<void> {
   await waitPhase(page, 'PRIME');
   // input disabled while the tutor streams was already observed via toBeEnabled; confidence is required in PRIME
   await expect(page.getByTestId('send')).toBeDisabled();
+  // PRIME is a cold attempt: the side panel must not be holding the answer (DESIGN §7.3).
+  await expect(panel(page)).not.toContainText(TINY.concept1Definition);
+  await expect(page.getByTestId('concept-concealed')).toBeVisible();
   await answer(page, A.pretest, 'Fairly sure');
   await waitPhase(page, 'PROBE');
   await expect(page.getByTestId('chat-log')).toContainText("Let's find out.");
+  await expect(panel(page)).not.toContainText(TINY.concept1Definition);
   await answer(page, A.probe);
   await waitPhase(page, 'DEVELOP');
+  // The tutor is teaching from here, so the concept context comes back.
+  await expect(panel(page)).toContainText(TINY.concept1Definition);
   await page.getByTestId('give-up').click();
   await waitPhase(page, 'CONSOLIDATE');
   await answer(page, A.consolidate);
   await waitPhase(page, 'EXTEND');
   await answer(page, A.transfer);
   await waitPhase(page, 'CHECK');
+  // The unaided check is the one that counts toward mastery: nothing on screen may help with it.
+  await expect(panel(page)).not.toContainText(TINY.concept1Definition);
+  await expect(page.getByTestId('concept-concealed')).toBeVisible();
   await answer(page, A.check, 'Certain');
   await expect(page.getByTestId('wrap-summary')).toBeVisible({ timeout: 30_000 });
   await page.getByTestId('summary-input').fill(A.summary);

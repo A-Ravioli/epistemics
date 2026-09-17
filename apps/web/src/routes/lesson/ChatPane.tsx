@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Confidence, LessonPhase } from '@epistemics/core';
-import { Button, ChatBubble, ConfidenceButtons, Explainer, Kbd, Spinner, inputClass } from '@epistemics/ui';
+import { Button, ChatBubble, ConfidenceButtons, Kbd, Spinner, inputClass } from '@epistemics/ui';
 import type { LessonRunner, LessonView } from '../../lib/services/lesson.js';
 import { PHASE_LABEL } from './LessonHeader.js';
 
@@ -65,14 +65,9 @@ export function ChatPane({ view, runner }: { view: LessonView; runner: LessonRun
       </div>
       <div className="space-y-2 border-t border-line bg-paper p-3">
         {needsConfidence ? (
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="text-xs font-medium">How sure are you?</span>
-              <ConfidenceButtons value={confidence} onChange={setConfidence} disabled={disabled} hotkeys={false} />
-            </div>
-            <Explainer storageKey="confidence" title="Why say how sure you are?">
-              <p>You commit before you find out. A lucky guess then does not count as knowing, and a confident miss gets extra attention: that is how the app tells the two apart.</p>
-            </Explainer>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-xs font-medium" title="You commit before you find out: a lucky guess then does not count as knowing, and a confident miss gets extra attention.">How sure are you?</span>
+            <ConfidenceButtons value={confidence} onChange={setConfidence} disabled={disabled} hotkeys={false} />
           </div>
         ) : null}
         <label htmlFor="lesson-input" className="sr-only">Your answer</label>

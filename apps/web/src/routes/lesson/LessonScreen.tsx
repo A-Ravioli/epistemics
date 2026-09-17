@@ -75,6 +75,8 @@ function LessonView({ runner }: { runner: LessonRunner }) {
   const view = useStore(runner.store);
   const { state, lesson } = view;
   const isRemediation = view.isRemediation;
+  // "How a lesson works" is worth a screen before the first answer and is clutter after it.
+  const started = view.messages.some((m) => m.role === 'learner');
 
   if (view.inputMode === 'done') {
     const passed = Object.values(state.checkResults).filter((r) => r.rating >= 3).length;
@@ -108,14 +110,16 @@ function LessonView({ runner }: { runner: LessonRunner }) {
     <div className="mx-auto flex max-w-6xl gap-4" data-testid="lesson-screen">
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <LessonHeader view={view} />
-        <Explainer storageKey="lesson" title="How a lesson works" testId="lesson-explainer">
-          <p>Each concept goes through six short steps: <strong>{PHASE_LABEL.PRIME}</strong> (a cold attempt), <strong>{PHASE_LABEL.PROBE}</strong>, <strong>{PHASE_LABEL.DEVELOP}</strong> (the tutor asks, hints only after you try), <strong>{PHASE_LABEL.CONSOLIDATE}</strong>, <strong>{PHASE_LABEL.EXTEND}</strong> (a new case) and <strong>{PHASE_LABEL.CHECK}</strong>, where the tutor goes silent and your answer is graded without help.</p>
-          <p>The tutor never hands you the answer, and only the final check counts toward mastery.</p>
-        </Explainer>
+        {started ? null : (
+          <Explainer storageKey="lesson" title="How a lesson works" testId="lesson-explainer">
+            <p>Each concept goes through six short steps: <strong>{PHASE_LABEL.PRIME}</strong> (a cold attempt), <strong>{PHASE_LABEL.PROBE}</strong>, <strong>{PHASE_LABEL.DEVELOP}</strong> (the tutor asks, hints only after you try), <strong>{PHASE_LABEL.CONSOLIDATE}</strong>, <strong>{PHASE_LABEL.EXTEND}</strong> (a new case) and <strong>{PHASE_LABEL.CHECK}</strong>, where the tutor goes silent and your answer is graded without help.</p>
+            <p>The tutor never hands you the answer, and only the final check counts toward mastery. Where a step asks how sure you are, say so before you find out: that is how a lucky guess is told apart from knowing.</p>
+          </Explainer>
+        )}
         {view.error ? <ErrorBanner title="The tutor call failed" message={view.error} onRetry={() => runner.retry()} retryLabel="Retry" /> : null}
         <div className="lg:hidden">
           <Disclosure summary="About this concept" testId="concept-context-mobile">
-            <ConceptContext concept={view.concept} lesson={lesson} />
+            <ConceptContext concept={view.concept} lesson={lesson} phase={state.phase} />
           </Disclosure>
         </div>
         {view.inputMode === 'summary' || view.inputMode === 'jol' ? (
@@ -124,7 +128,7 @@ function LessonView({ runner }: { runner: LessonRunner }) {
           <ChatPane view={view} runner={runner} />
         )}
       </div>
-      <SidePanel concept={view.concept} lesson={lesson} />
+      <SidePanel concept={view.concept} lesson={lesson} phase={state.phase} />
     </div>
   );
 }

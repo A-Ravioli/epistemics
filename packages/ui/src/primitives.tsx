@@ -94,7 +94,7 @@ export function PageHeader({ title, back, description, actions, meta, as: Tag = 
       {back ? <div className="text-sm text-muted">{back}</div> : null}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <Tag className="text-xl font-semibold leading-tight">{title}</Tag>
+          <Tag className="text-2xl font-semibold leading-tight tracking-tight">{title}</Tag>
           {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

@@ -37,25 +37,33 @@ type PrimaryKey = 'resume' | 'review' | 'lesson' | 'remediation' | 'checkpoint' 
 
 interface Primary {
   key: PrimaryKey;
-  title: string;
-  body: string;
-  to?: string;
-  label?: string;
-  testId?: string;
+  /**
+   * Only for the two keys that have no card of their own. Every other key marks an existing card as next
+   * up instead of restating it: the screen used to print the next action twice, once in a hero and again
+   * in the card below it.
+   */
+  hero?: { title: string; body: string; to?: string; label?: string; testId?: string };
 }
 
 /** The one thing to do next, in the order DESIGN §3.2 lists the day. */
 function primaryAction(t: TodayModel): Primary {
   const due = t.queue.order.length;
-  if (t.openLesson) return { key: 'resume', title: `Resume: ${t.openLesson.title}`, body: 'You left a lesson part-way. Pick up where you stopped.', to: `/lesson/${t.openLesson.lessonId}`, label: 'Continue lesson', testId: 'continue-lesson' };
-  if (due > 0) return { key: 'review', title: `${plural(due, 'review')} due, about ${minutes(t.queue.minutes)}`, body: 'Reviews come first: clearing them is what unlocks the next lesson.', to: '/review', label: 'Start reviews', testId: 'start-reviews' };
-  if (t.nextLesson && !t.lessonLocked) return { key: 'lesson', title: `Next lesson: ${t.nextLesson.title}`, body: `${plural(t.nextLesson.concepts.length, 'concept')}, taught by the tutor, then checked without help.`, to: `/lesson/${t.nextLesson.id}`, label: 'Start lesson', testId: 'start-lesson' };
-  if (t.remediation.length) return { key: 'remediation', title: `Repair: ${t.remediation[0]!.name}`, body: 'A short loop for a concept that did not pass its check.', to: `/lesson/remediation:${t.remediation[0]!.conceptId}`, label: 'Start repair', testId: 'start-remediation' };
-  if (t.checkpoint?.ready) return { key: 'checkpoint', title: `Checkpoint: ${t.checkpoint.unit.title}`, body: 'The unit is taught and reviewed. Prove it: 8-15 questions, no tutor, feedback at the end.', to: `/checkpoint/${t.checkpoint.unit.id}`, label: 'Start checkpoint', testId: 'start-checkpoint' };
-  if (t.teachback.length) return { key: 'teachback', title: `Teach it back: ${t.teachback[0]!.name}`, body: 'Explain it to a curious student; it counts as a review.', to: `/teachback/${t.teachback[0]!.conceptId}`, label: 'Teach', testId: 'start-teachback' };
-  if (t.nextLesson && t.lessonLocked) return { key: 'done', title: 'Nothing more today', body: t.recoveryMode ? 'Recovery mode: the lesson stays hidden until the backlog clears.' : 'The next lesson is waiting on the review gate. Come back when reviews are due.' };
-  return { key: 'done', title: 'All clear', body: 'Every lesson is complete or waiting on a prerequisite. The map shows what is next.' };
+  if (t.openLesson) return { key: 'resume', hero: { title: `Resume: ${t.openLesson.title}`, body: 'You left a lesson part-way. Pick up where you stopped.', to: `/lesson/${t.openLesson.lessonId}`, label: 'Continue lesson', testId: 'continue-lesson' } };
+  if (due > 0) return { key: 'review' };
+  if (t.nextLesson && !t.lessonLocked) return { key: 'lesson' };
+  if (t.remediation.length) return { key: 'remediation' };
+  if (t.checkpoint?.ready) return { key: 'checkpoint' };
+  if (t.teachback.length) return { key: 'teachback' };
+  if (t.nextLesson && t.lessonLocked) return { key: 'done', hero: { title: 'Nothing more today', body: t.recoveryMode ? 'Recovery mode: the lesson stays hidden until the backlog clears.' : 'The next lesson is waiting on the review gate. Come back when reviews are due.' } };
+  return { key: 'done', hero: { title: 'All clear', body: 'Every lesson is complete or waiting on a prerequisite. The map shows what is next.' } };
 }
+
+/** The eyebrow that marks the single card holding the screen's only primary button. */
+function NextUp() {
+  return <div className="mb-1 text-xs font-medium uppercase tracking-wide text-accent">Next up</div>;
+}
+
+const NEXT_CARD = 'border-accent/50 ring-1 ring-accent/30';
 
 export function TodayScreen() {
   const { ctx } = useApp();
@@ -105,57 +113,27 @@ function TodayBody() {
       {ahead.error ? <Banner tone="warn">Could not prepare the next unit: {ahead.error}</Banner> : null}
       {notice ? <Banner tone="warn" data-testid="today-notice">{notice}</Banner> : null}
 
-      <Card className="border-accent/50 ring-1 ring-accent/30" data-testid="next-up">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="text-xs font-medium uppercase tracking-wide text-accent">Next up</div>
-            <h2 className="mt-0.5 text-base font-semibold">{primary.title}</h2>
-            <p className="mt-1 text-sm text-muted">{primary.body}</p>
+      {primary.hero ? (
+        <Card className={NEXT_CARD} data-testid="next-up">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <NextUp />
+              <h2 className="text-base font-semibold">{primary.hero.title}</h2>
+              <p className="mt-1 text-sm text-muted">{primary.hero.body}</p>
+            </div>
+            {primary.hero.to && primary.hero.label ? (
+              <Link to={primary.hero.to} className="shrink-0"><Button className="w-full sm:w-auto" data-testid={primary.hero.testId}>{primary.hero.label}</Button></Link>
+            ) : (
+              <Link to="/map" className="shrink-0"><Button variant="secondary" className="w-full sm:w-auto">Course map</Button></Link>
+            )}
           </div>
-          {primary.to && primary.label ? (
-            <Link to={primary.to} className="shrink-0"><Button className="w-full sm:w-auto" data-testid={primary.testId}>{primary.label}</Button></Link>
-          ) : (
-            <Link to="/map" className="shrink-0"><Button variant="secondary" className="w-full sm:w-auto">Course map</Button></Link>
-          )}
-        </div>
-      </Card>
-
-      {t.warmup ? <WarmupCard offer={t.warmup} onDone={q.refresh} /> : null}
-      <ReviewCard t={t} primary={primary.key} />
-      <LessonCard t={t} primary={primary.key} onOverride={q.refresh} />
-      {t.remediation.length > 0 ? (
-        <ListCard title="Repair loops" body="Short lessons (work it out → say it in your own words → check) for concepts that did not pass.">
-          {t.remediation.map((r) => (
-            <li key={r.conceptId} className="flex items-center justify-between gap-3 text-sm">
-              <span className="min-w-0 truncate">{r.name}</span>
-              <Link to={`/lesson/remediation:${r.conceptId}`}><Button variant="secondary" size="sm">Start</Button></Link>
-            </li>
-          ))}
-        </ListCard>
-      ) : null}
-      {t.checkpoint ? (
-        <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-testid="checkpoint-card">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold">Checkpoint: {t.checkpoint.unit.title}</h2>
-            <p className="mt-1 text-xs text-muted">{t.checkpoint.ready ? 'Ready. 8-15 questions without the tutor; feedback comes at the end.' : `Not yet: ${t.checkpoint.reason} It opens once every concept in the unit has been recalled on two different days.`}</p>
-          </div>
-          {t.checkpoint.ready ? (
-            primary.key !== 'checkpoint' ? <Link to={`/checkpoint/${t.checkpoint.unit.id}`}><Button variant="secondary" size="sm">Start checkpoint</Button></Link> : <Pill tone="accent">Next up</Pill>
-          ) : (
-            <Pill tone="neutral">Locked</Pill>
-          )}
         </Card>
       ) : null}
-      {t.teachback.length > 0 ? (
-        <ListCard title="Teach it back" body="Concepts you half know (60-85% mastery): explaining them to a curious student is the fastest way to finish the job.">
-          {t.teachback.map((c) => (
-            <li key={c.conceptId} className="flex items-center justify-between gap-3 text-sm">
-              <span className="min-w-0 truncate">{c.name} <span className="text-xs text-muted">mastery {(c.mastery * 100).toFixed(0)}%</span></span>
-              <Link to={`/teachback/${c.conceptId}`}><Button variant="secondary" size="sm">Teach</Button></Link>
-            </li>
-          ))}
-        </ListCard>
-      ) : null}
+
+      {t.warmup ? <WarmupCard offer={t.warmup} onDone={q.refresh} /> : null}
+      {sections(t, primary.key, q.refresh).map((sec) => (
+        <div key={sec.key} data-testid={sec.key === primary.key && !primary.hero ? 'next-up' : undefined}>{sec.node}</div>
+      ))}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Stat label="Streak" value={t.streak} hint="days in a row with every review cleared" tone={t.streak > 0 ? 'good' : 'neutral'} />
         <Stat label="Lessons done" value={t.completedLessonIds.size} hint={`of ${lessonsTotal} in this course`} />
@@ -165,17 +143,85 @@ function TodayBody() {
   );
 }
 
-function ListCard({ title, body, children }: { title: string; body: string; children: ReactNode }) {
+/**
+ * The day's cards in DESIGN §3.2 order, with the one that is next up hoisted to the top. Each card owns its
+ * own copy and its own button; exactly one of them is marked `next` and carries the screen's only primary
+ * button, so nothing on Today is stated twice.
+ */
+function sections(t: TodayModel, primary: PrimaryKey, refresh: () => Promise<void>): { key: PrimaryKey; node: ReactNode }[] {
+  const all: { key: PrimaryKey; node: ReactNode }[] = [
+    { key: 'review', node: <ReviewCard t={t} next={primary === 'review'} /> },
+    { key: 'lesson', node: <LessonCard t={t} next={primary === 'lesson'} onOverride={refresh} /> },
+  ];
+  if (t.remediation.length > 0) {
+    all.push({
+      key: 'remediation',
+      node: (
+        <ListCard next={primary === 'remediation'} title="Repair loops" body="Short lessons (work it out → say it in your own words → check) for concepts that did not pass.">
+          {t.remediation.map((r, i) => (
+            <li key={r.conceptId} className="flex items-center justify-between gap-3 text-sm">
+              <span className="min-w-0 truncate">{r.name}</span>
+              <Link to={`/lesson/remediation:${r.conceptId}`}>
+                <Button variant={primary === 'remediation' && i === 0 ? 'primary' : 'secondary'} size="sm" data-testid={i === 0 ? 'start-remediation' : undefined}>Start</Button>
+              </Link>
+            </li>
+          ))}
+        </ListCard>
+      ),
+    });
+  }
+  if (t.checkpoint) {
+    const next = primary === 'checkpoint';
+    all.push({
+      key: 'checkpoint',
+      node: (
+        <Card className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${next ? NEXT_CARD : ''}`} data-testid="checkpoint-card">
+          <div className="min-w-0">
+            {next ? <NextUp /> : null}
+            <h2 className="text-base font-semibold">Checkpoint: {t.checkpoint.unit.title}</h2>
+            <p className="mt-1 text-xs text-muted">{t.checkpoint.ready ? 'Ready. 8-15 questions without the tutor; feedback comes at the end.' : `Not yet: ${t.checkpoint.reason} It opens once every concept in the unit has been recalled on two different days.`}</p>
+          </div>
+          {t.checkpoint.ready ? (
+            <Link to={`/checkpoint/${t.checkpoint.unit.id}`} className="shrink-0"><Button variant={next ? 'primary' : 'secondary'} size={next ? 'md' : 'sm'} data-testid="start-checkpoint">Start checkpoint</Button></Link>
+          ) : (
+            <Pill tone="neutral">Locked</Pill>
+          )}
+        </Card>
+      ),
+    });
+  }
+  if (t.teachback.length > 0) {
+    all.push({
+      key: 'teachback',
+      node: (
+        <ListCard next={primary === 'teachback'} title="Teach it back" body="Concepts you half know (60-85% mastery): explaining them to a curious student is the fastest way to finish the job.">
+          {t.teachback.map((c, i) => (
+            <li key={c.conceptId} className="flex items-center justify-between gap-3 text-sm">
+              <span className="min-w-0 truncate">{c.name} <span className="text-xs text-muted">mastery {(c.mastery * 100).toFixed(0)}%</span></span>
+              <Link to={`/teachback/${c.conceptId}`}>
+                <Button variant={primary === 'teachback' && i === 0 ? 'primary' : 'secondary'} size="sm" data-testid={i === 0 ? 'start-teachback' : undefined}>Teach</Button>
+              </Link>
+            </li>
+          ))}
+        </ListCard>
+      ),
+    });
+  }
+  return [...all.filter((x) => x.key === primary), ...all.filter((x) => x.key !== primary)];
+}
+
+function ListCard({ title, body, children, next = false }: { title: string; body: string; children: ReactNode; next?: boolean }) {
   return (
-    <Card>
-      <h2 className="text-sm font-semibold">{title}</h2>
+    <Card className={next ? NEXT_CARD : ''}>
+      {next ? <NextUp /> : null}
+      <h2 className="text-base font-semibold">{title}</h2>
       <p className="mt-1 text-xs text-muted">{body}</p>
       <ul className="mt-2 space-y-1.5">{children}</ul>
     </Card>
   );
 }
 
-function ReviewCard({ t, primary }: { t: TodayModel; primary: PrimaryKey }) {
+function ReviewCard({ t, next }: { t: TodayModel; next: boolean }) {
   const ctx = useCourse();
   const q = t.queue.queue;
   const total = t.queue.order.length;
@@ -187,14 +233,16 @@ function ReviewCard({ t, primary }: { t: TodayModel; primary: PrimaryKey }) {
         : `${plural(q.dueToday, 'card')} due; the rest are held back (sibling cards of one you just saw, or beyond today's cap).`
       : `${plural(total, 'card')} due (${q.learning.length} still being learned, ${q.reviews.length} to refresh), about ${minutes(t.queue.minutes)}.`;
   return (
-    <Card data-testid="review-card">
+    <Card className={next ? NEXT_CARD : ''} data-testid="review-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold">Review queue</h2>
+          {next ? <NextUp /> : null}
+          <h2 className="text-base font-semibold">Review queue</h2>
           <p className="mt-1 text-sm text-muted" data-testid="review-summary">{summary}</p>
+          {next ? <p className="mt-1 text-sm text-muted">Reviews come first: clearing them is what unlocks the next lesson.</p> : null}
         </div>
         {total > 0 ? (
-          primary !== 'review' ? <Link to="/review" className="shrink-0"><Button variant="secondary" size="sm" data-testid="start-reviews">Start reviews</Button></Link> : <Pill tone="accent">Next up</Pill>
+          <Link to="/review" className="shrink-0"><Button variant={next ? 'primary' : 'secondary'} size={next ? 'md' : 'sm'} data-testid="start-reviews">Start reviews</Button></Link>
         ) : (
           <Pill tone="good">Clear</Pill>
         )}
@@ -215,7 +263,7 @@ function ReviewCard({ t, primary }: { t: TodayModel; primary: PrimaryKey }) {
   );
 }
 
-function LessonCard({ t, primary, onOverride }: { t: TodayModel; primary: PrimaryKey; onOverride: () => Promise<void> }) {
+function LessonCard({ t, next, onOverride }: { t: TodayModel; next: boolean; onOverride: () => Promise<void> }) {
   const ctx = useCourse();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -223,7 +271,7 @@ function LessonCard({ t, primary, onOverride }: { t: TodayModel; primary: Primar
   if (!t.nextLesson) {
     return (
       <Card data-testid="lesson-card">
-        <h2 className="text-sm font-semibold">Next lesson</h2>
+        <h2 className="text-base font-semibold">Next lesson</h2>
         <p className="mt-1 text-sm text-muted">None available: every lesson is either complete or waiting on a prerequisite you have not mastered yet. Keep reviewing; the <Link to="/map" className="underline">map</Link> shows what is blocking.</p>
       </Card>
     );
@@ -244,10 +292,11 @@ function LessonCard({ t, primary, onOverride }: { t: TodayModel; primary: Primar
     }
   };
   return (
-    <Card data-testid="lesson-card">
+    <Card className={next ? NEXT_CARD : ''} data-testid="lesson-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold">Next lesson{t.nextUnit ? <span className="font-normal text-muted"> · {t.nextUnit.title}</span> : null}</h2>
+          {next ? <NextUp /> : null}
+          <h2 className="text-base font-semibold">Next lesson{t.nextUnit ? <span className="text-sm font-normal text-muted"> · {t.nextUnit.title}</span> : null}</h2>
           <div className="mt-1 text-base">{lesson.title}</div>
           <div className="mt-1 text-xs text-muted">{plural(lesson.concepts.length, 'concept')}: {lesson.concepts.map((c) => c.name).join(', ')}</div>
           {t.lessonLocked ? (
@@ -262,10 +311,8 @@ function LessonCard({ t, primary, onOverride }: { t: TodayModel; primary: Primar
               <Pill tone="warn">Locked</Pill>
               {canOverride ? <Button variant="ghost" size="sm" onClick={override} disabled={busy} data-testid="gate-override">Override once today</Button> : t.overrideUsedToday ? <span className="text-xs text-muted">Override used today</span> : null}
             </>
-          ) : primary !== 'lesson' ? (
-            <Link to={`/lesson/${lesson.id}`}><Button variant="secondary" size="sm" data-testid="start-lesson">Start lesson</Button></Link>
           ) : (
-            <Pill tone="accent">Next up</Pill>
+            <Link to={`/lesson/${lesson.id}`}><Button variant={next ? 'primary' : 'secondary'} size={next ? 'md' : 'sm'} data-testid="start-lesson">Start lesson</Button></Link>
           )}
         </div>
       </div>

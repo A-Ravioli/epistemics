@@ -278,7 +278,7 @@ export function Explainer({ storageKey, title, children, testId }: { storageKey:
           <div className="font-medium">{title}</div>
           <div className="space-y-1 text-ink/90">{children}</div>
         </div>
-        <Button variant="ghost" size="sm" onClick={dismiss} aria-label={`Dismiss: ${title}`} data-testid="explainer-dismiss">Got it</Button>
+        <Button variant="ghost" size="sm" onClick={dismiss} aria-label={`Dismiss: ${title}`} data-testid="explainer-dismiss" className="shrink-0 whitespace-nowrap">Got it</Button>
       </div>
     </aside>
   );

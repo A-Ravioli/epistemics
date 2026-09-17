@@ -3,12 +3,18 @@
 @source "../../../packages/ui/src";
 
 /*
- * Palette. `muted` is the only "secondary text" colour: it is tuned to ≥ 5:1 on paper and on mist in both
- * themes (WCAG AA for body text), so screens use `text-muted` instead of alpha-blended ink.
+ * Palette. Three surfaces, always in this order: `ground` is the page behind everything, `paper` is a raised
+ * surface (cards, inputs, tutor bubbles, the mobile bar), `mist` is a tint used *inside* those surfaces for
+ * chips, rails and skeletons. Cards read as raised because they are a step lighter than the ground, not
+ * because of a shadow: dark mode has no usable shadows.
+ *
+ * `muted` is the only "secondary text" colour: it is tuned to ≥ 5:1 on ground, paper and mist in both themes
+ * (WCAG AA for body text), so screens use `text-muted` instead of alpha-blended ink.
  */
 @theme {
   --color-ink: #1b1a17;
   --color-muted: #5e5a52;
+  --color-ground: #f5f2ec;
   --color-paper: #fcfbf8;
   --color-mist: #efece5;
   --color-line: #ddd8cc;
@@ -21,8 +27,9 @@
   :root:not([data-theme="light"]) {
     --color-ink: #ece9e1;
     --color-muted: #aba69a;
-    --color-paper: #171613;
-    --color-mist: #24221e;
+    --color-ground: #100e0c;
+    --color-paper: #1b1916;
+    --color-mist: #272420;
     --color-line: #3a372f;
     --color-accent: #6fb8d2;
   }
@@ -30,14 +37,15 @@
 :root[data-theme="dark"] {
   --color-ink: #ece9e1;
   --color-muted: #aba69a;
-  --color-paper: #171613;
-  --color-mist: #24221e;
+  --color-ground: #100e0c;
+  --color-paper: #1b1916;
+  --color-mist: #272420;
   --color-line: #3a372f;
   --color-accent: #6fb8d2;
 }
 
 html, body, #root { height: 100%; }
-body { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+body { background: var(--color-ground); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 
 @layer base {
   /* One visible focus style for every focusable thing (links, tabs, SVG nodes), not only buttons; utilities such as `focus-visible:ring-2` still override it. */

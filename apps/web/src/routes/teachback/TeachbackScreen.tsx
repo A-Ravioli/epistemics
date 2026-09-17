@@ -82,7 +82,7 @@ function TeachbackView({ runner }: { runner: TeachbackRunner }) {
       </div>
       {v.done && v.grade ? (
         <Card className="space-y-3">
-          <h2 className="text-sm font-semibold">Blind grade of your explanation</h2>
+          <h2 className="text-base font-semibold">Blind grade of your explanation</h2>
           <GradeReceipt graded={v.grade} rubric={rubric} />
           <Link to="/today"><Button>Back to Today</Button></Link>
         </Card>

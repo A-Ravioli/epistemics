@@ -33,8 +33,8 @@ export function WarmupCard({ offer, onDone }: { offer: WarmupOffer; onDone: () =
     <Card data-testid="warmup-card">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">Warm-up <span className="font-normal text-muted">· optional, 2-3 minutes</span></h2>
-          <p className="mt-1 text-xs text-muted">Free recall of your last lesson. Whatever you remember counts as a review; whatever you miss goes first in today's queue.</p>
+          <h2 className="text-base font-semibold">Warm-up <span className="text-sm font-normal text-muted">· optional, 2-3 minutes</span></h2>
+          <p className="mt-1 text-xs text-muted">Whatever you remember counts as a review; whatever you miss goes first in today's queue.</p>
         </div>
         {!result ? <Button variant="ghost" size="sm" onClick={() => setSkipped(true)} title="Skip for today">Skip</Button> : null}
       </div>

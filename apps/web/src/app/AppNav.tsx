@@ -29,7 +29,7 @@ export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[
   return (
     <>
       <aside className="hidden w-52 shrink-0 flex-col gap-1 border-r border-line bg-mist/40 p-3 md:flex" aria-label="Primary">
-        <div className="mb-1 px-2 text-base font-semibold tracking-tight">Epistemics</div>
+        <div className="mb-1 px-2 text-lg font-semibold tracking-tight">Epistemics</div>
         <div className="mb-3 truncate px-2 text-xs text-muted" title={courseTitle}>{courseTitle ?? 'No course yet'}</div>
         <nav className="flex flex-col gap-1" aria-label="Screens">{links()}</nav>
         <div className="mt-auto space-y-2 px-1 text-[11px] text-muted">
