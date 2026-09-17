@@ -14,6 +14,8 @@ export const TINY = {
   recallItem: 'tiny-i2',
   applyItem: 'tiny-i3',
   recall2Item: 'tiny-i4',
+  /** The concept definition the side panel must not show while the learner is being checked. */
+  concept1Definition: 'The probability that an event does not happen equals one minus the probability that it happens',
   /** Answers a knowledgeable learner would give; each shares ≥3 content words with the reference. */
   answers: {
     pretest: 'The complement probability is one minus the probability of the event, so it is 0.7.',

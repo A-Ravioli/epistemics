@@ -117,7 +117,7 @@ function LessonView({ runner }: { runner: LessonRunner }) {
         <p>The tutor never hands you the answer, and only the final check counts toward mastery.</p>
       </Explainer>
       {view.error ? <ErrorBanner title="The tutor call failed" message={view.error} onRetry={() => runner.retry()} retryLabel="Retry" /> : null}
-      <ConceptDisclosure concept={view.concept} lesson={lesson} />
+      <ConceptDisclosure concept={view.concept} lesson={lesson} phase={state.phase} />
     </>
   );
 

@@ -1,5 +1,20 @@
-import type { Concept, Lesson } from '@epistemics/core';
+import type { Concept, Lesson, LessonPhase } from '@epistemics/core';
 import { Disclosure, Markdown } from '@epistemics/ui';
+
+/**
+ * Phases the learner answers with no help. The engine is the source of truth for what "unaided" means:
+ * in `core/session/lesson.ts` the PRIME pretest and the CHECK answer are the two attempts recorded with
+ * `assisted: false`, and PROBE runs before any teaching has happened. DESIGN §7.3 and §10.4 ("Checkpoint:
+ * distraction-free, no side panel") extend the same rule to the lesson: while the learner is being checked,
+ * nothing on screen may hold the answer. Everything returns in DEVELOP, where the tutor is teaching anyway.
+ */
+const CONCEALED = new Set<LessonPhase>(['PRIME', 'PROBE', 'CHECK']);
+
+const CONCEAL_NOTE: Partial<Record<LessonPhase, string>> = {
+  PRIME: 'The concept is hidden for your first attempt: answer from what you already have. Its definition, objectives and examples come back once the tutor starts teaching.',
+  PROBE: 'Still hidden while you say what you already know. It comes back in the next step.',
+  CHECK: 'Hidden for the unaided check. This answer is the one that counts toward mastery, so nothing here can help you with it.',
+};
 
 /**
  * Concept context for the learner: definition, objectives and examples. Never reference answers, never
@@ -57,8 +72,15 @@ export function ConceptContext({ concept, lesson }: { concept: Concept | undefin
 /** Label for the disclosure that holds the context above the conversation. */
 export const SIDE_PANEL_LABEL = 'About this concept';
 
-/** The same context, as the one disclosure the lesson column carries. */
-export function ConceptDisclosure({ concept, lesson }: { concept: Concept | undefined; lesson: Lesson }) {
+/**
+ * The same context, as the one disclosure the lesson column carries — except while the learner is answering
+ * without help, when there is no disclosure to open at all, only a line saying why. A closed disclosure
+ * would still be one click from the answer, and it keeps whatever open state it was left in.
+ */
+export function ConceptDisclosure({ concept, lesson, phase }: { concept: Concept | undefined; lesson: Lesson; phase: LessonPhase }) {
+  if (CONCEALED.has(phase)) {
+    return <p className="text-[13px] leading-relaxed text-muted" data-testid="concept-concealed">{CONCEAL_NOTE[phase]}</p>;
+  }
   return (
     <Disclosure summary={SIDE_PANEL_LABEL} testId="concept-context">
       <ConceptContext concept={concept} lesson={lesson} />
