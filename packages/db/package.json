@@ -1,0 +1,37 @@
+{
+  "name": "@epistemics/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./web": "./src/executors/web.ts",
+    "./node": "./src/executors/node.ts",
+    "./memory": "./src/executors/memory.ts",
+    "./tauri": "./src/executors/tauri.ts",
+    "./worker": "./src/executors/web.worker.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "generate": "drizzle-kit generate && node --experimental-strip-types scripts/embed-migrations.ts",
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts"
+  },
+  "dependencies": {
+    "@epistemics/core": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "@sqlite.org/sqlite-wasm": "catalog:",
+    "@tauri-apps/plugin-sql": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "@types/node": "catalog:",
+    "drizzle-kit": "catalog:",
+    "@vitest/browser": "^5.0.1",
+    "@vitest/browser-playwright": "^5.0.1",
+    "playwright": "^1.63.0"
+  }
+}

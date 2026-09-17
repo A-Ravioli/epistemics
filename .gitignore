@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+.env
+.env.*
+!.env.example
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
+evals/out/
+.vitest/
+apps/web/.ux-audit/

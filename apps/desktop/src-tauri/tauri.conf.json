@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Epistemics",
+  "version": "0.1.0",
+  "identifier": "dev.epistemics.app",
+  "build": {
+    "frontendDist": "../../web/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm --filter @epistemics/web dev",
+    "beforeBuildCommand": "pnpm --filter @epistemics/web build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Epistemics",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ipc: http://ipc.localhost https://*.supabase.co wss://*.supabase.co https://*.supabase.in http://localhost:11434; worker-src 'self' blob:; font-src 'self' data:",
+      "devCsp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline' http://localhost:5173; img-src 'self' data: blob:; connect-src 'self' ipc: http://ipc.localhost https://*.supabase.co wss://*.supabase.co https://*.supabase.in http://localhost:11434 http://localhost:5173 ws://localhost:5173; worker-src 'self' blob:; font-src 'self' data: http://localhost:5173"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Education",
+    "shortDescription": "Local-first tutoring that adapts to how you learn.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
+  },
+  "plugins": {
+    "sql": {
+      "preload": ["sqlite:epistemics.db"]
+    }
+  }
+}

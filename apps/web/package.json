@@ -1,0 +1,42 @@
+{
+  "name": "@epistemics/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@epistemics/architect": "workspace:*",
+    "@epistemics/core": "workspace:*",
+    "@epistemics/db": "workspace:*",
+    "@epistemics/ingest": "workspace:*",
+    "@epistemics/llm": "workspace:*",
+    "@epistemics/platform": "workspace:*",
+    "@epistemics/sync": "workspace:*",
+    "@epistemics/ui": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "pdfjs-dist": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "@types/node": "catalog:"
+  }
+}
