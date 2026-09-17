@@ -8,6 +8,13 @@
       "when": 1789584816546,
       "tag": "0000_true_karen_page",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789603928255,
+      "tag": "0001_sync_columns",
+      "breakpoints": true
     }
   ]
 }

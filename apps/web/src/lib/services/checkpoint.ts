@@ -27,6 +27,7 @@ import { findItem, findUnit } from './courses.js';
 import { gradeAnswer, resolveGradeTarget, type Graded } from './grading.js';
 import { applyReview, rescheduleConceptAgain } from './queue.js';
 import { recordReceipt } from './receipts.js';
+import { syncEvents } from '../sync-events.js';
 
 export interface CheckpointView {
   sessionId: string;
@@ -157,6 +158,7 @@ export class CheckpointRunner {
             await addPendingRemediation(this.ctx.db, this.ctx.course.id, conceptId);
           }
           await endSession(this.ctx.db, this.sessionId, { unitId: this.unit.id, ...result }, this.ctx.now());
+          syncEvents.emit('activity');
           return true;
         }
       }

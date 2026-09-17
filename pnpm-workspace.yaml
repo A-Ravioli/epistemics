@@ -39,3 +39,4 @@ catalog:
   hono: ^4.9.0
   "@hono/node-server": ^1.19.0
   "@types/node": ^22.18.0
+  "@supabase/supabase-js": ^2.116.0

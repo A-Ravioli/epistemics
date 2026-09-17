@@ -11,6 +11,8 @@ export type AnthropicTransport = 'byok' | 'proxy';
 export interface LlmSettings {
   mode: LlmMode;
   transport: AnthropicTransport;
+  /** Route Anthropic calls through the Supabase `anthropic-proxy` edge function while signed in (overrides `transport`). */
+  viaSupabase?: boolean;
   models: Partial<ModelConfig>;
   ollamaBaseUrl: string;
   ollamaModel: string;
@@ -38,7 +40,36 @@ export const KEYS = {
   overrides: (courseId: string) => `overrides:${courseId}`,
   diagnosticDone: (courseId: string) => `diagnosticDone:${courseId}`,
   builtCurricula: 'builtCurricula',
+  /** Device-local sync configuration; the `sync` prefix keeps it out of the outbox push (packages/sync tables.ts). */
+  sync: 'sync',
 } as const;
+
+export interface SyncSettings {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+}
+
+/** Build-time defaults (apps/web/.env.local: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY). */
+export function envSupabaseDefaults(): SyncSettings | undefined {
+  const env = (import.meta as { env?: Record<string, string | undefined> }).env ?? {};
+  const url = env['VITE_SUPABASE_URL'];
+  const key = env['VITE_SUPABASE_ANON_KEY'];
+  return url && key ? { supabaseUrl: url, supabaseAnonKey: key } : undefined;
+}
+
+/** Stored values win; otherwise the build-time defaults; otherwise empty (sync off). */
+export async function getSyncSettings(db: Db): Promise<SyncSettings> {
+  const stored = await getSetting<Partial<SyncSettings>>(db, KEYS.sync);
+  const env = envSupabaseDefaults();
+  return {
+    supabaseUrl: stored?.supabaseUrl ?? env?.supabaseUrl ?? '',
+    supabaseAnonKey: stored?.supabaseAnonKey ?? env?.supabaseAnonKey ?? '',
+  };
+}
+
+export async function setSyncSettings(db: Db, s: SyncSettings): Promise<void> {
+  await setSetting(db, KEYS.sync, s);
+}
 
 /** Curricula built by the learner in this app (the Shelf's "built by you" list), newest last. */
 export interface BuiltCurriculumRef { id: string; version: number; at: number }

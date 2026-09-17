@@ -3,6 +3,7 @@ import type { ConceptState } from '@epistemics/core';
 import type { Db } from '../client.js';
 import { conceptState } from '../schema.js';
 import { batchAll, parseJson, toJson } from './_util.js';
+import { dirtyQueries, type WriteOptions } from './_outbox.js';
 
 type Row = typeof conceptState.$inferSelect;
 
@@ -36,19 +37,20 @@ export async function getConceptState(db: Db, courseId: string, conceptId: strin
   return row ? rowToState(row) : undefined;
 }
 
-export async function upsertConceptState(db: Db, state: ConceptState): Promise<void> {
-  const row = stateToRow(state);
-  const { courseId: _c, conceptId: _k, ...set } = row;
-  await db.insert(conceptState).values(row)
-    .onConflictDoUpdate({ target: [conceptState.courseId, conceptState.conceptId], set }).run();
+export async function upsertConceptState(db: Db, state: ConceptState, opts: WriteOptions = {}): Promise<void> {
+  await upsertConceptStates(db, [state], opts);
 }
 
-export async function upsertConceptStates(db: Db, states: readonly ConceptState[]): Promise<void> {
-  await batchAll(db, states.map((s) => {
-    const row = stateToRow(s);
-    const { courseId: _c, conceptId: _k, ...set } = row;
-    return db.insert(conceptState).values(row).onConflictDoUpdate({ target: [conceptState.courseId, conceptState.conceptId], set });
-  }));
+export async function upsertConceptStates(db: Db, states: readonly ConceptState[], opts: WriteOptions = {}): Promise<void> {
+  const now = states.reduce((m, s) => Math.max(m, s.updatedAt), 0) || Date.now();
+  await batchAll(db, [
+    ...states.map((s) => {
+      const row = stateToRow(s);
+      const { courseId: _c, conceptId: _k, ...set } = row;
+      return db.insert(conceptState).values(row).onConflictDoUpdate({ target: [conceptState.courseId, conceptState.conceptId], set });
+    }),
+    ...dirtyQueries(db, 'concept_state', states.map((s) => ({ courseId: s.courseId, conceptId: s.conceptId })), now, opts),
+  ]);
 }
 
 export async function listConceptStates(db: Db, courseId: string): Promise<ConceptState[]> {

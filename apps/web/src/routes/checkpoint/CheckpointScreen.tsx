@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import type { Confidence } from '@epistemics/core';
-import { Banner, Button, Card, ConfidenceButtons, Markdown, Pill, Progress, Spinner, inputClass } from '@epistemics/ui';
+import { Button, Card, ConfidenceButtons, ErrorBanner, Markdown, Pill, Progress, Skeleton, Spinner, inputClass } from '@epistemics/ui';
 import { useCourse } from '../../lib/app-state.js';
 import { useStore } from '../../lib/store.js';
 import { CheckpointRunner } from '../../lib/services/checkpoint.js';
@@ -13,16 +13,32 @@ export function CheckpointScreen() {
   const ctx = useCourse();
   const [runner, setRunner] = useState<CheckpointRunner | undefined>();
   const [error, setError] = useState<string | undefined>();
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    setError(undefined);
     CheckpointRunner.open(ctx, unitId)
       .then((r) => {
         setRunner(r);
         void r.start();
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, [ctx, unitId]);
-  if (error) return <Banner tone="bad">{error}</Banner>;
-  if (!runner) return <Spinner label="Composing the checkpoint" />;
+  }, [ctx, unitId, attempt]);
+  if (error) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-3">
+        <ErrorBanner title="Could not compose the checkpoint" message={error} onRetry={() => setAttempt((a) => a + 1)} />
+        <Link to="/today" className="text-sm text-muted hover:underline">← Back to Today</Link>
+      </div>
+    );
+  }
+  if (!runner) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4" data-testid="checkpoint-loading">
+        <Skeleton lines={1} label="Composing the checkpoint" />
+        <Card><Skeleton lines={4} /></Card>
+      </div>
+    );
+  }
   return <CheckpointView runner={runner} />;
 }
 
@@ -31,58 +47,69 @@ function CheckpointView({ runner }: { runner: CheckpointRunner }) {
   const v = useStore(runner.store);
   const [answer, setAnswer] = useState('');
   const [confidence, setConfidence] = useState<Confidence | undefined>();
+  const input = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     setAnswer('');
     setConfidence(undefined);
-  }, [v.item?.id]);
+    if (!v.busy) input.current?.focus();
+  }, [v.item?.id, v.busy]);
 
   if (v.result) {
     const entries = Object.entries(v.result.perConcept);
+    const passed = entries.filter(([, r]) => r.passed).length;
     return (
       <div className="mx-auto max-w-2xl space-y-4" data-testid="checkpoint-done">
         <Card>
-          <h1 className="text-lg font-semibold">Checkpoint: {v.unit.title}</h1>
-          <p className="mt-1 text-sm text-ink/70">{entries.filter(([, r]) => r.passed).length} of {entries.length} concepts passed (threshold 80%).</p>
+          <div className="text-xs uppercase tracking-wide text-muted">Checkpoint result</div>
+          <h1 className="text-lg font-semibold">{v.unit.title}</h1>
+          <p className="mt-1 text-sm text-muted">{passed} of {entries.length} concepts passed. A concept passes at 80% or more; each pass counts as one spaced retrieval, and each miss gets a short repair lesson before the next unit.</p>
           <ul className="mt-3 space-y-1 text-sm">
             {entries.map(([id, r]) => (
-              <li key={id} className="flex items-center justify-between">
-                <span>{findConcept(ctx.curriculum, id)?.concept.name ?? id}</span>
-                <Pill tone={r.passed ? 'good' : 'bad'}>{Math.round(r.score * 100)}%{r.passed ? '' : ' · remediation queued'}</Pill>
+              <li key={id} className="flex items-center justify-between gap-3">
+                <span className="min-w-0 truncate">{findConcept(ctx.curriculum, id)?.concept.name ?? id}</span>
+                <Pill tone={r.passed ? 'good' : 'bad'}>{Math.round(r.score * 100)}%{r.passed ? ' · passed' : ' · repair queued'}</Pill>
               </li>
             ))}
           </ul>
-          <Link to="/today" className="mt-4 inline-block"><Button>Back to Today</Button></Link>
+          <Link to="/today" className="mt-4 inline-block"><Button data-testid="checkpoint-back">Back to Today</Button></Link>
         </Card>
       </div>
     );
   }
 
+  const canSubmit = !v.busy && confidence !== undefined && answer.trim().length > 0;
+  const blocker = v.busy ? 'Grading…' : answer.trim().length === 0 ? 'Write an answer' : confidence === undefined ? 'Pick how sure you are' : null;
+
   return (
     <div className="mx-auto max-w-2xl space-y-4" data-testid="checkpoint-screen">
       <header className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-semibold">Checkpoint: {v.unit.title}</span>
-          <span className="text-ink/60">{Math.min(v.index + 1, v.total)} of {v.total}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <div className="min-w-0">
+            <div className="text-xs uppercase tracking-wide text-muted">Checkpoint · no tutor, no hints</div>
+            <h1 className="font-semibold">{v.unit.title}</h1>
+          </div>
+          <span className="text-muted">Question {Math.min(v.index + 1, v.total)} of {v.total}</span>
         </div>
-        <Progress value={v.index} max={v.total} />
+        <Progress value={v.index} max={v.total} label="Checkpoint progress" />
       </header>
-      {v.error ? <Banner tone="bad" className="flex justify-between"><span>{v.error}</span><Button variant="secondary" onClick={() => runner.retry()}>Retry</Button></Banner> : null}
+      {v.error ? <ErrorBanner title="Grading failed" message={v.error} onRetry={() => runner.retry()} retryLabel="Retry" /> : null}
       {v.item ? (
         <Card className="space-y-3">
           <Markdown className="text-base">{v.item.prompt}</Markdown>
-          <textarea className={`${inputClass} min-h-28`} value={answer} onChange={(e) => setAnswer(e.target.value)} disabled={v.busy} placeholder="Unaided. No tutor, no hints." data-testid="checkpoint-answer" />
+          <label htmlFor="checkpoint-answer" className="sr-only">Your answer</label>
+          <textarea id="checkpoint-answer" ref={input} className={`${inputClass} min-h-28`} value={answer} onChange={(e) => setAnswer(e.target.value)} disabled={v.busy} placeholder="Your answer, unaided." data-testid="checkpoint-answer" />
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs text-ink/60">Confidence:</span>
+            <span className="text-xs font-medium">How sure are you?</span>
             <ConfidenceButtons value={confidence} onChange={setConfidence} disabled={v.busy} hotkeys={false} />
           </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={() => confidence && runner.submit(answer, confidence)} disabled={v.busy || confidence === undefined || answer.trim().length === 0}>Submit</Button>
-            {v.busy ? <Spinner label="Grading blind" /> : null}
-            <Button variant="ghost" onClick={() => runner.finishEarly()} disabled={v.busy}>Finish early</Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => confidence && runner.submit(answer, confidence)} disabled={!canSubmit} title={blocker ?? undefined} data-testid="checkpoint-submit">Submit</Button>
+            {v.busy ? <Spinner label="Grading blind" /> : blocker ? <span className="text-xs text-muted">{blocker} to submit.</span> : null}
+            <Button variant="ghost" onClick={() => runner.finishEarly()} disabled={v.busy} title="Unanswered questions count as misses" className="ml-auto">Finish early</Button>
           </div>
         </Card>
-      ) : <Spinner />}
-      <p className="text-xs text-ink/50">Feedback comes at the end; each answer is graded blind against the item rubric.</p>
+      ) : <Spinner label="Loading the next question" />}
+      <p className="text-xs text-muted">Feedback comes at the end. Each answer is graded blind against the item's rubric; unanswered questions count as misses.</p>
     </div>
   );
 }

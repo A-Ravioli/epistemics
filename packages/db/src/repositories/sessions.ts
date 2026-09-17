@@ -4,6 +4,7 @@ import type { LessonPhase, ObserverResult, Session, SessionType, Turn } from '@e
 import type { Db } from '../client.js';
 import { sessions, turns } from '../schema.js';
 import { batchAll, parseJson, toJson } from './_util.js';
+import { dirtyQueries, markDirty, type WriteOptions } from './_outbox.js';
 
 type SessionRow = typeof sessions.$inferSelect;
 type TurnRow = typeof turns.$inferSelect;
@@ -21,10 +22,13 @@ export interface NewSession { id?: string; courseId: string; type: SessionType; 
 
 export async function createSession(db: Db, input: NewSession, now: number = Date.now()): Promise<Session> {
   const id = input.id ?? uuidv7(now);
-  await db.insert(sessions).values({
-    id, courseId: input.courseId, type: input.type, lessonId: input.lessonId ?? null, unitId: input.unitId ?? null,
-    startedAt: now, endedAt: null, summaryJson: null, stateJson: null,
-  }).run();
+  await batchAll(db, [
+    db.insert(sessions).values({
+      id, courseId: input.courseId, type: input.type, lessonId: input.lessonId ?? null, unitId: input.unitId ?? null,
+      startedAt: now, endedAt: null, summaryJson: null, stateJson: null, updatedAt: now,
+    }),
+    ...dirtyQueries(db, 'sessions', [id], now),
+  ]);
   const s: Session = { id, courseId: input.courseId, type: input.type, startedAt: now };
   if (input.lessonId) s.lessonId = input.lessonId;
   if (input.unitId) s.unitId = input.unitId;
@@ -38,19 +42,22 @@ export async function getSession(db: Db, id: string): Promise<Session | undefine
 
 export type SessionPatch = Partial<Pick<Session, 'lessonId' | 'unitId' | 'endedAt' | 'summary'>>;
 
-export async function updateSession(db: Db, id: string, patch: SessionPatch): Promise<void> {
+export async function updateSession(db: Db, id: string, patch: SessionPatch, now: number = Date.now()): Promise<void> {
   const set: Partial<typeof sessions.$inferInsert> = {};
   if (patch.lessonId !== undefined) set.lessonId = patch.lessonId;
   if (patch.unitId !== undefined) set.unitId = patch.unitId;
   if (patch.endedAt !== undefined) set.endedAt = patch.endedAt;
   if (patch.summary !== undefined) set.summaryJson = toJson(patch.summary);
   if (Object.keys(set).length === 0) return;
+  set.updatedAt = now;
   await db.update(sessions).set(set).where(eq(sessions.id, id)).run();
+  await markDirty(db, 'sessions', id, now);
 }
 
 export async function endSession(db: Db, id: string, summary: Record<string, unknown> | undefined, now: number = Date.now()): Promise<void> {
-  await db.update(sessions).set({ endedAt: now, summaryJson: summary === undefined ? null : toJson(summary), stateJson: null })
+  await db.update(sessions).set({ endedAt: now, summaryJson: summary === undefined ? null : toJson(summary), stateJson: null, updatedAt: now })
     .where(eq(sessions.id, id)).run();
+  await markDirty(db, 'sessions', id, now);
 }
 
 export async function listSessions(db: Db, courseId: string, opts: { type?: SessionType; limit?: number } = {}): Promise<Session[]> {
@@ -69,9 +76,10 @@ export async function getOpenSession(db: Db, courseId: string, type: SessionType
 }
 
 /** Persist serialised engine state for resume. Accepts a pre-serialised string or any JSON value. */
-export async function saveState(db: Db, sessionId: string, state: string | unknown): Promise<void> {
+export async function saveState(db: Db, sessionId: string, state: string | unknown, now: number = Date.now()): Promise<void> {
   const stateJson = typeof state === 'string' ? state : toJson(state);
-  await db.update(sessions).set({ stateJson }).where(eq(sessions.id, sessionId)).run();
+  await db.update(sessions).set({ stateJson, updatedAt: now }).where(eq(sessions.id, sessionId)).run();
+  await markDirty(db, 'sessions', sessionId, now);
 }
 
 export async function getState<T = unknown>(db: Db, sessionId: string): Promise<T | undefined> {
@@ -89,16 +97,19 @@ function rowToTurn(r: TurnRow): Turn {
   return t;
 }
 
-export async function saveTurns(db: Db, list: readonly Turn[]): Promise<void> {
-  await batchAll(db, list.map((t) => {
-    const row: typeof turns.$inferInsert = {
-      id: t.id, sessionId: t.sessionId, ordinal: t.ordinal, role: t.role, content: t.content,
-      phase: t.phase ?? null, conceptId: t.conceptId ?? null, hintLevel: t.hintLevel ?? null,
-      observerJson: t.observer === undefined ? null : toJson(t.observer), createdAt: t.createdAt,
-    };
-    const { id: _id, ...set } = row;
-    return db.insert(turns).values(row).onConflictDoUpdate({ target: turns.id, set });
-  }));
+export async function saveTurns(db: Db, list: readonly Turn[], now: number = Date.now(), opts: WriteOptions = {}): Promise<void> {
+  await batchAll(db, [
+    ...list.map((t) => {
+      const row: typeof turns.$inferInsert = {
+        id: t.id, sessionId: t.sessionId, ordinal: t.ordinal, role: t.role, content: t.content,
+        phase: t.phase ?? null, conceptId: t.conceptId ?? null, hintLevel: t.hintLevel ?? null,
+        observerJson: t.observer === undefined ? null : toJson(t.observer), createdAt: t.createdAt, updatedAt: now,
+      };
+      const { id: _id, ...set } = row;
+      return db.insert(turns).values(row).onConflictDoUpdate({ target: turns.id, set });
+    }),
+    ...dirtyQueries(db, 'turns', list.map((t) => t.id), now, opts),
+  ]);
 }
 
 export async function getTurns(db: Db, sessionId: string): Promise<Turn[]> {

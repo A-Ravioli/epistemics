@@ -53,6 +53,7 @@ import { findConcept, findLesson } from './courses.js';
 import { gradeAnswer, resolveGradeTarget, type Graded } from './grading.js';
 import { activateConcept, grantImplicitCredit } from './queue.js';
 import { recordReceipt } from './receipts.js';
+import { syncEvents } from '../sync-events.js';
 
 export const REMEDIATION_PREFIX = 'remediation:';
 
@@ -492,6 +493,7 @@ export class LessonRunner {
     };
     await endSession(this.ctx.db, this.sessionId, summary, now);
     if (this.isRemediation) await removePendingRemediation(this.ctx.db, this.ctx.course.id, this.lesson.concepts[0]!.id);
+    syncEvents.emit('activity');
   }
 
   // ---------------------------------------------------------------------------

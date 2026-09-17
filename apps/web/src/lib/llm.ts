@@ -22,6 +22,7 @@ import {
 import type { Platform } from '@epistemics/platform';
 import { createArchitectMockResponder } from './architect-mock.js';
 import type { LlmSettings } from './settings.js';
+import { getEdgeTransport } from './sync.js';
 
 /** Demo provider: the built-in tutor/grader heuristics plus schema-valid Architect outputs so builds run without a key. */
 function mockProvider(onUsage: UsageSink, delayMs: number): LlmProvider {
@@ -78,6 +79,23 @@ export async function buildProvider(platform: Platform, db: Db, settings: LlmSet
   const onUsage = combineSinks(ledger.record, dbUsageSink(db));
 
   if (settings.mode === 'anthropic') {
+    if (settings.viaSupabase) {
+      // Signed-in users can route through the anthropic-proxy edge function: bearer token in, no API key on the device.
+      const edge = getEdgeTransport();
+      if (edge) {
+        return {
+          mode: 'anthropic',
+          ledger,
+          provider: createAnthropicProvider({ baseURL: edge.baseURL, fetch: edge.fetch, browser: true, models: settings.models, onUsage }),
+        };
+      }
+      return {
+        mode: 'mock',
+        ledger,
+        note: 'Sign in on the Account screen to use the tutor through your Supabase project; using the demo tutor meanwhile.',
+        provider: mockProvider(onUsage, opts.mockDelayMs ?? 12),
+      };
+    }
     if (settings.transport === 'proxy' && platform.llmBaseUrl) {
       return {
         mode: 'anthropic',

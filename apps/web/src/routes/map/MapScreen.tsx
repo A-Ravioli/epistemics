@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { conceptDepths, type Concept, type ConceptState, type Receipt } from '@epistemics/core';
 import { getCardsForConcept, getReceipts, listConceptStates } from '@epistemics/db';
-import { Banner, Button, Card, Disclosure, Pill, Spinner } from '@epistemics/ui';
+import { Button, Card, Disclosure, ErrorBanner, PageHeader, Pill, Skeleton } from '@epistemics/ui';
 import { useCourse, useQuery } from '../../lib/app-state.js';
 import { allConcepts, findConcept } from '../../lib/services/courses.js';
 import { relativeDue } from '../../lib/format.js';
@@ -29,6 +29,13 @@ function masteryColor(m: number): string {
   if (m > 0) return '#dc2626';
   return 'var(--color-mist)';
 }
+
+const LEGEND = [
+  { m: 0.9, label: 'mastered (85%+)' },
+  { m: 0.7, label: 'developing (60-85%)' },
+  { m: 0.4, label: 'shaky (under 60%)' },
+  { m: 0, label: 'not started' },
+];
 
 /** Prerequisite graph laid out in layers by depth (longest prerequisite chain). Colour = mastery. */
 export function MapScreen() {
@@ -57,23 +64,32 @@ export function MapScreen() {
     return { nodes, edges, encompass, width: (maxDepth + 1) * (W + GAP_X) + 20, height: maxCol * (H + GAP_Y) + 20 };
   }, [ctx.curriculum, q.data]);
 
-  if (q.error) return <Banner tone="bad">{q.error}</Banner>;
-  if (!q.data) return <Spinner label="Drawing the map" />;
+  if (q.error) return <ErrorBanner title="Could not load the map" message={q.error} onRetry={q.refresh} />;
+  if (!q.data) {
+    return (
+      <div className="space-y-4" data-testid="map-loading">
+        <PageHeader title="Course map" />
+        <Card><Skeleton lines={4} label="Drawing the map" /></Card>
+      </div>
+    );
+  }
 
   const sel = selected ? findConcept(ctx.curriculum, selected) : undefined;
+  const nodeList = [...layout.nodes.values()];
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Course map</h1>
-        <div className="flex items-center gap-3 text-xs text-ink/60">
-          <span className="inline-flex items-center gap-1"><i className="inline-block h-3 w-3 rounded-sm" style={{ background: masteryColor(0.9) }} /> mastered</span>
-          <span className="inline-flex items-center gap-1"><i className="inline-block h-3 w-3 rounded-sm" style={{ background: masteryColor(0.7) }} /> developing</span>
-          <span className="inline-flex items-center gap-1"><i className="inline-block h-3 w-3 rounded-sm" style={{ background: masteryColor(0.4) }} /> shaky</span>
-          <span className="inline-flex items-center gap-1"><i className="inline-block h-3 w-3 rounded-sm border border-line" style={{ background: masteryColor(0) }} /> not started</span>
-          <Button variant="ghost" onClick={() => setHideItems(!hideItems)}>{hideItems ? 'Show names' : 'Map from memory'}</Button>
-        </div>
-      </header>
-      <div className="overflow-auto rounded-lg border border-line bg-paper">
+      <PageHeader
+        title="Course map"
+        description="Every concept, arranged so prerequisites sit to the left of what they unlock. Colour shows how well you know each one."
+        actions={<Button variant="secondary" size="sm" onClick={() => setHideItems(!hideItems)} aria-pressed={hideItems} title="Hide the names and try to recall what each box is">{hideItems ? 'Show names' : 'Map from memory'}</Button>}
+      />
+      <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted" aria-label="Legend">
+        {LEGEND.map((l) => (
+          <li key={l.label} className="inline-flex items-center gap-1"><i className={`inline-block h-3 w-3 rounded-sm ${l.m === 0 ? 'border border-line' : ''}`} style={{ background: masteryColor(l.m) }} aria-hidden="true" /> {l.label}</li>
+        ))}
+        <li className="inline-flex items-center gap-1"><span aria-hidden="true">→</span> prerequisite</li>
+      </ul>
+      <div className="overflow-auto rounded-lg border border-line bg-paper" tabIndex={0} aria-label="Prerequisite graph, scrollable">
         <svg width={layout.width} height={layout.height} role="img" aria-label="Prerequisite graph" data-testid="map-svg">
           <defs>
             <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="currentColor" opacity="0.5" /></marker>
@@ -88,17 +104,33 @@ export function MapScreen() {
             const b = layout.nodes.get(e.to)!;
             return <line key={`pr${i}`} x1={a.x + W} y1={a.y + H / 2} x2={b.x} y2={b.y + H / 2} stroke="currentColor" strokeOpacity={0.45} markerEnd="url(#arrow)" />;
           })}
-          {[...layout.nodes.values()].map((n) => (
-            <g key={n.id} transform={`translate(${n.x},${n.y})`} onClick={() => setSelected(n.id)} className="cursor-pointer" role="button" aria-label={n.name} data-testid="map-node">
+          {nodeList.map((n) => (
+            <g
+              key={n.id}
+              transform={`translate(${n.x},${n.y})`}
+              onClick={() => setSelected(n.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelected(n.id);
+                }
+              }}
+              className="cursor-pointer focus:outline-none"
+              role="button"
+              tabIndex={0}
+              aria-label={`${n.name}, mastery ${Math.round(n.mastery * 100)}%`}
+              aria-pressed={selected === n.id}
+              data-testid="map-node"
+            >
               <rect width={W} height={H} rx={8} fill={masteryColor(n.mastery)} fillOpacity={n.mastery > 0 ? 0.25 : 1} stroke={selected === n.id ? 'var(--color-accent)' : 'var(--color-line)'} strokeWidth={selected === n.id ? 2 : 1} />
               <rect width={6} height={H} rx={3} fill={masteryColor(n.mastery)} />
-              <text x={14} y={H / 2 + 4} fontSize={12} fill="currentColor">{hideItems ? `Concept ${n.depth}.${[...layout.nodes.values()].filter((m) => m.depth === n.depth).indexOf(n) + 1}` : n.name.length > 24 ? `${n.name.slice(0, 23)}…` : n.name}</text>
-              <text x={W - 8} y={H / 2 + 4} fontSize={10} textAnchor="end" fill="currentColor" opacity={0.6}>{Math.round(n.mastery * 100)}%</text>
+              <text x={14} y={H / 2 + 4} fontSize={12} fill="currentColor">{hideItems ? `Concept ${n.depth}.${nodeList.filter((m) => m.depth === n.depth).indexOf(n) + 1}` : n.name.length > 24 ? `${n.name.slice(0, 23)}…` : n.name}</text>
+              <text x={W - 8} y={H / 2 + 4} fontSize={10} textAnchor="end" fill="currentColor" opacity={0.7}>{Math.round(n.mastery * 100)}%</text>
             </g>
           ))}
         </svg>
       </div>
-      {sel ? <ConceptDetail concept={sel.concept} state={q.data.states.find((s) => s.conceptId === sel.concept.id)} receipts={q.data.receipts.filter((r) => r.conceptId === sel.concept.id)} onClose={() => setSelected(undefined)} /> : <p className="text-sm text-ink/60">Click a concept to see its items and receipts.</p>}
+      {sel ? <ConceptDetail concept={sel.concept} state={q.data.states.find((s) => s.conceptId === sel.concept.id)} receipts={q.data.receipts.filter((r) => r.conceptId === sel.concept.id)} onClose={() => setSelected(undefined)} /> : <p className="text-sm text-muted">Select a concept (click, or Tab to it and press Enter) to see its questions and your graded attempts.</p>}
     </div>
   );
 }
@@ -109,50 +141,51 @@ function ConceptDetail({ concept, state, receipts, onClose }: { concept: Concept
   const now = ctx.now();
   return (
     <Card className="space-y-3" data-testid="concept-detail">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-base font-semibold">{concept.name}</h2>
-          <p className="text-sm text-ink/70">{concept.definition}</p>
+          <p className="text-sm text-muted">{concept.definition}</p>
           <div className="mt-1 flex flex-wrap gap-2 text-xs">
-            <Pill tone={state && state.mastery >= 0.85 ? 'good' : 'neutral'}>mastery {Math.round((state?.mastery ?? 0) * 100)}%</Pill>
-            <Pill tone="neutral">{state?.successfulSessions ?? 0} successful sessions</Pill>
-            {state?.unassistedN ? <Pill tone="neutral">unassisted {state.unassistedPass}/{state.unassistedN}</Pill> : null}
-            {state?.assistedN ? <Pill tone="neutral">assisted {state.assistedPass}/{state.assistedN}</Pill> : null}
-            {state?.misconceptions.length ? <Pill tone="warn">{state.misconceptions.join(', ')}</Pill> : null}
+            <Pill tone={state && state.mastery >= 0.85 ? 'good' : 'neutral'} title="Retention × spaced-session progress; mastered at 85% with an 80% unaided pass rate">mastery {Math.round((state?.mastery ?? 0) * 100)}%</Pill>
+            <Pill tone="neutral" title="Days on which you recalled this concept without help; three are needed">{state?.successfulSessions ?? 0} of 3 spaced recalls</Pill>
+            {state?.unassistedN ? <Pill tone="neutral" title="Passes without help / attempts">unaided {state.unassistedPass}/{state.unassistedN}</Pill> : null}
+            {state?.assistedN ? <Pill tone="neutral" title="Passes with the tutor's help / attempts">with help {state.assistedPass}/{state.assistedN}</Pill> : null}
+            {state?.misconceptions.length ? <Pill tone="warn" title="Patterns the grader noticed in your misses">{state.misconceptions.join(', ')}</Pill> : null}
           </div>
         </div>
-        <div className="flex gap-2">
-          <Link to={`/teachback/${concept.id}`}><Button variant="secondary">Teach back</Button></Link>
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+        <div className="flex shrink-0 gap-2">
+          <Link to={`/teachback/${concept.id}`}><Button variant="secondary" size="sm">Teach it back</Button></Link>
+          <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
         </div>
       </div>
-      <Disclosure summary={`Items (${concept.items.length})`}>
+      <Disclosure summary={`Questions (${concept.items.length})`}>
+        {cardsQ.error ? <ErrorBanner message={cardsQ.error} onRetry={cardsQ.refresh} /> : null}
         <ul className="space-y-1 text-sm">
           {concept.items.map((i) => {
             const card = cardsQ.data?.find((c) => c.itemId === i.id);
             return (
-              <li key={i.id} className="flex items-start justify-between gap-2">
-                <span><Pill tone="neutral">{i.type}</Pill> <span className="text-ink/80">{i.prompt.length > 120 ? `${i.prompt.slice(0, 119)}…` : i.prompt}</span></span>
-                <span className="shrink-0 text-xs text-ink/50">{card ? (card.state === 0 ? 'not active' : `${['new', 'learning', 'review', 'relearning'][card.state]} · ${relativeDue(card.due, now)} · R ${ctx.scheduler.retrievability(card, now).toFixed(2)}`) : ''}</span>
+              <li key={i.id} className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+                <span className="min-w-0"><Pill tone="neutral">{i.type}</Pill> <span className="text-ink/80">{i.prompt.length > 120 ? `${i.prompt.slice(0, 119)}…` : i.prompt}</span></span>
+                <span className="shrink-0 text-xs text-muted">{card ? (card.state === 0 ? 'not active yet' : `${['new', 'learning', 'review', 'relearning'][card.state]} · due ${relativeDue(card.due, now)} · ${Math.round(ctx.scheduler.retrievability(card, now) * 100)}% likely recalled`) : ''}</span>
               </li>
             );
           })}
         </ul>
       </Disclosure>
-      <Disclosure summary={`Receipts (${receipts.length})`}>
-        {receipts.length === 0 ? <p className="text-xs text-ink/60">No graded attempts yet.</p> : (
+      <Disclosure summary={`Graded attempts (${receipts.length})`}>
+        {receipts.length === 0 ? <p className="text-xs text-muted">No graded attempts yet.</p> : (
           <ul className="space-y-2 text-sm">
             {[...receipts].reverse().slice(0, 20).map((r) => (
               <li key={r.id} className="rounded-md border border-line p-2">
-                <div className="flex flex-wrap gap-2 text-xs text-ink/60">
+                <div className="flex flex-wrap gap-2 text-xs text-muted">
                   <Pill tone={r.rating >= 3 ? 'good' : r.rating === 2 ? 'warn' : 'bad'}>{['', 'Again', 'Hard', 'Good', 'Easy'][r.rating]}</Pill>
-                  <span>{r.assisted ? 'assisted' : 'unassisted'}</span>
-                  {r.confidence ? <span>confidence {r.confidence}</span> : null}
+                  <span>{r.assisted ? 'with help' : 'unaided'}</span>
+                  {r.confidence ? <span>confidence {['', 'guess', 'fairly sure', 'certain'][r.confidence]}</span> : null}
                   {r.disputed ? <span>disputed</span> : null}
                   <span>{new Date(r.createdAt).toLocaleString()}</span>
                 </div>
-                <p className="mt-1 whitespace-pre-wrap text-ink/80">{r.answer || '(no answer)'}</p>
-                {r.grade ? <p className="mt-1 text-xs text-ink/60">{r.grade.feedback}</p> : null}
+                <p className="mt-1 whitespace-pre-wrap break-words text-ink/80">{r.answer || '(no answer)'}</p>
+                {r.grade ? <p className="mt-1 text-xs text-muted">{r.grade.feedback}</p> : null}
               </li>
             ))}
           </ul>

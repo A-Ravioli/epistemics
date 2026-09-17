@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { adjustRatingForConfidence, isCorrect, type Card as CardT, type Confidence, type Item, type Rating } from '@epistemics/core';
 import { createSession, endSession, getReceiptsForSession, setReceiptDisputed } from '@epistemics/db';
-import { Banner, Button, Card, ConfidenceButtons, EmptyState, Markdown, Pill, Progress, RatingButtons, Spinner, inputClass } from '@epistemics/ui';
+import { Banner, Button, Card, ConfidenceButtons, EmptyState, ErrorBanner, Explainer, Kbd, Markdown, Pill, Progress, RatingButtons, Skeleton, Spinner, Stepper, inputClass } from '@epistemics/ui';
 import { useCourse } from '../../lib/app-state.js';
 import { getQueueFirst, markDayCleared, setQueueFirst } from '../../lib/settings.js';
 import { gradeAnswer, resolveGradeTarget, type Graded } from '../../lib/services/grading.js';
@@ -10,6 +10,18 @@ import { applyReview, loadQueue, todayKey, type LoadedQueue } from '../../lib/se
 import { GradeReceipt } from './GradeReceipt.js';
 
 const SELF_GRADED = new Set<Item['type']>(['recall', 'cloze', 'predict']);
+
+const ITEM_TYPE_LABEL: Record<Item['type'], string> = {
+  recall: 'Recall',
+  cloze: 'Fill the gap',
+  explain: 'Explain',
+  apply: 'Apply',
+  discriminate: 'Tell apart',
+  map: 'Map from memory',
+  teachback: 'Teach back',
+  predict: 'Predict',
+};
+const CARD_STATE_LABEL = ['New', 'Learning', 'Review', 'Relearning'] as const;
 
 type Step = 'answer' | 'confidence' | 'reveal' | 'grading' | 'graded';
 
@@ -32,12 +44,15 @@ export function ReviewScreen() {
   const [graded, setGraded] = useState<Graded | undefined>();
   const [hyper, setHyper] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [loadError, setLoadError] = useState<string | undefined>();
   const [busy, setBusy] = useState(false);
   const [finished, setFinished] = useState(false);
   const sessionId = useRef<string | undefined>(undefined);
   const shown = useRef(new Set<string>());
   const startedAt = useRef(Date.now());
   const answerRef = useRef<HTMLTextAreaElement>(null);
+  const confidenceRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     const first = await getQueueFirst(ctx.db, ctx.course.id);
@@ -60,17 +75,20 @@ export function ReviewScreen() {
     }
   }, [ctx, done]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+  const boot = useCallback(async () => {
+    setLoadError(undefined);
+    try {
       sessionId.current ??= (await createSession(ctx.db, { courseId: ctx.course.id, type: 'review' }, ctx.now())).id;
-      if (!cancelled) await load();
-    })().catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-    return () => {
-      cancelled = true;
-    };
+      await load();
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : String(e));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctx.course.id]);
+
+  useEffect(() => {
+    void boot();
+  }, [boot]);
 
   const current: Current | undefined = useMemo(() => {
     const card = order[index];
@@ -85,17 +103,24 @@ export function ReviewScreen() {
     setConfidence(undefined);
     setGraded(undefined);
     setHyper(false);
+    setError(undefined);
     answerRef.current?.focus();
   }, [current?.card.id]);
+
+  // Keyboard users: move focus with the step so the next control is one Tab away, never lost on `body`.
+  useEffect(() => {
+    if (step === 'confidence') confidenceRef.current?.querySelector('button')?.focus();
+    else if (step === 'reveal' || step === 'graded') resultRef.current?.focus();
+  }, [step]);
 
   const previews = useMemo(() => {
     if (!current) return undefined;
     const p = ctx.scheduler.previewRatings(current.card, ctx.now());
     const fmt = (c: CardT) => {
       const ms = c.due - ctx.now();
-      if (ms < 3_600_000) return `${Math.max(1, Math.round(ms / 60_000))}m`;
-      if (ms < 86_400_000) return `${Math.round(ms / 3_600_000)}h`;
-      return `${Math.round(ms / 86_400_000)}d`;
+      if (ms < 3_600_000) return `${Math.max(1, Math.round(ms / 60_000))} min`;
+      if (ms < 86_400_000) return `${Math.round(ms / 3_600_000)} h`;
+      return `${Math.round(ms / 86_400_000)} d`;
     };
     return { 1: fmt(p[1].card), 2: fmt(p[2].card), 3: fmt(p[3].card), 4: fmt(p[4].card) } as Record<Rating, string>;
   }, [current, ctx]);
@@ -175,6 +200,13 @@ export function ReviewScreen() {
     await grade(3);
   }, [ctx.db, current, grade]);
 
+  const selfGradedNow = current ? SELF_GRADED.has(current.item.type) : false;
+  const continueFromAnswer = useCallback(() => {
+    if (!current) return;
+    if (!selfGradedNow && answer.trim().length === 0) return;
+    setStep('confidence');
+  }, [current, selfGradedNow, answer]);
+
   // Keyboard shortcuts: 1-3 confidence, 1-4 rating, space = reveal / accept.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -196,96 +228,138 @@ export function ReviewScreen() {
         void rate(graded.rating, { grade: graded });
       } else if (step === 'answer' && e.key === ' ') {
         e.preventDefault();
-        setStep('confidence');
+        continueFromAnswer();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [busy, current, step, confidence, graded, grade, rate]);
+  }, [busy, current, step, confidence, graded, grade, rate, continueFromAnswer]);
 
-  if (error && !current) return <Banner tone="bad">{error}</Banner>;
+  if (loadError) return <div className="mx-auto max-w-2xl"><ErrorBanner title="Could not load the review queue" message={loadError} onRetry={boot} /></div>;
   if (finished) {
     return (
-      <div className="mx-auto max-w-2xl">
-        <EmptyState title="Reviews cleared" body={`${done} card${done === 1 ? '' : 's'} answered. The lesson gate is open.`} action={<Button onClick={() => navigate('/today')}>Back to Today</Button>} />
+      <div className="mx-auto max-w-2xl space-y-4">
+        <div className="text-sm text-muted"><Link to="/today" className="hover:underline">← Today</Link></div>
+        <EmptyState
+          title="Reviews cleared"
+          body={`${done} card${done === 1 ? '' : 's'} answered. Nothing more is due today, so the lesson gate is open.`}
+          action={<Button onClick={() => navigate('/today')} data-testid="reviews-done-today">Back to Today</Button>}
+          testId="reviews-cleared"
+        />
       </div>
     );
   }
-  if (!loaded || !current) return <Spinner label="Loading queue" />;
+  if (!loaded || !current) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4" data-testid="review-loading">
+        <Skeleton lines={1} label="Loading the queue" />
+        <Card><Skeleton lines={2} /></Card>
+        <Card><Skeleton lines={3} /></Card>
+      </div>
+    );
+  }
 
   const selfGraded = SELF_GRADED.has(current.item.type);
   const total = order.length;
-  const isLearning = current.card.state === 1 || current.card.state === 3;
+  const conceptName = ctx.curriculum.units.flatMap((u) => u.lessons).flatMap((l) => l.concepts).find((c) => c.id === current.item.conceptId)?.name;
+  const stepIndex = step === 'answer' ? 0 : step === 'confidence' || step === 'grading' ? 1 : 2;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4" data-testid="review-screen">
       <header className="space-y-2">
-        <div className="flex items-center justify-between text-sm text-ink/70">
-          <span data-testid="review-progress">{index + 1} of {total}{done ? ` · ${done} done` : ''}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <Link to="/today" className="text-muted hover:underline" data-testid="review-stop">← Stop and go to Today</Link>
           <span className="flex items-center gap-2">
-            <Pill tone={isLearning ? 'accent' : 'neutral'}>{isLearning ? 'learning' : current.card.state === 0 ? 'new' : 'review'}</Pill>
-            <Pill tone="neutral">{current.item.type}</Pill>
-            <Link to="/today" className="text-xs underline">Stop</Link>
+            <Pill tone={current.card.state === 1 || current.card.state === 3 ? 'accent' : 'neutral'} title="Learning cards repeat within the session; review cards come back after days">{CARD_STATE_LABEL[current.card.state] ?? 'Review'}</Pill>
+            <Pill tone="neutral" title={`Item type: ${current.item.type}`}>{ITEM_TYPE_LABEL[current.item.type]}</Pill>
           </span>
         </div>
-        <Progress value={index} max={total} />
+        <div className="flex items-center justify-between gap-3 text-sm text-muted">
+          <span data-testid="review-progress">{index + 1} of {total}{done ? ` · ${done} done` : ''}</span>
+          <Stepper steps={['Answer', 'Confidence', selfGraded ? 'Reveal & rate' : 'Blind grade']} current={stepIndex} label="Review steps" />
+        </div>
+        <Progress value={index} max={total} label="Queue progress" />
       </header>
 
       <Card>
-        <div className="text-xs uppercase tracking-wide text-ink/50">{ctx.curriculum.units.flatMap((u) => u.lessons).flatMap((l) => l.concepts).find((c) => c.id === current.item.conceptId)?.name}</div>
+        <div className="text-xs uppercase tracking-wide text-muted">{conceptName}</div>
         <Markdown className="mt-2 text-base">{current.item.prompt}</Markdown>
       </Card>
 
       {step === 'answer' ? (
         <Card className="space-y-3">
-          <label className="block text-sm font-medium">{selfGraded ? 'Recall it silently or jot it down' : 'Your answer'}</label>
-          <textarea ref={answerRef} className={`${inputClass} min-h-24`} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={selfGraded ? 'Optional notes' : 'Write your answer'} data-testid="review-answer" />
-          <Button onClick={() => setStep('confidence')} disabled={!selfGraded && answer.trim().length === 0} data-testid="review-continue">Continue to confidence</Button>
+          <label htmlFor="review-answer" className="block text-sm font-medium">{selfGraded ? 'Recall the answer first; jot it down if it helps' : 'Your answer'}</label>
+          <textarea
+            id="review-answer"
+            ref={answerRef}
+            className={`${inputClass} min-h-24`}
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                continueFromAnswer();
+              }
+            }}
+            placeholder={selfGraded ? 'Optional notes; you rate yourself after the reveal' : 'Write your answer; it is graded blind against a rubric'}
+            data-testid="review-answer"
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={continueFromAnswer} disabled={!selfGraded && answer.trim().length === 0} data-testid="review-continue" title={!selfGraded && answer.trim().length === 0 ? 'Write an answer first' : undefined}>Continue</Button>
+            <span className="text-xs text-muted"><Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd> continues</span>
+          </div>
         </Card>
       ) : null}
 
       {step === 'confidence' || step === 'grading' ? (
         <Card className="space-y-3">
-          <div className="text-sm font-medium">How confident are you?</div>
-          <ConfidenceButtons value={confidence} onChange={setConfidence} disabled={step === 'grading'} />
-          {error ? <Banner tone="bad">{error}</Banner> : null}
-          <div className="flex items-center gap-3">
+          <div className="text-sm font-medium">How sure are you?</div>
+          <div ref={confidenceRef}>
+            <ConfidenceButtons value={confidence} onChange={setConfidence} disabled={step === 'grading'} />
+          </div>
+          <Explainer storageKey="confidence" title="Why say how sure you are?">
+            <p>You commit before the reveal. A lucky guess then does not count as knowing, and a confident miss is asked again today: that is how the app tells the two apart.</p>
+          </Explainer>
+          {error ? <ErrorBanner title="Grading failed" message={error} onRetry={() => void grade()} /> : null}
+          <div className="flex flex-wrap items-center gap-3">
             {selfGraded ? (
-              <Button onClick={() => setStep('reveal')} disabled={confidence === undefined} data-testid="show-answer">Show answer</Button>
+              <Button onClick={() => setStep('reveal')} disabled={confidence === undefined} data-testid="show-answer" title={confidence === undefined ? 'Pick a confidence first' : undefined}>Show answer <Kbd>Space</Kbd></Button>
             ) : (
-              <Button onClick={() => grade()} disabled={confidence === undefined || step === 'grading'} data-testid="grade-answer">Grade my answer</Button>
+              <Button onClick={() => grade()} disabled={confidence === undefined || step === 'grading'} data-testid="grade-answer" title={confidence === undefined ? 'Pick a confidence first' : undefined}>Grade my answer <Kbd>Space</Kbd></Button>
             )}
-            {step === 'grading' ? <Spinner label="Grading blind" /> : null}
+            {step === 'grading' ? <Spinner label="Grading blind against the rubric" /> : confidence === undefined ? <span className="text-xs text-muted">Pick a confidence to continue.</span> : null}
           </div>
         </Card>
       ) : null}
 
       {step === 'reveal' ? (
         <Card className="space-y-3" data-testid="review-reveal">
-          <div className="text-xs uppercase tracking-wide text-ink/50">Reference</div>
+          <div ref={resultRef} tabIndex={-1} className="text-xs uppercase tracking-wide text-muted focus:outline-none">Reference answer</div>
           <Markdown>{current.item.reference.answer}</Markdown>
-          {current.item.reference.notes ? <p className="text-xs text-ink/60">{current.item.reference.notes}</p> : null}
-          {hyper ? <Banner tone="bad">High-confidence miss: this will be asked again this session.</Banner> : null}
+          {current.item.reference.notes ? <p className="text-xs text-muted">{current.item.reference.notes}</p> : null}
+          {hyper ? <Banner tone="bad">Confident miss: this card is asked again later in this session.</Banner> : null}
+          {error ? <ErrorBanner title="Could not save the rating" message={error} /> : null}
+          <div className="text-sm font-medium">How did you do? The rating sets when you see this card next.</div>
           <RatingButtons onRate={(r) => rate(r)} disabled={busy} previews={previews} />
         </Card>
       ) : null}
 
       {step === 'graded' && graded ? (
         <Card className="space-y-3" data-testid="review-graded">
+          <div ref={resultRef} tabIndex={-1} className="text-xs uppercase tracking-wide text-muted focus:outline-none">Blind grade</div>
           <GradeReceipt graded={graded} rubric={current.item.rubric} />
-          {graded.disagreement ? <Banner tone="warn">Grader samples disagreed; you may self-grade with the rubric instead.</Banner> : null}
-          {hyper ? <Banner tone="bad">High-confidence miss: this will be asked again this session.</Banner> : null}
-          {error ? <Banner tone="bad">{error}</Banner> : null}
+          {graded.disagreement ? <Banner tone="warn">The grader samples disagreed. Rate yourself against the criteria above instead.</Banner> : null}
+          {hyper ? <Banner tone="bad">Confident miss: this card is asked again later in this session.</Banner> : null}
+          {error ? <ErrorBanner title="Could not save the rating" message={error} /> : null}
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={() => rate(graded.rating, { grade: graded })} disabled={busy} data-testid="accept-grade">Accept ({['', 'Again', 'Hard', 'Good', 'Easy'][graded.rating]})</Button>
-            <Button variant="secondary" onClick={dispute} disabled={busy || (graded.grade.samples ?? 1) >= 3}>Dispute (re-grade with 3 samples)</Button>
+            <Button onClick={() => rate(graded.rating, { grade: graded })} disabled={busy} data-testid="accept-grade">Accept {['', 'Again', 'Hard', 'Good', 'Easy'][graded.rating]} <Kbd>Space</Kbd></Button>
+            <Button variant="secondary" onClick={dispute} disabled={busy || (graded.grade.samples ?? 1) >= 3} title="Two more independent grades are taken and the majority decides. The dispute is logged.">Dispute the grade</Button>
             {graded.disagreement ? <RatingButtons onRate={(r) => rate(r, { grade: graded })} disabled={busy} hotkeys={false} /> : null}
           </div>
         </Card>
       ) : null}
 
-      <p className="text-xs text-ink/50">Keys: space to continue, 1-3 confidence, 1-4 rating. Confidence is always asked before the reveal.</p>
+      <p className="text-xs text-muted">Keys: <Kbd>Space</Kbd> continues, <Kbd>1</Kbd>–<Kbd>3</Kbd> confidence, <Kbd>1</Kbd>–<Kbd>4</Kbd> rating. Confidence is always asked before the answer is shown.</p>
     </div>
   );
 }
-

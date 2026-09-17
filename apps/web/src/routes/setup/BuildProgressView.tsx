@@ -31,7 +31,7 @@ export function BuildProgressView({ progress, outline, unitsToBuild, label }: { 
         {progress.phase === 'done' ? <Pill tone="good">Built</Pill> : null}
       </div>
       <Progress value={Math.min(finished, expected)} max={expected} />
-      <div className="text-xs text-ink/60">
+      <div className="text-xs text-muted">
         {finished} of ~{expected} stages · {progress.cached} instant from cache
       </div>
       {progress.event ? (
@@ -41,7 +41,7 @@ export function BuildProgressView({ progress, outline, unitsToBuild, label }: { 
         </div>
       ) : null}
       {recent.length ? (
-        <ul className="space-y-0.5 text-xs text-ink/60">
+        <ul className="space-y-0.5 text-xs text-muted">
           {recent.map((e, i) => (
             <li key={`${e.at}-${i}`} className="flex gap-2">
               <span className="w-14 shrink-0">{e.event.status === 'cached' ? 'instant' : e.event.status}</span>

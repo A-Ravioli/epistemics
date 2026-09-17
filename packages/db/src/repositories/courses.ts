@@ -13,6 +13,7 @@ import type { Course, CourseGoals, CourseSettings, Curriculum, Scaffolding } fro
 import type { Db } from '../client.js';
 import { cards, courses } from '../schema.js';
 import { batchAll, chunk, parseJson, toJson } from './_util.js';
+import { dirtyQueries, markDirty } from './_outbox.js';
 import { iterateConcepts } from './curricula.js';
 
 export const UNACTIVATED_OFFSET_MS = 100 * 365.25 * 86_400_000;
@@ -50,11 +51,14 @@ export async function createCourse(db: Db, input: NewCourse, now: number = Date.
     title: input.title, goals: input.goals, settings: input.settings, scaffolding: input.scaffolding ?? 'novice',
     createdAt: now, updatedAt: now,
   };
-  await db.insert(courses).values({
-    id: course.id, curriculumId: course.curriculumId, curriculumVersion: course.curriculumVersion, title: course.title,
-    goalsJson: toJson(course.goals), settingsJson: toJson(course.settings), scaffolding: course.scaffolding,
-    createdAt: now, updatedAt: now, deletedAt: null,
-  }).run();
+  await batchAll(db, [
+    db.insert(courses).values({
+      id: course.id, curriculumId: course.curriculumId, curriculumVersion: course.curriculumVersion, title: course.title,
+      goalsJson: toJson(course.goals), settingsJson: toJson(course.settings), scaffolding: course.scaffolding,
+      createdAt: now, updatedAt: now, deletedAt: null,
+    }),
+    ...dirtyQueries(db, 'courses', [course.id], now),
+  ]);
   return course;
 }
 
@@ -77,11 +81,13 @@ export async function updateCourse(db: Db, id: string, patch: CoursePatch, now: 
   if (patch.settings !== undefined) set.settingsJson = toJson(patch.settings);
   if (patch.scaffolding !== undefined) set.scaffolding = patch.scaffolding;
   await db.update(courses).set(set).where(eq(courses.id, id)).run();
+  await markDirty(db, 'courses', id, now);
   return getCourse(db, id);
 }
 
 export async function deleteCourse(db: Db, id: string, now: number = Date.now()): Promise<void> {
   await db.update(courses).set({ deletedAt: now, updatedAt: now }).where(eq(courses.id, id)).run();
+  await markDirty(db, 'courses', id, now);
 }
 
 /**
@@ -108,7 +114,10 @@ export async function enrol(
       });
     }
   }
-  await batchAll(db, chunk(rows, 100).map((slice) => db.insert(cards).values(slice)));
+  await batchAll(db, [
+    ...chunk(rows, 100).map((slice) => db.insert(cards).values(slice)),
+    ...dirtyQueries(db, 'cards', rows.map((r) => r.id), now),
+  ]);
   return course;
 }
 
@@ -118,7 +127,10 @@ export async function activateCards(db: Db, courseId: string, conceptId: string,
   const before = await db.select({ id: cards.id }).from(cards)
     .where(and(eq(cards.courseId, courseId), eq(cards.conceptId, conceptId), gte(cards.due, threshold))).all();
   if (before.length === 0) return 0;
-  await db.update(cards).set({ due: now, updatedAt: now })
-    .where(and(eq(cards.courseId, courseId), eq(cards.conceptId, conceptId), gte(cards.due, threshold))).run();
+  await batchAll(db, [
+    db.update(cards).set({ due: now, updatedAt: now })
+      .where(and(eq(cards.courseId, courseId), eq(cards.conceptId, conceptId), gte(cards.due, threshold))),
+    ...dirtyQueries(db, 'cards', before.map((r) => r.id), now),
+  ]);
   return before.length;
 }

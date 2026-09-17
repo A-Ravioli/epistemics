@@ -12,6 +12,8 @@ const bytes = customType<{ data: Uint8Array; driverData: Uint8Array }>({
 
 const ts = () => integer('created_at').notNull();
 const upd = () => integer('updated_at').notNull();
+/** `updated_at` on tables that gained it after the initial schema: defaults to 0 so the ALTER works on existing rows. */
+const updLater = () => integer('updated_at').notNull().default(0);
 const del = () => integer('deleted_at');
 
 // ---------------- content ----------------
@@ -69,7 +71,7 @@ export const sources = sqliteTable('sources', {
   hash: text('hash').notNull(),
   licence: text('licence'),
   pageCount: integer('page_count'),
-  createdAt: ts(),
+  createdAt: ts(), updatedAt: updLater(), deletedAt: del(),
 });
 
 export const chunks = sqliteTable('chunks', {
@@ -82,14 +84,15 @@ export const chunks = sqliteTable('chunks', {
   text: text('text').notNull(),
   tokenCount: integer('token_count').notNull(),
   hash: text('hash').notNull(),
-  embedding: bytes('embedding'),                 // Float32Array bytes
+  embedding: bytes('embedding'),                 // Float32Array bytes; local-only (never synced)
+  updatedAt: updLater(), deletedAt: del(),
 }, (t) => [index('chunks_source').on(t.sourceId, t.ordinal)]);
 
 export const genCache = sqliteTable('gen_cache', {
   key: text('key').primaryKey(),                  // sha256(inputHash + promptVersion + model + kind)
   kind: text('kind').notNull(),
   json: text('json').notNull(),
-  createdAt: ts(),
+  createdAt: ts(), updatedAt: updLater(),
 });
 
 // ---------------- learner ----------------
@@ -164,6 +167,7 @@ export const sessions = sqliteTable('sessions', {
   endedAt: integer('ended_at'),
   summaryJson: text('summary_json'),
   stateJson: text('state_json'),                   // serialised engine state for resume
+  updatedAt: updLater(),
 }, (t) => [index('sessions_course').on(t.courseId, t.startedAt)]);
 
 export const turns = sqliteTable('turns', {
@@ -176,7 +180,7 @@ export const turns = sqliteTable('turns', {
   conceptId: text('concept_id'),
   hintLevel: integer('hint_level'),
   observerJson: text('observer_json'),
-  createdAt: ts(),
+  createdAt: ts(), updatedAt: updLater(),
 }, (t) => [index('turns_session').on(t.sessionId, t.ordinal)]);
 
 export const receipts = sqliteTable('receipts', {
@@ -191,7 +195,7 @@ export const receipts = sqliteTable('receipts', {
   rating: integer('rating').notNull(),
   assisted: integer('assisted').notNull().default(0),
   disputed: integer('disputed').notNull().default(0),
-  createdAt: ts(),
+  createdAt: ts(), updatedAt: updLater(),
 }, (t) => [index('receipts_course').on(t.courseId, t.createdAt)]);
 
 export const jol = sqliteTable('jol', {
@@ -202,7 +206,7 @@ export const jol = sqliteTable('jol', {
   predictedRecall: real('predicted_recall').notNull(),
   actualOutcome: integer('actual_outcome'),
   checkedAt: integer('checked_at'),
-  createdAt: ts(),
+  createdAt: ts(), updatedAt: updLater(),
 });
 
 export const fsrsParams = sqliteTable('fsrs_params', {
@@ -212,6 +216,7 @@ export const fsrsParams = sqliteTable('fsrs_params', {
   optimizedAt: integer('optimized_at'),
   nReviews: integer('n_reviews').notNull().default(0),
   logloss: real('logloss'),
+  updatedAt: updLater(), deletedAt: del(),
 });
 
 export const llmCalls = sqliteTable('llm_calls', {
@@ -232,12 +237,27 @@ export const llmCalls = sqliteTable('llm_calls', {
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   valueJson: text('value_json').notNull(),
+  updatedAt: updLater(), deletedAt: del(),
 });
 
+/**
+ * Change log for sync (see docs/SYNC.md). Every repository write inserts one row per touched primary key;
+ * `row_id` is the JSON-encoded key: `"<id>"` for single-column keys, `{"id":..,"version":..}` /
+ * `{"courseId":..,"conceptId":..}` for composite ones. The sync engine pushes and deletes them in batches.
+ */
 export const outbox = sqliteTable('outbox', {
   id: text('id').primaryKey(),
   tableName: text('table_name').notNull(),
   rowId: text('row_id').notNull(),
   op: text('op').notNull(),
   createdAt: ts(),
+});
+
+/** Per-table sync cursors, written only by the sync engine. */
+export const syncState = sqliteTable('_sync_state', {
+  tableName: text('table_name').primaryKey(),
+  /** Highest `server_updated_at` (ISO-8601) pulled for this table. */
+  lastPullServerTs: text('last_pull_server_ts'),
+  lastPushAt: integer('last_push_at'),
+  lastPullAt: integer('last_pull_at'),
 });

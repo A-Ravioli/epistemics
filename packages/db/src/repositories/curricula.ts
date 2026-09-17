@@ -13,6 +13,7 @@ import type { Concept, ConceptEdge, Curriculum, CurriculumManifest, Item } from 
 import type { Db } from '../client.js';
 import { curricula, concepts, items, conceptEdges } from '../schema.js';
 import { batchAll, parseJson, toJson } from './_util.js';
+import { dirtyQueries, markDirty, type WriteOptions } from './_outbox.js';
 
 type ConceptRow = typeof concepts.$inferSelect;
 type ItemRow = typeof items.$inferSelect;
@@ -33,13 +34,11 @@ export function* iterateItems(c: Curriculum): Generator<Item> {
   for (const { concept } of iterateConcepts(c)) for (const item of concept.items) yield item;
 }
 
-export async function saveCurriculum(db: Db, curriculum: Curriculum, now: number = Date.now()): Promise<void> {
+export async function saveCurriculum(db: Db, curriculum: Curriculum, now: number = Date.now(), opts: WriteOptions = {}): Promise<void> {
   const m = curriculum.manifest;
   const id = m.id;
   const version = m.version;
-
-  const queries: Parameters<typeof batchAll>[1] = [];
-  queries.push(
+  await batchAll(db, [
     db.insert(curricula).values({
       id, version,
       title: m.title, subject: m.subject, contentHash: m.contentHash,
@@ -49,10 +48,29 @@ export async function saveCurriculum(db: Db, curriculum: Curriculum, now: number
       target: [curricula.id, curricula.version],
       set: { title: m.title, subject: m.subject, contentHash: m.contentHash, manifestJson: toJson(m), curriculumJson: toJson(curriculum), updatedAt: now, deletedAt: null },
     }),
+    ...projectionQueries(db, curriculum),
+    ...dirtyQueries(db, 'curricula', [{ id, version }], now, opts),
+  ]);
+}
+
+/**
+ * Rebuild the `concepts` / `items` / `concept_edges` projections from a curriculum without touching the
+ * `curricula` row itself. The sync engine calls this after pulling a curriculum version, since projections
+ * are local-only and never synced.
+ */
+export async function rebuildProjections(db: Db, curriculum: Curriculum): Promise<void> {
+  await batchAll(db, projectionQueries(db, curriculum));
+}
+
+function projectionQueries(db: Db, curriculum: Curriculum): Parameters<typeof batchAll>[1] {
+  const m = curriculum.manifest;
+  const id = m.id;
+  const version = m.version;
+  const queries: Parameters<typeof batchAll>[1] = [
     db.delete(concepts).where(eq(concepts.curriculumId, id)),
     db.delete(items).where(eq(items.curriculumId, id)),
     db.delete(conceptEdges).where(eq(conceptEdges.curriculumId, id)),
-  );
+  ];
 
   for (const { concept, unitId, lessonId } of iterateConcepts(curriculum)) {
     const { items: conceptItems, ...shell } = concept;
@@ -80,7 +98,7 @@ export async function saveCurriculum(db: Db, curriculum: Curriculum, now: number
     const { id: _eid, ...edgeSet } = erow;
     queries.push(db.insert(conceptEdges).values(erow).onConflictDoUpdate({ target: conceptEdges.id, set: edgeSet }));
   }
-  await batchAll(db, queries);
+  return queries;
 }
 
 export async function getCurriculum(db: Db, id: string, version: number): Promise<Curriculum | undefined> {
@@ -107,11 +125,13 @@ export async function listCurriculumVersions(db: Db, id: string): Promise<Curric
 export async function deleteCurriculum(db: Db, id: string, version: number, now: number = Date.now()): Promise<void> {
   await db.update(curricula).set({ deletedAt: now, updatedAt: now })
     .where(and(eq(curricula.id, id), eq(curricula.version, version))).run();
+  await markDirty(db, 'curricula', { id, version }, now);
 }
 
 export async function freezeCurriculum(db: Db, id: string, version: number, now: number = Date.now()): Promise<void> {
   await db.update(curricula).set({ frozenAt: now, updatedAt: now })
     .where(and(eq(curricula.id, id), eq(curricula.version, version))).run();
+  await markDirty(db, 'curricula', { id, version }, now);
 }
 
 function rowToItem(r: ItemRow): Item {

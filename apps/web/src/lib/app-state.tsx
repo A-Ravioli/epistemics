@@ -14,6 +14,8 @@ import { getActiveCourseId, getLlmSettings, setActiveCourseId, type LlmSettings 
 import type { CourseContext } from './services/context.js';
 import { listMyCourses } from './services/courses.js';
 import { schedulerForCourse } from './services/scheduler.js';
+import { startSync } from './sync.js';
+import { syncEvents } from './sync-events.js';
 
 export interface ActiveCourse {
   course: Course;
@@ -66,6 +68,7 @@ export function AppProvider({ children, fallback }: { children: ReactNode; fallb
   const boot = useCallback(async () => {
     const platform = await getPlatform();
     const db = await getDb();
+    await startSync(platform, db).catch((e: unknown) => console.warn('[sync] not started', e)); // optional; never blocks boot
     const llmSettings = await getLlmSettings(db);
     const llm = await buildProvider(platform, db, llmSettings);
     const courses = await listMyCourses(db);
@@ -82,7 +85,8 @@ export function AppProvider({ children, fallback }: { children: ReactNode; fallb
         ctx,
         async refreshCourses() {
           const list = await listMyCourses(base.db);
-          const act = await loadActive(base.db, list, base.active?.course.id ?? (await getActiveCourseId(base.db)));
+          // The stored id wins: enrolling sets it, so a freshly created course becomes the one Today shows.
+          const act = await loadActive(base.db, list, (await getActiveCourseId(base.db)) ?? base.active?.course.id);
           setState(make({ ...base, courses: list, active: act }));
         },
         async setActiveCourse(id) {
@@ -104,6 +108,11 @@ export function AppProvider({ children, fallback }: { children: ReactNode; fallb
   useEffect(() => {
     boot().catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [boot]);
+
+  // A sync pull may have brought new courses or progress: refresh the course list.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  useEffect(() => syncEvents.on('pulled', () => void stateRef.current?.refreshCourses().catch(() => undefined)), []);
 
   if (!state) return <>{fallback ? fallback({ error }) : null}</>;
   return <AppContext.Provider value={state}>{children}</AppContext.Provider>;

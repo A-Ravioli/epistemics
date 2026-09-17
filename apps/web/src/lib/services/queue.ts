@@ -27,6 +27,7 @@ import { activateCards, appendReviewLogs, getCards, getReviewLog, isActivated, s
 import { findItem } from './courses.js';
 import { dayCfg, type CourseContext } from './context.js';
 import { recordReceipt } from './receipts.js';
+import { syncEvents } from '../sync-events.js';
 
 export interface LoadedQueue {
   queue: Queue;
@@ -133,6 +134,7 @@ export async function applyReview(ctx: CourseContext, input: ApplyReviewInput): 
   if (!input.noImplicitCredit && !input.assisted && isCorrect(input.rating)) {
     implicit = await grantImplicitCredit(ctx, input.card.conceptId);
   }
+  syncEvents.emit('activity');
   return { card: next, log, implicit, leech };
 }
 

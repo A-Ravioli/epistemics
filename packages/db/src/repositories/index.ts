@@ -1,3 +1,4 @@
+export * from './_outbox.js';
 export * from './curricula.js';
 export * from './courses.js';
 export * from './cards.js';

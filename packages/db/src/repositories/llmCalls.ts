@@ -2,6 +2,8 @@ import { and, asc, count, desc, eq, gte, sum } from 'drizzle-orm';
 import type { LlmCall, LlmRole } from '@epistemics/core';
 import type { Db } from '../client.js';
 import { llmCalls } from '../schema.js';
+import { batchAll } from './_util.js';
+import { dirtyQueries, type WriteOptions } from './_outbox.js';
 
 type Row = typeof llmCalls.$inferSelect;
 
@@ -15,12 +17,16 @@ function rowToCall(r: Row): LlmCall {
   return c;
 }
 
-export async function insertLlmCall(db: Db, c: LlmCall): Promise<void> {
-  await db.insert(llmCalls).values({
-    id: c.id, sessionId: c.sessionId ?? null, courseId: c.courseId ?? null, role: c.role, model: c.model,
-    inputTokens: c.inputTokens, cacheRead: c.cacheRead, cacheWrite: c.cacheWrite, outputTokens: c.outputTokens,
-    costUsd: c.costUsd, latencyMs: c.latencyMs, createdAt: c.createdAt,
-  }).run();
+/** Append-only: a re-insert of an existing id is ignored. */
+export async function insertLlmCall(db: Db, c: LlmCall, opts: WriteOptions = {}): Promise<void> {
+  await batchAll(db, [
+    db.insert(llmCalls).values({
+      id: c.id, sessionId: c.sessionId ?? null, courseId: c.courseId ?? null, role: c.role, model: c.model,
+      inputTokens: c.inputTokens, cacheRead: c.cacheRead, cacheWrite: c.cacheWrite, outputTokens: c.outputTokens,
+      costUsd: c.costUsd, latencyMs: c.latencyMs, createdAt: c.createdAt,
+    }).onConflictDoNothing(),
+    ...dirtyQueries(db, 'llm_calls', [c.id], c.createdAt, opts),
+  ]);
 }
 
 export async function listLlmCalls(db: Db, opts: { sinceMs?: number; sessionId?: string; limit?: number } = {}): Promise<LlmCall[]> {
