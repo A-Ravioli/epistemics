@@ -17,6 +17,39 @@ afterEach(async () => {
 const A = TINY.answers;
 
 describe('LessonRunner with the mock provider', () => {
+  it('never reports itself idle mid-turn, so the composer cannot be clicked into a void', async () => {
+    // Regression: `publish(null)` used to clear `busy` between an event reducing and its effects running,
+    // so for a few hundred milliseconds Send looked ready while the runner was still working. A click that
+    // landed in that window was swallowed — `submit` was never reached and the lesson stalled on the phase.
+    // The invariant: within one turn the view reports idle exactly once, on the publish that ends it.
+    const runner = await LessonRunner.open(ctx, TINY.lessonId);
+    await runner.start();
+
+    let busyLog: (string | null)[] = [];
+    const unsubscribe = runner.store.subscribe(() => busyLog.push(runner.store.get().busy));
+
+    // `submit`/`giveUp` clear the last error before dispatching, which publishes the still-idle view: that
+    // first entry is the turn's own starting gun. Everything after it, up to the publish that ends the turn,
+    // must report busy — including the pump's first publish, which already carries the new phase. Reporting
+    // idle there is the bug: the composer re-enables under a phase whose tutor call has not even started.
+    const turn = async (label: string, run: () => Promise<void>) => {
+      busyLog = [];
+      await run();
+      expect(busyLog.length, `${label}: expected a turn's worth of publishes`).toBeGreaterThan(2);
+      expect(busyLog[0], `${label}: the turn should open from idle`).toBeNull();
+      expect(busyLog[busyLog.length - 1], `${label}: the turn must end idle`).toBeNull();
+      expect(busyLog.slice(1, -1), `${label}: published idle mid-turn, enabling the composer early`).not.toContain(null);
+    };
+
+    await turn('PRIME', () => runner.submit(A.pretest, 2));
+    await turn('PROBE', () => runner.submit(A.probe));
+    await turn('DEVELOP give up', () => runner.giveUp());
+    await turn('CONSOLIDATE', () => runner.submit(A.consolidate));
+    unsubscribe();
+
+    expect(runner.store.get().state.phase).toBe('EXTEND');
+  });
+
   it('runs a whole lesson: PRIME → CHECK → WRAP, activating items and persisting state along the way', async () => {
     const runner = await LessonRunner.open(ctx, TINY.lessonId);
     await runner.start();

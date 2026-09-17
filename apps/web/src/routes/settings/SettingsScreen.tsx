@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import type { LlmRole } from '@epistemics/core';
 import { DEFAULT_MODELS } from '@epistemics/llm';
-import { Banner, Button, Card, ErrorBanner, Field, Page, PageHeader, SectionTitle, SegmentedGroup, Spinner, inputClass } from '@epistemics/ui';
+import { Banner, Button, Card, ChoiceGroup, ErrorBanner, Field, Page, PageHeader, SectionTitle, SegmentedGroup, Spinner, inputClass } from '@epistemics/ui';
 import { useApp } from '../../lib/app-state.js';
 import { API_KEY_SECRET } from '../../lib/llm.js';
 import { getLlmSettings, setLlmSettings, type LlmSettings } from '../../lib/settings.js';
@@ -20,7 +20,7 @@ const ROLE_HELP: Partial<Record<LlmRole, string>> = {
 function Section({ id, title, description, children }: { id: string; title: string; description: string; children: React.ReactNode }) {
   return (
     <Card className="space-y-4" data-testid={`settings-${id}`}>
-      <div className="border-b border-hairline pb-3">
+      <div>
         <SectionTitle>{title}</SectionTitle>
         <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{description}</p>
       </div>
@@ -160,61 +160,84 @@ export function SettingsScreen() {
 
   const canBackup = 'exportDatabase' in app.platform;
 
+  const anthropicSettings = (
+    <>
+      {app.platform.kind === 'web' ? (
+        <ChoiceGroup<LlmSettings['transport']>
+          label="How the key is used"
+          value={llm.transport}
+          onChange={(transport) => setLlm({ ...llm, transport })}
+          options={[
+            {
+              value: 'byok',
+              label: 'Bring your own key',
+              description: 'Stored in this browser and sent straight to the API.',
+              detail: (
+                <Field label={hasKey ? 'API key (one is stored; enter a new one to replace it)' : 'API key'}>
+                  <div className="flex gap-2">
+                    <input type="password" className={inputClass} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-ant-…" autoComplete="off" data-testid="api-key" />
+                    {hasKey ? <Button variant="secondary" onClick={forgetKey}>Forget</Button> : null}
+                  </div>
+                </Field>
+              ),
+            },
+            { value: 'proxy', label: 'Server proxy', description: 'The key stays on your server; the app calls /api/anthropic with a daily budget.' },
+          ]}
+        />
+      ) : (
+        <>
+          <p className="text-[13px] text-muted">On desktop the key lives in the OS keychain and never enters the app.</p>
+          <Field label={hasKey ? 'API key (one is stored; enter a new one to replace it)' : 'API key'}>
+            <div className="flex gap-2">
+              <input type="password" className={inputClass} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-ant-…" autoComplete="off" data-testid="api-key" />
+              {hasKey ? <Button variant="secondary" onClick={forgetKey}>Forget</Button> : null}
+            </div>
+          </Field>
+        </>
+      )}
+      <details className="rounded-input bg-nested px-4 py-3 text-sm">
+        <summary className="cursor-pointer font-medium text-muted">Model per role (optional)</summary>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {ROLES.map((role) => (
+            <Field key={role} label={`${role[0]!.toUpperCase()}${role.slice(1)}`} hint={ROLE_HELP[role]}>
+              <input className={inputClass} value={llm.models[role] ?? ''} placeholder={DEFAULT_MODELS[role]} onChange={(e) => setLlm({ ...llm, models: { ...llm.models, [role]: e.target.value || undefined } })} />
+            </Field>
+          ))}
+        </div>
+      </details>
+      <Field label="Daily budget in USD per course (0 = no limit)" hint="At 80% of the budget the tutor switches to a cheaper model; at 100% it stops for the day.">
+        <input type="number" min={0} step={0.5} className={inputClass} value={llm.dailyBudgetUsd} onChange={(e) => setLlm({ ...llm, dailyBudgetUsd: Number(e.target.value) })} />
+      </Field>
+    </>
+  );
+
+  const ollamaSettings = (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <Field label="Ollama base URL"><input className={inputClass} value={llm.ollamaBaseUrl} onChange={(e) => setLlm({ ...llm, ollamaBaseUrl: e.target.value })} /></Field>
+      <Field label="Model" hint="Local models teach less well than Claude; expect rougher hints and grading."><input className={inputClass} value={llm.ollamaModel} onChange={(e) => setLlm({ ...llm, ollamaModel: e.target.value })} /></Field>
+    </div>
+  );
+
   return (
     <Page width="sm">
-      <PageHeader title="Settings" crumbs={[{ label: 'Settings' }]} description="Three groups: the tutor (which model talks to you), scheduling (how much review each day), and your data." />
+      <PageHeader title="Settings" description="Three groups: the tutor (which model talks to you), scheduling (how much review each day), and your data." />
       {saved ? <Banner tone="good" data-testid="settings-saved">{saved}</Banner> : null}
       {error ? <ErrorBanner message={error} /> : null}
 
       <Section id="tutor" title="Tutor" description="Which language model plays the tutor, observer and grader. The demo tutor works offline but cannot really teach.">
-        <Field label="Provider">
-          <select className={inputClass} value={llm.mode} onChange={(e) => setLlm({ ...llm, mode: e.target.value as LlmSettings['mode'] })} data-testid="llm-mode">
-            <option value="mock">Demo (mock model, no network)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-            <option value="ollama">Ollama (local model)</option>
-          </select>
-        </Field>
-        {llm.mode === 'anthropic' ? (
-          <>
-            {app.platform.kind === 'web' ? (
-              <Field label="How the key is used" hint="Bring your own key: stored in this browser and sent straight to the API. Server proxy: the key stays on your server and the app calls /api/anthropic with a daily budget.">
-                <select className={inputClass} value={llm.transport} onChange={(e) => setLlm({ ...llm, transport: e.target.value as LlmSettings['transport'] })}>
-                  <option value="byok">Bring your own key (direct)</option>
-                  <option value="proxy">Server proxy (/api/anthropic)</option>
-                </select>
-              </Field>
-            ) : <p className="text-xs text-muted">On desktop the key lives in the OS keychain and never enters the app.</p>}
-            {llm.transport === 'byok' || app.platform.kind === 'tauri' ? (
-              <Field label={hasKey ? 'API key (one is stored; enter a new one to replace it)' : 'API key'}>
-                <div className="flex gap-2">
-                  <input type="password" className={inputClass} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="sk-ant-…" autoComplete="off" data-testid="api-key" />
-                  {hasKey ? <Button variant="secondary" onClick={forgetKey}>Forget</Button> : null}
-                </div>
-              </Field>
-            ) : null}
-            <details className="rounded-input bg-nested px-3.5 py-2.5 text-sm">
-              <summary className="cursor-pointer font-medium text-muted">Model per role (optional)</summary>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {ROLES.map((role) => (
-                  <Field key={role} label={`${role[0]!.toUpperCase()}${role.slice(1)}`} hint={ROLE_HELP[role]}>
-                    <input className={inputClass} value={llm.models[role] ?? ''} placeholder={DEFAULT_MODELS[role]} onChange={(e) => setLlm({ ...llm, models: { ...llm.models, [role]: e.target.value || undefined } })} />
-                  </Field>
-                ))}
-              </div>
-            </details>
-            <Field label="Daily budget in USD per course (0 = no limit)" hint="At 80% of the budget the tutor switches to a cheaper model; at 100% it stops for the day.">
-              <input type="number" min={0} step={0.5} className={inputClass} value={llm.dailyBudgetUsd} onChange={(e) => setLlm({ ...llm, dailyBudgetUsd: Number(e.target.value) })} />
-            </Field>
-          </>
-        ) : null}
-        {llm.mode === 'ollama' ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Ollama base URL"><input className={inputClass} value={llm.ollamaBaseUrl} onChange={(e) => setLlm({ ...llm, ollamaBaseUrl: e.target.value })} /></Field>
-            <Field label="Model" hint="Local models teach less well than Claude; expect rougher hints and grading."><input className={inputClass} value={llm.ollamaModel} onChange={(e) => setLlm({ ...llm, ollamaModel: e.target.value })} /></Field>
-          </div>
-        ) : null}
+        <ChoiceGroup<LlmSettings['mode']>
+          label="Provider"
+          testId="llm-mode"
+          value={llm.mode}
+          onChange={(mode) => setLlm({ ...llm, mode })}
+          options={[
+            { value: 'mock', label: 'Demo tutor', description: 'A deterministic stand-in model. No network and no key, but it cannot really teach.' },
+            { value: 'anthropic', label: 'Anthropic (Claude)', description: 'The tutor this app is built around.', detail: anthropicSettings },
+            { value: 'ollama', label: 'Ollama', description: 'A model running on this machine. Expect rougher hints and grading.', detail: ollamaSettings },
+          ]}
+        />
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={saveLlm} disabled={busy} data-testid="save-llm">Save tutor settings</Button>
+          <Button variant="secondary" onClick={saveLlm} disabled={busy} data-testid="save-llm">Save tutor settings</Button>
           {busy ? <Spinner /> : null}
           <span className="text-xs text-muted">In use now: {app.llm.mode}{app.llm.note ? ` (${app.llm.note})` : ''}</span>
         </div>
@@ -231,7 +254,7 @@ export function SettingsScreen() {
               <Field label="New cards per day, at most" hint="Caps how many freshly learned cards join the rotation."><input type="number" min={0} className={inputClass} value={maxNew} onChange={(e) => setMaxNew(Number(e.target.value))} /></Field>
             </div>
             <p className="text-xs text-muted">Timezone {course.settings.timezone}; a study day starts at {course.settings.dayStartHour}:00. Tutor scaffolding: {course.scaffolding} (set from your background at enrolment).</p>
-            <Button onClick={saveCourse} disabled={busy}>Save scheduling</Button>
+            <Button variant="secondary" onClick={saveCourse} disabled={busy}>Save scheduling</Button>
           </>
         ) : null}
       </Section>

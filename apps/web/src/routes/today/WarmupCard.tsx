@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, ErrorBanner, Pill, SectionTitle, Spinner, inputClass } from '@epistemics/ui';
+import { Button, Card, ErrorBanner, SectionTitle, Spinner, inputClass } from '@epistemics/ui';
 import { useCourse } from '../../lib/app-state.js';
 import { runWarmup, type WarmupOffer, type WarmupResultView } from '../../lib/services/warmup.js';
 
@@ -39,11 +39,11 @@ export function WarmupCard({ offer, onDone }: { offer: WarmupOffer; onDone: () =
         {!result ? <Button variant="ghost" size="sm" onClick={() => setSkipped(true)} title="Skip for today">Skip</Button> : null}
       </div>
       {result ? (
-        <div className="mt-2 space-y-2 text-sm" aria-live="polite">
-          <p>Recalled: {result.reviewed.length ? result.reviewed.map((r) => <Pill key={r.conceptId} tone="good">{name(r.conceptId)}</Pill>) : <span className="text-muted">none</span>}</p>
-          {result.partial.length ? <p>Partly: {result.partial.map((id) => <Pill key={id} tone="warn">{name(id)}</Pill>)}</p> : null}
-          <p>Going first in today's queue: {result.queuedFirst.length ? result.queuedFirst.map((id) => <Pill key={id} tone="bad">{name(id)}</Pill>) : <span className="text-muted">nothing missed</span>}</p>
-          <p className="text-xs text-muted">{result.reviewedCards} card{result.reviewedCards === 1 ? '' : 's'} credited with a Good review.</p>
+        <div className="mt-2 space-y-1.5 text-[13px] leading-relaxed text-muted" aria-live="polite">
+          <p><span className="font-medium text-green-fg">Recalled:</span> {result.reviewed.length ? result.reviewed.map((r) => name(r.conceptId)).join(', ') : 'none'}</p>
+          {result.partial.length ? <p><span className="font-medium text-yellow-fg">Partly:</span> {result.partial.map(name).join(', ')}</p> : null}
+          <p><span className="font-medium text-ink">First in today's queue:</span> {result.queuedFirst.length ? result.queuedFirst.map(name).join(', ') : 'nothing missed'}</p>
+          <p>{result.reviewedCards} card{result.reviewedCards === 1 ? '' : 's'} credited with a Good review.</p>
         </div>
       ) : (
         <>

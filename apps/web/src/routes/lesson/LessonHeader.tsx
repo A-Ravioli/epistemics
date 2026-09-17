@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router';
 import type { LessonPhase, Scaffolding } from '@epistemics/core';
 import { MAX_HINT_LEVEL } from '@epistemics/core';
-import { Breadcrumbs, Icon, IconButton, Pill, TopBar } from '@epistemics/ui';
-import { useCourse } from '../../lib/app-state.js';
+import { IconButton } from '@epistemics/ui';
 import type { LessonView } from '../../lib/services/lesson.js';
 
 /** Plain-words name of each phase; the phase code stays in `data-phase` and tooltips for the curious. */
@@ -30,62 +29,36 @@ export const PHASE_HELP: Record<LessonPhase, string> = {
   DONE: 'Lesson complete.',
 };
 
-const SCAFFOLDING_LABEL: Record<Scaffolding, { label: string; help: string }> = {
-  novice: { label: 'Worked example first', help: 'You are new to this: the tutor shows a complete example before asking you to solve one.' },
-  developing: { label: 'Problem first, early hints', help: 'You have some background: the tutor asks first and hints readily.' },
-  advanced: { label: 'Hints withheld', help: 'You know the ground: the tutor withholds hints for two attempts.' },
+const SCAFFOLDING_LABEL: Record<Scaffolding, string> = {
+  novice: 'worked example first',
+  developing: 'problem first, early hints',
+  advanced: 'hints withheld',
 };
 
 const HINT_PHASES = new Set<LessonPhase>(['DEVELOP', 'EXTEND', 'REMEDIATE']);
 
+/**
+ * One line of chrome above the conversation: where you are and what this step is. The phase code stays in
+ * `data-phase` for tests and tooltips; the learner reads the plain-words version.
+ */
 export function LessonHeader({ view }: { view: LessonView }) {
-  const ctx = useCourse();
   const navigate = useNavigate();
   const { state, lesson, concept } = view;
-  const plan = state.phasePlan;
   const current = state.phase;
-  const idx = plan.indexOf(current);
-  const wrapping = current === 'WRAP' || current === 'DONE';
   const hints = HINT_PHASES.has(current);
-  const scaffold = SCAFFOLDING_LABEL[state.scaffolding];
   return (
-    <header className="space-y-3" data-testid="lesson-header">
-      <TopBar actions={<IconButton icon="back" label="Back to Today" onClick={() => navigate('/today')} data-testid="lesson-back" />}>
-        <Breadcrumbs crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: `${view.isRemediation ? 'Repair' : 'Lesson'} · ${lesson.title}` }]} />
-      </TopBar>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h1 className="min-w-0 text-[22px] font-semibold leading-tight tracking-[-0.02em]">{view.isRemediation ? 'Repair: ' : ''}{lesson.title}</h1>
-        <span className="text-[13px] text-muted">Concept {Math.min(state.conceptIndex + 1, state.conceptIds.length)} of {state.conceptIds.length}{concept ? `: ${concept.name}` : ''}</span>
-      </div>
-      <ol className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-full bg-fill p-0.5" aria-label="Lesson phases" data-testid="phase-indicator" data-phase={current}>
-        {plan.map((p, i) => {
-          const done = wrapping || idx > i;
-          const active = p === current;
-          return (
-            <li key={p} aria-current={active ? 'step' : undefined}>
-              <span title={`${p}: ${PHASE_HELP[p]}`} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${active ? 'bg-surface text-ink shadow-chip' : done ? 'text-green-fg' : 'text-muted'}`}>
-                {done && !active ? <Icon name="check" size={11} /> : null}
-                {PHASE_LABEL[p]}
-              </span>
-            </li>
-          );
-        })}
-        {current === 'REMEDIATE' ? <li><Pill tone="warn" title="REMEDIATE">{PHASE_LABEL.REMEDIATE}</Pill></li> : null}
-        {wrapping ? <li><Pill tone="accent" title="WRAP">{PHASE_LABEL.WRAP}</Pill></li> : null}
-      </ol>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[13px] text-muted">
-        <p className="min-w-0 max-w-xl"><span className="font-medium text-ink">{PHASE_LABEL[current]}.</span> {PHASE_HELP[current]}</p>
-        <span className="flex flex-wrap items-center gap-2" data-testid="hint-status">
-          {hints ? (
-            <>
-              <Pill tone={state.hintLevel > 0 ? 'warn' : 'neutral'}>Hint {state.hintLevel} of {MAX_HINT_LEVEL}</Pill>
-              <span>{state.hintLevel >= MAX_HINT_LEVEL ? 'last hint given; explain it and move on' : 'next hint after your next attempt'}</span>
-            </>
-          ) : (
-            <span>No hints in this phase</span>
-          )}
-          <Pill tone="neutral" title={scaffold.help}>{scaffold.label}</Pill>
-        </span>
+    <header className="flex items-start gap-3" data-testid="lesson-header">
+      <IconButton icon="back" label="Back to Today" onClick={() => navigate('/today')} data-testid="lesson-back" className="-ml-2 mt-0.5" />
+      <div className="min-w-0 flex-1">
+        <h1 className="type-heading truncate">{view.isRemediation ? 'Repair: ' : ''}{lesson.title}</h1>
+        <p className="mt-0.5 text-[13px] leading-relaxed text-muted" data-testid="phase-indicator" data-phase={current}>
+          <span title={`${current}: ${PHASE_HELP[current]}`}>{PHASE_LABEL[current]}</span>
+          {' · '}concept {Math.min(state.conceptIndex + 1, state.conceptIds.length)} of {state.conceptIds.length}{concept ? `, ${concept.name}` : ''}
+          <span data-testid="hint-status">
+            {hints ? ` · hint ${state.hintLevel} of ${MAX_HINT_LEVEL}` : ' · no hints in this step'}
+            {` · ${SCAFFOLDING_LABEL[state.scaffolding]}`}
+          </span>
+        </p>
       </div>
     </header>
   );

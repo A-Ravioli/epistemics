@@ -31,25 +31,41 @@ async function answer(page: Page, text: string, confidence?: 'Guess' | 'Fairly s
   await page.getByTestId('send').click();
 }
 
+/** The lesson column while the learner is answering without help: no disclosure, just the reason. */
+async function expectConcealed(page: Page): Promise<void> {
+  await expect(page.getByTestId('concept-concealed')).toBeVisible();
+  await expect(page.getByTestId('concept-context')).toHaveCount(0);
+}
+
 /** Drive the first lesson of the tiny pack from PRIME to completion with the mock tutor. */
 export async function completeFirstLesson(page: Page): Promise<void> {
   const A = TINY.answers;
   await page.getByTestId('start-lesson').click();
   await expect(page.getByTestId('lesson-screen')).toBeVisible();
   await waitPhase(page, 'PRIME');
+  // PRIME is a cold attempt: nothing on screen may hold the answer (DESIGN §7.3).
+  await expectConcealed(page);
   // input disabled while the tutor streams was already observed via toBeEnabled; confidence is required in PRIME
   await expect(page.getByTestId('send')).toBeDisabled();
   await answer(page, A.pretest, 'Fairly sure');
   await waitPhase(page, 'PROBE');
   await expect(page.getByTestId('chat-log')).toContainText("Let's find out.");
+  await expectConcealed(page);
   await answer(page, A.probe);
   await waitPhase(page, 'DEVELOP');
+  // The tutor is teaching from here, so the concept context is available again.
+  await expect(page.getByTestId('concept-context')).toBeVisible();
+  await page.getByTestId('concept-context').getByRole('button').first().click();
+  await expect(page.getByTestId('concept-context')).toContainText(TINY.concept1Definition);
   await page.getByTestId('give-up').click();
   await waitPhase(page, 'CONSOLIDATE');
   await answer(page, A.consolidate);
   await waitPhase(page, 'EXTEND');
   await answer(page, A.transfer);
   await waitPhase(page, 'CHECK');
+  // The unaided check is the one that counts toward mastery, and the disclosure the learner opened in
+  // DEVELOP must not still be sitting there holding the definition.
+  await expectConcealed(page);
   await answer(page, A.check, 'Certain');
   await expect(page.getByTestId('wrap-summary')).toBeVisible({ timeout: 30_000 });
   await page.getByTestId('summary-input').fill(A.summary);

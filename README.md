@@ -22,7 +22,7 @@ Implemented and tested (320 unit tests, 13 Playwright flows, Rust crate compiles
 - **Server** (`apps/server`): Hono passthrough proxy for the browser build with a per-day USD budget.
 - **Sync** (`packages/sync`, `supabase/`): optional cross-device sync through Supabase. Sign in on the Account screen and every review, lesson, course and generated curriculum syncs between the web app and the desktop app with last-writer-wins per row; the app keeps working offline. A Supabase edge function can hold the Anthropic key and enforce a per-user daily budget. Setup in [supabase/README.md](supabase/README.md); protocol in [docs/SYNC.md](docs/SYNC.md).
 
-See [docs/UX-AUDIT.md](docs/UX-AUDIT.md) for the screen-by-screen UX audit, [docs/DESIGN.md](docs/DESIGN.md) for the design, [docs/PLAN.md](docs/PLAN.md) for the phased plan, and [docs/research/](docs/research/) for the evidence base.
+See [docs/UX-AUDIT.md](docs/UX-AUDIT.md) for the screen-by-screen UX audit, [docs/DESIGN.md](docs/DESIGN.md) for the design, [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) for the visual system (tokens, components and the rules that hold them together), [docs/PLAN.md](docs/PLAN.md) for the phased plan, and [docs/research/](docs/research/) for the evidence base.
 
 ## Run it
 

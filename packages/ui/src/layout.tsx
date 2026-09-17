@@ -17,7 +17,7 @@ export function Workspace({ children, aside, asideLabel, asideTestId, className 
     <div className={`flex min-h-0 flex-1 ${className}`} {...rest}>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">{children}</div>
       {aside ? (
-        <aside className="hidden w-[300px] shrink-0 overflow-y-auto border-l border-hairline px-5 py-6 lg:block" aria-label={asideLabel} data-testid={asideTestId}>
+        <aside className="hidden w-[300px] shrink-0 overflow-y-auto px-5 py-6 lg:block" aria-label={asideLabel} data-testid={asideTestId}>
           {aside}
         </aside>
       ) : null}
@@ -25,10 +25,10 @@ export function Workspace({ children, aside, asideLabel, asideTestId, className 
   );
 }
 
-/** A titled section inside a right panel; hairline between sections. */
+/** A titled section inside a right panel; space between sections, no rule. */
 export function PanelSection({ title, children, className = '' }: { title?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`border-t border-hairline py-4 first:border-t-0 first:pt-0 last:pb-0 ${className}`}>
+    <section className={`py-4 first:pt-0 last:pb-0 ${className}`}>
       {title ? <Eyebrow className="mb-2">{title}</Eyebrow> : null}
       {children}
     </section>

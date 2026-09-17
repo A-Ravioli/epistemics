@@ -23,7 +23,7 @@ export function GradeReceipt({ graded, rubric }: { graded: Graded; rubric: Rubri
         {met} of {g.criteria.length} criteria met · score {Math.round(g.score * 100)}% · grader confidence {confidenceWord(g.confidence)}{g.samples && g.samples > 1 ? ` · ${g.samples} independent grades` : ''}
         {graded.rawRating !== graded.rating ? ` · would have been ${RATING[graded.rawRating]}; adjusted by your confidence` : ''}
       </p>
-      <ul className="divide-y divide-hairline border-y border-hairline">
+      <ul className="space-y-2">
         {g.criteria.map((c) => (
           <li key={c.id} className="flex gap-3 py-2.5">
             <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${c.met ? 'bg-green-bg text-green-fg' : 'bg-red-bg text-red-fg'}`} aria-label={c.met ? 'met' : 'not met'} role="img">

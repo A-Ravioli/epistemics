@@ -104,7 +104,6 @@ export function MapScreen() {
       <Page width="full" className="max-w-5xl">
       <PageHeader
         title="Course map"
-        crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: 'Map' }]}
         description="Every concept, arranged so prerequisites sit to the left of what they unlock. Colour shows how well you know each one."
         actions={
           <>
@@ -119,7 +118,7 @@ export function MapScreen() {
         ))}
         <li className="inline-flex items-center gap-1"><span aria-hidden="true">→</span> prerequisite</li>
       </ul>
-      <div className="overflow-auto rounded-card border border-hairline bg-nested" tabIndex={0} aria-label="Prerequisite graph, scrollable">
+      <div className="overflow-auto rounded-card bg-nested" tabIndex={0} aria-label="Prerequisite graph, scrollable">
         <svg width={layout.width} height={layout.height} role="img" aria-label="Prerequisite graph" data-testid="map-svg">
           <defs>
             <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="currentColor" opacity="0.5" /></marker>
@@ -173,7 +172,7 @@ function ConceptDetail({ concept, state, receipts, onClose }: { concept: Concept
     <div className="space-y-4" data-testid="concept-detail">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[17px] font-semibold leading-snug">{concept.name}</h2>
+          <h2 className="type-heading">{concept.name}</h2>
           <p className="reading-sm mt-1.5 text-ink">{concept.definition}</p>
           <div className="mt-2.5 flex flex-wrap gap-1.5 text-xs">
             <Pill tone={state && state.mastery >= 0.85 ? 'good' : 'neutral'} title="Retention × spaced-session progress; mastered at 85% with an 80% unaided pass rate">mastery {Math.round((state?.mastery ?? 0) * 100)}%</Pill>
@@ -192,7 +191,7 @@ function ConceptDetail({ concept, state, receipts, onClose }: { concept: Concept
           {concept.items.map((i) => {
             const card = cardsQ.data?.find((c) => c.itemId === i.id);
             return (
-              <li key={i.id} className="flex flex-col gap-1 border-t border-hairline py-2 first:border-t-0 first:pt-0">
+              <li key={i.id} className="flex flex-col gap-1 py-1.5">
                 <span className="min-w-0"><Pill tone="purple">{i.type}</Pill> <span>{i.prompt.length > 120 ? `${i.prompt.slice(0, 119)}…` : i.prompt}</span></span>
                 <span className="shrink-0 text-xs text-muted">{card ? (card.state === 0 ? 'not active yet' : `${['new', 'learning', 'review', 'relearning'][card.state]} · due ${relativeDue(card.due, now)} · ${Math.round(ctx.scheduler.retrievability(card, now) * 100)}% likely recalled`) : ''}</span>
               </li>

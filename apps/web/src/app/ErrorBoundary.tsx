@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode; onReset?: ()
     if (!this.state.error) return this.props.children;
     return (
       <Card className="m-4 max-w-lg self-center md:m-8" role="alert" data-testid="screen-error">
-        <h1 className="text-[17px] font-semibold">This screen hit an error</h1>
+        <h1 className="type-heading">This screen hit an error</h1>
         <p className="mt-2 break-words text-sm text-muted">{this.state.error.message}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button onClick={() => { this.setState({}); this.props.onReset?.(); }}>Try again</Button>

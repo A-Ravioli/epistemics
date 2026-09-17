@@ -1,65 +1,89 @@
-import type { Concept, Lesson } from '@epistemics/core';
-import { Disclosure, Markdown, PanelSection, Pill } from '@epistemics/ui';
+import type { Concept, Lesson, LessonPhase } from '@epistemics/core';
+import { Disclosure, Markdown } from '@epistemics/ui';
+
+/**
+ * Phases the learner answers with no help. The engine is the source of truth for what "unaided" means:
+ * in `core/session/lesson.ts` the PRIME pretest and the CHECK answer are the two attempts recorded with
+ * `assisted: false`, and PROBE runs before any teaching has happened. DESIGN §7.3 and §10.4 ("Checkpoint:
+ * distraction-free, no side panel") extend the same rule to the lesson: while the learner is being checked,
+ * nothing on screen may hold the answer. Everything returns in DEVELOP, where the tutor is teaching anyway.
+ */
+const CONCEALED = new Set<LessonPhase>(['PRIME', 'PROBE', 'CHECK']);
+
+const CONCEAL_NOTE: Partial<Record<LessonPhase, string>> = {
+  PRIME: 'The concept is hidden for your first attempt: answer from what you already have. Its definition, objectives and examples come back once the tutor starts teaching.',
+  PROBE: 'Still hidden while you say what you already know. It comes back in the next step.',
+  CHECK: 'Hidden for the unaided check. This answer is the one that counts toward mastery, so nothing here can help you with it.',
+};
 
 /**
  * Concept context for the learner: definition, objectives and examples. Never reference answers, never
  * the script's pretest/transfer references, never item references (DESIGN §7.3, "two attempts before reveal").
+ * It sits behind a disclosure above the conversation, so the lesson stays one column.
  */
 export function ConceptContext({ concept, lesson }: { concept: Concept | undefined; lesson: Lesson }) {
   return (
-    <div>
+    <div className="space-y-4 text-[13px] leading-relaxed text-muted">
       {concept ? (
         <>
-          <PanelSection title="Concept">
-            <div className="text-[15px] font-semibold leading-snug">{concept.name}</div>
-            <Markdown className="reading-sm mt-1.5 text-ink">{concept.definition}</Markdown>
-          </PanelSection>
-          <PanelSection title="What you should be able to do">
-            <ul className="space-y-2 text-sm">
+          <div>
+            <div className="font-medium text-ink">{concept.name}</div>
+            <Markdown className="reading-sm mt-1 text-ink">{concept.definition}</Markdown>
+          </div>
+          <div>
+            <div className="font-medium text-ink">What you should be able to do</div>
+            <ul className="mt-1 space-y-1">
               {concept.objectives.map((o) => (
-                <li key={o.id} className="flex items-start gap-2"><Pill tone="purple" title={`Bloom level: ${o.bloom}`}>{o.bloom}</Pill><span className="min-w-0 leading-snug">{o.text}</span></li>
+                <li key={o.id} title={`Bloom level: ${o.bloom}`}>{o.text}</li>
               ))}
             </ul>
-          </PanelSection>
+          </div>
           {concept.examples.length > 0 ? (
-            <PanelSection>
-              <Disclosure summary={`Examples (${concept.examples.length})`}>
-                <div className="space-y-3">
-                  {concept.examples.map((e, i) => (
-                    <div key={i}>
-                      <div className="text-xs font-medium">{e.title}{e.domain ? <span className="text-muted"> · {e.domain}</span> : null}</div>
-                      <Markdown className="reading-sm mt-1">{e.body}</Markdown>
-                    </div>
-                  ))}
+            <div className="space-y-3">
+              <div className="font-medium text-ink">Examples</div>
+              {concept.examples.map((e, i) => (
+                <div key={i}>
+                  <div className="font-medium text-ink">{e.title}{e.domain ? <span className="font-normal text-muted"> · {e.domain}</span> : null}</div>
+                  <Markdown className="reading-sm mt-1 text-ink">{e.body}</Markdown>
                 </div>
-              </Disclosure>
-            </PanelSection>
+              ))}
+            </div>
           ) : null}
           {concept.spans.length > 0 ? (
-            <PanelSection>
-              <Disclosure summary={`Source excerpts (${concept.spans.length})`}>
-                <ul className="space-y-1.5 text-xs text-muted">
-                  {concept.spans.map((s, i) => (
-                    <li key={i}>“{s.quote}”{s.page !== undefined ? ` (p. ${s.page})` : ''}{s.heading ? ` — ${s.heading}` : ''}</li>
-                  ))}
-                </ul>
-              </Disclosure>
-            </PanelSection>
+            <ul className="space-y-1">
+              {concept.spans.map((s, i) => (
+                <li key={i}>“{s.quote}”{s.page !== undefined ? ` (p. ${s.page})` : ''}{s.heading ? ` — ${s.heading}` : ''}</li>
+              ))}
+            </ul>
           ) : null}
         </>
       ) : null}
-      <PanelSection title="This lesson">
-        <ol className="space-y-1 text-sm">
-          {lesson.concepts.map((c, i) => (
-            <li key={c.id} className={`flex gap-2 ${c.id === concept?.id ? 'font-medium text-ink' : 'text-muted'}`} aria-current={c.id === concept?.id ? 'true' : undefined}>
-              <span className="w-4 shrink-0 tabular-nums">{i + 1}.</span><span className="min-w-0">{c.name}</span>
-            </li>
-          ))}
-        </ol>
-      </PanelSection>
+      <ol className="space-y-1">
+        {lesson.concepts.map((c, i) => (
+          <li key={c.id} className={c.id === concept?.id ? 'font-medium text-ink' : undefined} aria-current={c.id === concept?.id ? 'true' : undefined}>
+            {i + 1}. {c.name}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
 
-/** Kept for the disclosure on small screens; the right panel itself is rendered by `Workspace`. */
+/** Label for the disclosure that holds the context above the conversation. */
 export const SIDE_PANEL_LABEL = 'About this concept';
+
+/**
+ * The same context, as the one disclosure the lesson column carries — except while the learner is answering
+ * without help, when there is no disclosure to open at all, only a line saying why. A closed disclosure
+ * would still be one click from the answer, and it keeps whatever open state it was left in.
+ */
+export function ConceptDisclosure({ concept, lesson, phase }: { concept: Concept | undefined; lesson: Lesson; phase: LessonPhase }) {
+  if (CONCEALED.has(phase)) {
+    return <p className="text-[13px] leading-relaxed text-muted" data-testid="concept-concealed">{CONCEAL_NOTE[phase]}</p>;
+  }
+  return (
+    <Disclosure summary={SIDE_PANEL_LABEL} testId="concept-context">
+      <ConceptContext concept={concept} lesson={lesson} />
+    </Disclosure>
+  );
+}

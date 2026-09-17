@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
-import { Button, Card, Disclosure, ErrorBanner, Explainer, Icon, Page, PageHeader, Skeleton, Workspace } from '@epistemics/ui';
+import { Button, ErrorBanner, Explainer, Icon, Page, PageHeader, Skeleton } from '@epistemics/ui';
 import { useCourse, useQuery } from '../../lib/app-state.js';
 import { useStore } from '../../lib/store.js';
 import { getGateOverrideDay } from '../../lib/settings.js';
@@ -8,7 +8,7 @@ import { LessonRunner, REMEDIATION_PREFIX } from '../../lib/services/lesson.js';
 import { loadQueue, todayKey } from '../../lib/services/queue.js';
 import { ChatPane } from './ChatPane.js';
 import { LessonHeader, PHASE_LABEL } from './LessonHeader.js';
-import { ConceptContext, SIDE_PANEL_LABEL } from './SidePanel.js';
+import { ConceptDisclosure } from './SidePanel.js';
 import { WrapPanel } from './WrapPanel.js';
 
 /** Review gate (DESIGN §5.4): lessons open only when nothing is due, unless today's one override was used. */
@@ -26,7 +26,7 @@ function LessonLoading({ label }: { label: string }) {
   return (
     <Page width="reading" data-testid="lesson-loading">
       <Skeleton lines={2} label={label} />
-      <Card><Skeleton lines={4} /></Card>
+      <Skeleton lines={4} />
     </Page>
   );
 }
@@ -82,12 +82,11 @@ function LessonView({ runner }: { runner: LessonRunner }) {
     return (
       <Page width="sm" data-testid="lesson-done">
         <PageHeader
-          crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: lesson.title }]}
           title={`${isRemediation ? 'Repair complete' : 'Lesson complete'}: ${lesson.title}`}
           description={`Unaided check passed on ${passed} of ${state.conceptIds.length} concept${state.conceptIds.length === 1 ? '' : 's'}. Their review cards are now active and will come due on Today.`}
         />
-        <Card>
-          <ul className="divide-y divide-hairline text-sm">
+        <div>
+          <ul className="space-y-2 text-sm">
             {lesson.concepts.map((c) => {
               const r = state.checkResults[c.id];
               const ok = r && r.rating >= 3;
@@ -102,11 +101,11 @@ function LessonView({ runner }: { runner: LessonRunner }) {
               );
             })}
           </ul>
-          <div className="mt-5 flex flex-wrap gap-2 border-t border-hairline pt-4">
-            <Link to="/today"><Button data-testid="back-to-today">Back to Today</Button></Link>
-            <Link to="/map"><Button variant="secondary">Course map</Button></Link>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link to="/today"><Button size="lg" data-testid="back-to-today">Back to Today</Button></Link>
+            <Link to="/map"><Button size="lg" variant="secondary">Course map</Button></Link>
           </div>
-        </Card>
+        </div>
       </Page>
     );
   }
@@ -118,18 +117,14 @@ function LessonView({ runner }: { runner: LessonRunner }) {
         <p>The tutor never hands you the answer, and only the final check counts toward mastery.</p>
       </Explainer>
       {view.error ? <ErrorBanner title="The tutor call failed" message={view.error} onRetry={() => runner.retry()} retryLabel="Retry" /> : null}
-      <div className="lg:hidden">
-        <Disclosure summary={SIDE_PANEL_LABEL} testId="concept-context-mobile">
-          <ConceptContext concept={view.concept} lesson={lesson} />
-        </Disclosure>
-      </div>
+      <ConceptDisclosure concept={view.concept} lesson={lesson} phase={state.phase} />
     </>
   );
 
   return (
-    <Workspace data-testid="lesson-screen" aside={<ConceptContext concept={view.concept} lesson={lesson} />} asideLabel={SIDE_PANEL_LABEL} asideTestId="side-panel">
-      <div className="shrink-0 border-b border-hairline px-4 pb-4 pt-4 md:px-8 md:pt-5">
-        <LessonHeader view={view} />
+    <div className="flex min-h-0 flex-1 flex-col" data-testid="lesson-screen">
+      <div className="shrink-0 px-4 pb-3 pt-4 md:px-8 md:pt-5">
+        <div className="mx-auto w-full max-w-[680px]"><LessonHeader view={view} /></div>
       </div>
       {view.inputMode === 'summary' || view.inputMode === 'jol' ? (
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -141,7 +136,7 @@ function LessonView({ runner }: { runner: LessonRunner }) {
       ) : (
         <ChatPane view={view} runner={runner} above={above} />
       )}
-    </Workspace>
+    </div>
   );
 }
 

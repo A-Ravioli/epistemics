@@ -39,7 +39,7 @@ export function DiagnosticScreen() {
       <header className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <Eyebrow>Placement</Eyebrow>
-          <h1 className="mt-1 text-[22px] font-semibold leading-tight tracking-[-0.02em]">What do you already know?</h1>
+          <h1 className="mt-1 type-title">What do you already know?</h1>
         </div>
         <span className="text-[13px] text-muted">Question {v.state.probes + 1} · level {v.probe?.depth ?? '-'} of {v.state.maxDepth}</span>
       </header>
@@ -55,7 +55,7 @@ export function DiagnosticScreen() {
             <span className="text-[13px] font-medium">How sure are you?</span>
             <ConfidenceButtons value={confidence} onChange={setConfidence} disabled={v.busy} hotkeys={false} />
           </div>
-          <div className="flex flex-wrap items-center gap-3 border-t border-hairline pt-4">
+          <div className="flex flex-wrap items-center gap-3 pt-4">
             <Button onClick={() => confidence && runner.submit(answer, confidence)} disabled={!canSubmit} title={confidence === undefined ? 'Pick how sure you are first' : undefined}>Submit</Button>
             <Button variant="ghost" onClick={() => runner.submit("I don't know", 1)} disabled={v.busy}>I don't know</Button>
             {v.busy ? <Spinner label="Grading" /> : confidence === undefined ? <span className="text-xs text-muted">Pick a confidence to submit.</span> : null}
