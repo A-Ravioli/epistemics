@@ -32,3 +32,10 @@ export function currentTimezone(): string {
     return 'UTC';
   }
 }
+
+/** "Wednesday, 17 September" from a `YYYY-MM-DD` day key: the date a learner reads, not the one we store. */
+export function longDate(day: string): string {
+  const [y, m, d] = day.split('-').map(Number);
+  if (!y || !m || !d) return day;
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+}
