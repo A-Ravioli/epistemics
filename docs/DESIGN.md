@@ -442,7 +442,7 @@ The visual system — wallpaper and window materials, colour, elevation, the typ
 Screens (all keyboard-navigable; chat and cards render Markdown with KaTeX and highlighted code):
 
 1. **Today**: warm-up, review queue with debt meter, next lesson (locked/unlocked with reason), checkpoint, teach-back suggestions, streak of *reviews cleared* (not days opened).
-2. **Lesson**: chat pane with phase indicator (PRIME → CHECK) and hint-level pips; a side panel showing the concept's source excerpts with citations; a "give up" button that costs the item a rating of Again.
+2. **Lesson**: one column — the conversation, a line naming the current phase (PRIME → CHECK), and a disclosure holding the concept's definition, objectives, examples and source excerpts with citations. In PRIME, PROBE and CHECK, the phases the learner answers with no help, there is no disclosure to open at all, only a line saying why: nothing on screen may hold the answer to the question being asked. A "give up" button costs the item a rating of Again.
 3. **Review**: one item at a time; confidence buttons before reveal; rating buttons after; receipt drawer for LLM-graded items with dispute.
 4. **Checkpoint**: distraction-free, no side panel, progress only.
 5. **Course map**: the prerequisite graph coloured by mastery, with retention forecast per unit; click to see items and receipts. Doubles as the map-from-memory exercise when items are hidden.

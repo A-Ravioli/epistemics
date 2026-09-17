@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { Banner, Button, Disclosure, ErrorBanner, IconButton, Page, Skeleton } from '@epistemics/ui';
 import { useApp, useCourse, useQuery } from '../../lib/app-state.js';
-import { minutes, plural } from '../../lib/format.js';
+import { longDate, minutes, plural } from '../../lib/format.js';
 import { setGateOverrideDay } from '../../lib/settings.js';
 import { CurriculumBuilder, curriculumKey, unitBuilds, unitsToPrepare } from '../../lib/services/build.js';
 import { loadToday, type TodayModel } from '../../lib/services/today.js';
@@ -103,7 +103,7 @@ function TodayBody() {
         <div className="min-w-0">
           <h1 className="type-display">Today</h1>
           <p className="mt-1 text-[13px] text-muted">
-            {ctx.course.title} · <time dateTime={t.day}>{t.day}</time>
+            {ctx.course.title} · <time dateTime={t.day}>{longDate(t.day)}</time>
             {ahead.status ? (
               <span data-testid="unit-build-pill" title={ahead.status.event ? describeEvent(ahead.status.event) : undefined}> · preparing unit {unitIndex + 1}: {ahead.status.unitTitle}…</span>
             ) : null}
