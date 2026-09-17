@@ -69,7 +69,12 @@ export interface PersistedLesson {
   notes: LessonNote[];
 }
 
-export type LessonBusy = 'tutor' | 'observer' | 'grading' | 'saving' | null;
+/**
+ * What the runner is doing. `working` is the catch-all for "the pump is mid-cycle": an event has reduced
+ * but its effects have not run yet, so no more specific label applies. It exists because the composer keys
+ * off `busy`, and there is no instant between accepting a turn and finishing it where input is welcome.
+ */
+export type LessonBusy = 'tutor' | 'observer' | 'grading' | 'saving' | 'working' | null;
 export type LessonInputMode = 'answer' | 'answer_confidence' | 'summary' | 'jol' | 'done';
 
 export interface LessonMessage {
@@ -506,12 +511,24 @@ export class LessonRunner {
     await saveState(this.ctx.db, this.sessionId, payload);
   }
 
+  /**
+   * Raising an error ends the turn: the effect is parked for `retry()`, so the runner stops and the composer
+   * comes back. Clearing one says nothing about what the runner is doing — `submit` and `giveUp` clear the
+   * last error as they start — so it must leave `busy` and `streaming` alone rather than reporting idle.
+   */
   private setError(error: string | undefined): void {
-    this.store.set((v) => ({ ...v, error, busy: null, streaming: null }));
+    this.store.set((v) => (error === undefined ? { ...v, error: undefined } : { ...v, error, busy: null, streaming: null }));
   }
 
+  /**
+   * Publish the view. While the pump is running the lesson is always busy: keep the caller's label, or the
+   * one already showing, and fall back to `working` rather than to `null`. Publishing `null` mid-pump used
+   * to enable the composer between an event reducing and its effects starting — a window of a few hundred
+   * milliseconds in which Send looked ready, then went back to disabled as the tutor call began. A click
+   * landing in it was swallowed: the answer never reached `submit`, and the lesson sat there.
+   */
   private publish(busy: LessonBusy): void {
-    this.store.set((v) => this.view(busy ?? (this.pumping ? v.busy : null), v.streaming));
+    this.store.set((v) => this.view(busy ?? (this.pumping ? (v.busy ?? 'working') : null), v.streaming));
   }
 
   private view(busy: LessonBusy, streaming: string | null): LessonView {
