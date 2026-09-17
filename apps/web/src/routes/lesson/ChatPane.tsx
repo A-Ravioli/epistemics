@@ -4,7 +4,7 @@ import { Button, ChatBubble, ConfidenceButtons, Explainer, Kbd, Spinner } from '
 import type { LessonRunner, LessonView } from '../../lib/services/lesson.js';
 import { PHASE_LABEL } from './LessonHeader.js';
 
-const BUSY_LABEL = { tutor: 'The tutor is writing…', observer: 'Reading your answer…', grading: 'Grading blind…', saving: 'Saving…' } as const;
+const BUSY_LABEL = { tutor: 'The tutor is writing…', observer: 'Reading your answer…', grading: 'Grading blind…', saving: 'Saving…', working: 'Working…' } as const;
 
 const PLACEHOLDER: Record<LessonPhase, string> = {
   PRIME: 'Your best attempt, even a rough guess. Then say how sure you are.',
