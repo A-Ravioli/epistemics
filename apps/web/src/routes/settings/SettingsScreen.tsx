@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import type { LlmRole } from '@epistemics/core';
 import { DEFAULT_MODELS } from '@epistemics/llm';
-import { Banner, Button, Card, ErrorBanner, Field, PageHeader, Spinner, inputClass } from '@epistemics/ui';
+import { Banner, Button, Card, ErrorBanner, Field, Page, PageHeader, SectionTitle, SegmentedGroup, Spinner, inputClass } from '@epistemics/ui';
 import { useApp } from '../../lib/app-state.js';
 import { API_KEY_SECRET } from '../../lib/llm.js';
 import { getLlmSettings, setLlmSettings, type LlmSettings } from '../../lib/settings.js';
@@ -20,9 +20,9 @@ const ROLE_HELP: Partial<Record<LlmRole, string>> = {
 function Section({ id, title, description, children }: { id: string; title: string; description: string; children: React.ReactNode }) {
   return (
     <Card className="space-y-4" data-testid={`settings-${id}`}>
-      <div>
-        <h2 className="text-base font-semibold">{title}</h2>
-        <p className="mt-0.5 text-sm text-muted">{description}</p>
+      <div className="border-b border-hairline pb-3">
+        <SectionTitle>{title}</SectionTitle>
+        <p className="mt-0.5 text-[13px] leading-relaxed text-muted">{description}</p>
       </div>
       {children}
     </Card>
@@ -161,8 +161,8 @@ export function SettingsScreen() {
   const canBackup = 'exportDatabase' in app.platform;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <PageHeader title="Settings" description="Three groups: the tutor (which model talks to you), scheduling (how much review each day), and your data." />
+    <Page width="sm">
+      <PageHeader title="Settings" crumbs={[{ label: 'Settings' }]} description="Three groups: the tutor (which model talks to you), scheduling (how much review each day), and your data." />
       {saved ? <Banner tone="good" data-testid="settings-saved">{saved}</Banner> : null}
       {error ? <ErrorBanner message={error} /> : null}
 
@@ -192,8 +192,8 @@ export function SettingsScreen() {
                 </div>
               </Field>
             ) : null}
-            <details className="text-sm">
-              <summary className="cursor-pointer text-muted">Model per role (optional)</summary>
+            <details className="rounded-input bg-nested px-3.5 py-2.5 text-sm">
+              <summary className="cursor-pointer font-medium text-muted">Model per role (optional)</summary>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {ROLES.map((role) => (
                   <Field key={role} label={`${role[0]!.toUpperCase()}${role.slice(1)}`} hint={ROLE_HELP[role]}>
@@ -224,7 +224,7 @@ export function SettingsScreen() {
         {course ? (
           <>
             <Field label={`Target retention: ${(retention * 100).toFixed(0)}%`} hint="How likely you want to be to recall any card when it comes due. Higher means more frequent reviews; 90% is the usual sweet spot.">
-              <input type="range" min={0.8} max={0.95} step={0.01} value={retention} onChange={(e) => setRetention(Number(e.target.value))} className="w-full accent-accent" aria-valuetext={`${(retention * 100).toFixed(0)}%`} />
+              <input type="range" min={0.8} max={0.95} step={0.01} value={retention} onChange={(e) => setRetention(Number(e.target.value))} className="w-full accent-primary" aria-valuetext={`${(retention * 100).toFixed(0)}%`} />
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Reviews per day, at most" hint="Cards due beyond this become review debt."><input type="number" min={1} className={inputClass} value={reviewsPerDay} onChange={(e) => setReviewsPerDay(Number(e.target.value))} /></Field>
@@ -237,15 +237,11 @@ export function SettingsScreen() {
       </Section>
 
       <Section id="appearance" title="Appearance" description="Follow the system theme, or force light or dark.">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Theme">
-          {(['system', 'light', 'dark'] as const).map((t) => (
-            <Button key={t} variant={theme === t ? 'primary' : 'secondary'} onClick={() => applyTheme(t)} aria-pressed={theme === t}>{t[0]!.toUpperCase()}{t.slice(1)}</Button>
-          ))}
-        </div>
+        <SegmentedGroup<'system' | 'light' | 'dark'> label="Theme" value={theme} onChange={applyTheme} options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} />
       </Section>
 
       <Section id="account" title="Account and sync" description="Optional: sign in to keep courses and progress in sync across devices, or run the tutor through your own Supabase project.">
-        <Link to="/account" className="text-sm underline" data-testid="account-link">Open Account and sync</Link>
+        <Link to="/account" className="text-sm font-medium text-accent underline-offset-2 hover:underline" data-testid="account-link">Open Account and sync</Link>
       </Section>
 
       <Section id="data" title="Data" description="Everything lives on this device. A backup is one SQLite file with your courses, cards, review log, receipts and sessions.">
@@ -255,6 +251,6 @@ export function SettingsScreen() {
         </div>
         {!canBackup ? <p className="text-xs text-muted">Backup is available in the browser build. On desktop, copy the database file directly.</p> : null}
       </Section>
-    </div>
+    </Page>
   );
 }

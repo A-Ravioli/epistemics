@@ -1,7 +1,8 @@
-import { Link } from 'react-router';
+import { useNavigate } from 'react-router';
 import type { LessonPhase, Scaffolding } from '@epistemics/core';
 import { MAX_HINT_LEVEL } from '@epistemics/core';
-import { Pill } from '@epistemics/ui';
+import { Breadcrumbs, Icon, IconButton, Pill, TopBar } from '@epistemics/ui';
+import { useCourse } from '../../lib/app-state.js';
 import type { LessonView } from '../../lib/services/lesson.js';
 
 /** Plain-words name of each phase; the phase code stays in `data-phase` and tooltips for the curious. */
@@ -38,6 +39,8 @@ const SCAFFOLDING_LABEL: Record<Scaffolding, { label: string; help: string }> = 
 const HINT_PHASES = new Set<LessonPhase>(['DEVELOP', 'EXTEND', 'REMEDIATE']);
 
 export function LessonHeader({ view }: { view: LessonView }) {
+  const ctx = useCourse();
+  const navigate = useNavigate();
   const { state, lesson, concept } = view;
   const plan = state.phasePlan;
   const current = state.phase;
@@ -46,37 +49,38 @@ export function LessonHeader({ view }: { view: LessonView }) {
   const hints = HINT_PHASES.has(current);
   const scaffold = SCAFFOLDING_LABEL[state.scaffolding];
   return (
-    <header className="space-y-2" data-testid="lesson-header">
-      <div className="text-sm text-muted"><Link to="/today" className="hover:underline" data-testid="lesson-back">← Today</Link></div>
+    <header className="space-y-3" data-testid="lesson-header">
+      <TopBar actions={<IconButton icon="back" label="Back to Today" onClick={() => navigate('/today')} data-testid="lesson-back" />}>
+        <Breadcrumbs crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: `${view.isRemediation ? 'Repair' : 'Lesson'} · ${lesson.title}` }]} />
+      </TopBar>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h1 className="min-w-0 text-lg font-semibold leading-tight">{view.isRemediation ? 'Repair: ' : ''}{lesson.title}</h1>
-        <span className="text-xs text-muted">Concept {Math.min(state.conceptIndex + 1, state.conceptIds.length)} of {state.conceptIds.length}{concept ? `: ${concept.name}` : ''}</span>
+        <h1 className="min-w-0 text-[22px] font-semibold leading-tight tracking-[-0.02em]">{view.isRemediation ? 'Repair: ' : ''}{lesson.title}</h1>
+        <span className="text-[13px] text-muted">Concept {Math.min(state.conceptIndex + 1, state.conceptIds.length)} of {state.conceptIds.length}{concept ? `: ${concept.name}` : ''}</span>
       </div>
-      <ol className="flex flex-wrap items-center gap-1" aria-label="Lesson phases" data-testid="phase-indicator" data-phase={current}>
+      <ol className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-full bg-fill p-0.5" aria-label="Lesson phases" data-testid="phase-indicator" data-phase={current}>
         {plan.map((p, i) => {
           const done = wrapping || idx > i;
           const active = p === current;
           return (
-            <li key={p} className="flex items-center gap-1" aria-current={active ? 'step' : undefined}>
-              <span title={`${p}: ${PHASE_HELP[p]}`} className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${active ? 'bg-ink text-paper' : done ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100' : 'bg-mist text-muted'}`}>
+            <li key={p} aria-current={active ? 'step' : undefined}>
+              <span title={`${p}: ${PHASE_HELP[p]}`} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${active ? 'bg-surface text-ink shadow-chip' : done ? 'text-green-fg' : 'text-muted'}`}>
+                {done && !active ? <Icon name="check" size={11} /> : null}
                 {PHASE_LABEL[p]}
               </span>
-              {i < plan.length - 1 ? <span className="text-line" aria-hidden="true">→</span> : null}
             </li>
           );
         })}
         {current === 'REMEDIATE' ? <li><Pill tone="warn" title="REMEDIATE">{PHASE_LABEL.REMEDIATE}</Pill></li> : null}
         {wrapping ? <li><Pill tone="accent" title="WRAP">{PHASE_LABEL.WRAP}</Pill></li> : null}
       </ol>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted">
-        <p className="min-w-0"><span className="font-medium text-ink">{PHASE_LABEL[current]}.</span> {PHASE_HELP[current]}</p>
-        <span className="flex items-center gap-2" data-testid="hint-status">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[13px] text-muted">
+        <p className="min-w-0 max-w-xl"><span className="font-medium text-ink">{PHASE_LABEL[current]}.</span> {PHASE_HELP[current]}</p>
+        <span className="flex flex-wrap items-center gap-2" data-testid="hint-status">
           {hints ? (
-            <span>
-              <span className="font-medium text-ink">Hint {state.hintLevel} of {MAX_HINT_LEVEL}</span>
-              {' · '}
-              {state.hintLevel >= MAX_HINT_LEVEL ? 'last hint given; explain it and move on' : 'next hint after your next attempt'}
-            </span>
+            <>
+              <Pill tone={state.hintLevel > 0 ? 'warn' : 'neutral'}>Hint {state.hintLevel} of {MAX_HINT_LEVEL}</Pill>
+              <span>{state.hintLevel >= MAX_HINT_LEVEL ? 'last hint given; explain it and move on' : 'next hint after your next attempt'}</span>
+            </>
           ) : (
             <span>No hints in this phase</span>
           )}

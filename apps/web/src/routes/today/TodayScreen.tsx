@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { Banner, Button, Card, Disclosure, ErrorBanner, Meter, PageHeader, Pill, Skeleton, Stat } from '@epistemics/ui';
+import { Banner, Button, Card, Disclosure, ErrorBanner, IconButton, Meter, Page, PageHeader, Pill, SectionTitle, Skeleton, Stat, type PillTone } from '@epistemics/ui';
 import { useApp, useCourse, useQuery } from '../../lib/app-state.js';
 import { minutes, plural } from '../../lib/format.js';
 import { setGateOverrideDay } from '../../lib/settings.js';
@@ -44,6 +44,16 @@ interface Primary {
   testId?: string;
 }
 
+const PRIMARY_KIND: Record<PrimaryKey, { label: string; tone: PillTone }> = {
+  resume: { label: 'Lesson in progress', tone: 'accent' },
+  review: { label: 'Reviews', tone: 'accent' },
+  lesson: { label: 'Lesson', tone: 'good' },
+  remediation: { label: 'Repair', tone: 'warn' },
+  checkpoint: { label: 'Checkpoint', tone: 'purple' },
+  teachback: { label: 'Teach it back', tone: 'lime' },
+  done: { label: 'Done for today', tone: 'neutral' },
+};
+
 /** The one thing to do next, in the order DESIGN §3.2 lists the day. */
 function primaryAction(t: TodayModel): Primary {
   const due = t.queue.order.length;
@@ -66,18 +76,19 @@ export function TodayScreen() {
 function TodayBody() {
   const ctx = useCourse();
   const location = useLocation();
+  const navigate = useNavigate();
   const notice = (location.state as { notice?: string } | null)?.notice;
   const q = useQuery(() => loadToday(ctx), [ctx.course.id, ctx.course.updatedAt, ctx.curriculum]);
   const ahead = useUnitsAhead(q.data?.currentUnitOrdinal);
 
-  if (q.error) return <div className="mx-auto max-w-3xl"><ErrorBanner title="Could not load today" message={q.error} onRetry={q.refresh} /></div>;
+  if (q.error) return <Page><ErrorBanner title="Could not load today" message={q.error} onRetry={q.refresh} /></Page>;
   if (!q.data) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4" data-testid="today-loading">
+      <Page data-testid="today-loading">
         <PageHeader title="Today" />
         <Card><Skeleton lines={3} label="Building today" /></Card>
         <Card><Skeleton lines={2} /></Card>
-      </div>
+      </Page>
     );
   }
   const t = q.data;
@@ -85,37 +96,43 @@ function TodayBody() {
   const unitIndex = ahead.status ? [...ctx.curriculum.units].sort((a, b) => a.ordinal - b.ordinal).findIndex((u) => u.ordinal === ahead.status!.unit) : -1;
   const lessonsTotal = ctx.curriculum.units.reduce((a, u) => a + u.lessons.length, 0);
 
+  const kind = PRIMARY_KIND[primary.key];
   return (
-    <div className="mx-auto max-w-3xl space-y-4" data-testid="today-screen">
+    <Page data-testid="today-screen">
       <PageHeader
         title="Today"
+        crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title }, { label: 'Today' }]}
+        actions={<IconButton icon="gear" label="Settings" onClick={() => navigate('/settings')} />}
         description={ctx.course.title}
         meta={
           <span className="flex flex-wrap items-center gap-3">
-            {ahead.status ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-0.5 text-xs text-accent" data-testid="unit-build-pill" title={ahead.status.event ? describeEvent(ahead.status.event) : undefined}>
-                <span className="h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden="true" />
-                Preparing unit {unitIndex + 1}: {ahead.status.unitTitle}…
-              </span>
-            ) : null}
             <time dateTime={t.day}>{t.day}</time>
+            {ahead.status ? (
+              <Pill tone="accent" title={ahead.status.event ? describeEvent(ahead.status.event) : undefined}>
+                <span data-testid="unit-build-pill" className="inline-flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" aria-hidden="true" />
+                  Preparing unit {unitIndex + 1}: {ahead.status.unitTitle}…
+                </span>
+              </Pill>
+            ) : null}
           </span>
         }
       />
       {ahead.error ? <Banner tone="warn">Could not prepare the next unit: {ahead.error}</Banner> : null}
       {notice ? <Banner tone="warn" data-testid="today-notice">{notice}</Banner> : null}
 
-      <Card className="border-accent/50 ring-1 ring-accent/30" data-testid="next-up">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="text-xs font-medium uppercase tracking-wide text-accent">Next up</div>
-            <h2 className="mt-0.5 text-base font-semibold">{primary.title}</h2>
-            <p className="mt-1 text-sm text-muted">{primary.body}</p>
-          </div>
+      <Card className="p-5 sm:p-7" data-testid="next-up">
+        <div className="flex items-center justify-between gap-3">
+          <Pill tone={kind.tone}>{kind.label}</Pill>
+          <span className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Next up</span>
+        </div>
+        <h2 className="mt-4 text-[22px] font-semibold leading-tight tracking-[-0.02em] sm:text-[24px]">{primary.title}</h2>
+        <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-muted">{primary.body}</p>
+        <div className="mt-5">
           {primary.to && primary.label ? (
-            <Link to={primary.to} className="shrink-0"><Button className="w-full sm:w-auto" data-testid={primary.testId}>{primary.label}</Button></Link>
+            <Link to={primary.to} className="inline-block w-full sm:w-auto"><Button className="w-full sm:w-auto" data-testid={primary.testId}>{primary.label}</Button></Link>
           ) : (
-            <Link to="/map" className="shrink-0"><Button variant="secondary" className="w-full sm:w-auto">Course map</Button></Link>
+            <Link to="/map" className="inline-block w-full sm:w-auto"><Button variant="secondary" className="w-full sm:w-auto">Course map</Button></Link>
           )}
         </div>
       </Card>
@@ -126,7 +143,7 @@ function TodayBody() {
       {t.remediation.length > 0 ? (
         <ListCard title="Repair loops" body="Short lessons (work it out → say it in your own words → check) for concepts that did not pass.">
           {t.remediation.map((r) => (
-            <li key={r.conceptId} className="flex items-center justify-between gap-3 text-sm">
+            <li key={r.conceptId} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="min-w-0 truncate">{r.name}</span>
               <Link to={`/lesson/remediation:${r.conceptId}`}><Button variant="secondary" size="sm">Start</Button></Link>
             </li>
@@ -136,11 +153,11 @@ function TodayBody() {
       {t.checkpoint ? (
         <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-testid="checkpoint-card">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold">Checkpoint: {t.checkpoint.unit.title}</h2>
-            <p className="mt-1 text-xs text-muted">{t.checkpoint.ready ? 'Ready. 8-15 questions without the tutor; feedback comes at the end.' : `Not yet: ${t.checkpoint.reason} It opens once every concept in the unit has been recalled on two different days.`}</p>
+            <SectionTitle>Checkpoint: {t.checkpoint.unit.title}</SectionTitle>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted">{t.checkpoint.ready ? 'Ready. 8-15 questions without the tutor; feedback comes at the end.' : `Not yet: ${t.checkpoint.reason} It opens once every concept in the unit has been recalled on two different days.`}</p>
           </div>
           {t.checkpoint.ready ? (
-            primary.key !== 'checkpoint' ? <Link to={`/checkpoint/${t.checkpoint.unit.id}`}><Button variant="secondary" size="sm">Start checkpoint</Button></Link> : <Pill tone="accent">Next up</Pill>
+            primary.key !== 'checkpoint' ? <Link to={`/checkpoint/${t.checkpoint.unit.id}`}><Button variant="secondary" size="sm">Start checkpoint</Button></Link> : <Pill tone="purple">Next up</Pill>
           ) : (
             <Pill tone="neutral">Locked</Pill>
           )}
@@ -149,7 +166,7 @@ function TodayBody() {
       {t.teachback.length > 0 ? (
         <ListCard title="Teach it back" body="Concepts you half know (60-85% mastery): explaining them to a curious student is the fastest way to finish the job.">
           {t.teachback.map((c) => (
-            <li key={c.conceptId} className="flex items-center justify-between gap-3 text-sm">
+            <li key={c.conceptId} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="min-w-0 truncate">{c.name} <span className="text-xs text-muted">mastery {(c.mastery * 100).toFixed(0)}%</span></span>
               <Link to={`/teachback/${c.conceptId}`}><Button variant="secondary" size="sm">Teach</Button></Link>
             </li>
@@ -161,16 +178,16 @@ function TodayBody() {
         <Stat label="Lessons done" value={t.completedLessonIds.size} hint={`of ${lessonsTotal} in this course`} />
         <Stat label="Active cards" value={t.queue.cards.length} hint="questions in your review rotation" />
       </div>
-    </div>
+    </Page>
   );
 }
 
 function ListCard({ title, body, children }: { title: string; body: string; children: ReactNode }) {
   return (
     <Card>
-      <h2 className="text-sm font-semibold">{title}</h2>
-      <p className="mt-1 text-xs text-muted">{body}</p>
-      <ul className="mt-2 space-y-1.5">{children}</ul>
+      <SectionTitle>{title}</SectionTitle>
+      <p className="mt-1 text-[13px] leading-relaxed text-muted">{body}</p>
+      <ul className="mt-2 divide-y divide-hairline">{children}</ul>
     </Card>
   );
 }
@@ -190,8 +207,8 @@ function ReviewCard({ t, primary }: { t: TodayModel; primary: PrimaryKey }) {
     <Card data-testid="review-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold">Review queue</h2>
-          <p className="mt-1 text-sm text-muted" data-testid="review-summary">{summary}</p>
+          <SectionTitle>Review queue</SectionTitle>
+          <p className="mt-1 text-sm leading-relaxed text-muted" data-testid="review-summary">{summary}</p>
         </div>
         {total > 0 ? (
           primary !== 'review' ? <Link to="/review" className="shrink-0"><Button variant="secondary" size="sm" data-testid="start-reviews">Start reviews</Button></Link> : <Pill tone="accent">Next up</Pill>
@@ -199,7 +216,7 @@ function ReviewCard({ t, primary }: { t: TodayModel; primary: PrimaryKey }) {
           <Pill tone="good">Clear</Pill>
         )}
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 border-t border-hairline pt-4 sm:grid-cols-2">
         <Meter label="Done today" value={t.queue.reviewsDoneToday} max={t.queue.reviewsDoneToday + total} tone="accent" hint="answered so far / due today" />
         <Meter
           label="Review debt"
@@ -223,8 +240,8 @@ function LessonCard({ t, primary, onOverride }: { t: TodayModel; primary: Primar
   if (!t.nextLesson) {
     return (
       <Card data-testid="lesson-card">
-        <h2 className="text-sm font-semibold">Next lesson</h2>
-        <p className="mt-1 text-sm text-muted">None available: every lesson is either complete or waiting on a prerequisite you have not mastered yet. Keep reviewing; the <Link to="/map" className="underline">map</Link> shows what is blocking.</p>
+        <SectionTitle>Next lesson</SectionTitle>
+        <p className="mt-1 text-sm leading-relaxed text-muted">None available: every lesson is either complete or waiting on a prerequisite you have not mastered yet. Keep reviewing; the <Link to="/map" className="text-accent underline underline-offset-2">map</Link> shows what is blocking.</p>
       </Card>
     );
   }
@@ -247,13 +264,13 @@ function LessonCard({ t, primary, onOverride }: { t: TodayModel; primary: Primar
     <Card data-testid="lesson-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold">Next lesson{t.nextUnit ? <span className="font-normal text-muted"> · {t.nextUnit.title}</span> : null}</h2>
-          <div className="mt-1 text-base">{lesson.title}</div>
+          <SectionTitle>Next lesson{t.nextUnit ? <span className="font-normal text-muted"> · {t.nextUnit.title}</span> : null}</SectionTitle>
+          <div className="mt-1 text-[17px] leading-snug">{lesson.title}</div>
           <div className="mt-1 text-xs text-muted">{plural(lesson.concepts.length, 'concept')}: {lesson.concepts.map((c) => c.name).join(', ')}</div>
           {t.lessonLocked ? (
-            <p className="mt-2 text-sm text-amber-800 dark:text-amber-200" data-testid="lock-reason">Locked: {t.lockReason}</p>
+            <p className="mt-2 text-sm text-yellow-fg" data-testid="lock-reason">Locked: {t.lockReason}</p>
           ) : (
-            <p className="mt-2 text-sm text-emerald-800 dark:text-emerald-200" data-testid="lesson-unlocked">Unlocked: reviews are clear and prerequisites are met.</p>
+            <p className="mt-2 text-sm text-green-fg" data-testid="lesson-unlocked">Unlocked: reviews are clear and prerequisites are met.</p>
           )}
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
@@ -271,7 +288,7 @@ function LessonCard({ t, primary, onOverride }: { t: TodayModel; primary: Primar
       </div>
       {error ? <ErrorBanner className="mt-3" message={error} onRetry={override} /> : null}
       {t.lessonLocked ? (
-        <div className="mt-3">
+        <div className="mt-4">
           <Disclosure summary="Why reviews first?" testId="gate-explainer">
             <p>Memory fades on a schedule. Each card is due at the moment you are about to forget it, and answering it then is what makes it stick. New lessons add more cards, so the app asks you to clear what is due before adding to the pile.</p>
             <p className="mt-2">You can override the gate once a day (for example before a lecture on the topic). Overrides are logged on the Progress screen. There is no permanent off switch.</p>
