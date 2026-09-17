@@ -69,10 +69,13 @@ Course = one learner's enrolment in one Curriculum version
 
 ### 3.1 Onboarding a course
 
+The first run — the order these are actually asked in, what is inferred rather than asked, and why — is
+specified in [ONBOARDING.md](ONBOARDING.md). The steps themselves:
+
 1. **Choose a source**: (a) pick a curriculum from the Shelf; (b) name a subject ("real analysis", "microeconomics for an engineer"); (c) upload material (PDF, EPUB, DOCX, Markdown, a syllabus). (b) and (c) can be combined: a subject plus reference texts.
-2. **Scope interview** (one screen, not a chat): goal ("understand", "pass exam on <date>", "apply at work"), prior background, weekly time budget, target depth. This sets desired retention, the exam-date interval cap, and the initial scaffolding level.
+2. **Scope**: goal ("understand", "pass exam on <date>", "apply at work"), prior background, and time budget. This sets desired retention, the exam-date interval cap, and the initial scaffolding level. In the first run these are not a form: background comes from a free-recall prompt the learner answers before anything is explained, and the review load is derived from one question about minutes a day (ONBOARDING §3, §5). The full interview, including target depth, remains on the Setup screen for later courses.
 3. **Curriculum build** (§7) runs in the background, unit by unit, showing progress. Unit 1 is ready in minutes; later units generate ahead of the learner.
-4. **Diagnostic** (optional, recommended when the learner claims background): adaptive placement over the prerequisite graph (§6.4). Concepts judged known are seeded with a conservative memory state and a "provisional" flag; they still enter the review stream and must survive it.
+4. **Diagnostic** (optional, offered when the recall in step 2 shows real background): adaptive placement over the prerequisite graph (§6.4). Concepts judged known are seeded with a conservative memory state and a "provisional" flag; they still enter the review stream and must survive it.
 5. **Review the outline**: the learner can rename, reorder, drop, or merge units and lessons before the version is frozen. Editing after freezing creates a fork (§8).
 
 ### 3.2 A day ("Today" screen)
@@ -441,6 +444,7 @@ The visual system — wallpaper and window materials, colour, elevation, the typ
 
 Screens (all keyboard-navigable; chat and cards render Markdown with KaTeX and highlighted code):
 
+0. **First run** ([ONBOARDING.md](ONBOARDING.md)): one focused column, four derived steps — what to learn, what you already know, who the tutor is, how much time a day and the review-gate contract. It takes the whole window, and it is the only screen that is a form before it is a conversation.
 1. **Today**: warm-up, review queue with debt meter, next lesson (locked/unlocked with reason), checkpoint, teach-back suggestions, streak of *reviews cleared* (not days opened).
 2. **Lesson**: one column — the conversation, a line naming the current phase (PRIME → CHECK), and a disclosure holding the concept's definition, objectives, examples and source excerpts with citations. In PRIME, PROBE and CHECK, the phases the learner answers with no help, there is no disclosure to open at all, only a line saying why: nothing on screen may hold the answer to the question being asked. A "give up" button costs the item a rating of Again.
 3. **Review**: one item at a time; confidence buttons before reveal; rating buttons after; receipt drawer for LLM-graded items with dispute.

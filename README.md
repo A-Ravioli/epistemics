@@ -17,12 +17,12 @@ Implemented and tested (320 unit tests, 13 Playwright flows, Rust crate compiles
 - **Data** (`packages/db`, `packages/platform`): Drizzle schema, migrations, repositories; executors for Node (`node:sqlite`), the browser (sqlite-wasm on OPFS in a worker, single-owner lock), and Tauri; web and Tauri platform adapters (keychain secrets, streaming `llm_fetch` transport).
 - **Ingest and Architect** (`packages/ingest`, `packages/architect`): PDF, EPUB, DOCX and Markdown parsing, structure-aware chunking, embeddings; the curriculum-generation pipeline (outline → concepts → prerequisite/encompassing graph → lesson scripts → items → item self-check) with content-hash caching, DAG validation, and lazy per-unit building.
 - **Content** (`content/`): a hand-authored probability pack (2 units, 8 lessons, 29 concepts, 179 items, all numeric references machine-checked) and the prompt files.
-- **Web app** (`apps/web`): a macOS-style window — toolbar with a command palette (`⌘K`), a grouped sidebar, and a per-screen inspector — holding Welcome (pick a tutor), Today, Review, Lesson, Checkpoint, Diagnostic, Teach-back, Course map, Shelf, Setup, Progress, Settings.
+- **Web app** (`apps/web`): a macOS-style window — toolbar with a command palette (`⌘K`), a grouped sidebar, and a per-screen inspector — holding the first run (subject → what you already know → tutor → time), Today, Review, Lesson, Checkpoint, Diagnostic, Teach-back, Course map, Shelf, Setup, Progress, Settings.
 - **Desktop** (`apps/desktop`): Tauri 2 shell with OS-keychain secrets and a Rust `llm_fetch` command so the API key never enters the webview; on macOS the title bar is hidden and the app's own toolbar takes its place.
 - **Server** (`apps/server`): Hono passthrough proxy for the browser build with a per-day USD budget.
 - **Sync** (`packages/sync`, `supabase/`): optional cross-device sync through Supabase. Sign in on the Account screen and every review, lesson, course and generated curriculum syncs between the web app and the desktop app with last-writer-wins per row; the app keeps working offline. A Supabase edge function can hold the Anthropic key and enforce a per-user daily budget. Setup in [supabase/README.md](supabase/README.md); protocol in [docs/SYNC.md](docs/SYNC.md).
 
-See [docs/UX-AUDIT.md](docs/UX-AUDIT.md) for the screen-by-screen UX audit, [docs/DESIGN.md](docs/DESIGN.md) for the design, [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) for the visual system (tokens, components and the rules that hold them together), [docs/PLAN.md](docs/PLAN.md) for the phased plan, and [docs/research/](docs/research/) for the evidence base.
+See [docs/ONBOARDING.md](docs/ONBOARDING.md) for the first-run design, [docs/UX-AUDIT.md](docs/UX-AUDIT.md) for the screen-by-screen UX audit, [docs/DESIGN.md](docs/DESIGN.md) for the design, [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) for the visual system (tokens, components and the rules that hold them together), [docs/PLAN.md](docs/PLAN.md) for the phased plan, and [docs/research/](docs/research/) for the evidence base.
 
 ## Run it
 
@@ -33,14 +33,14 @@ pnpm install
 pnpm dev                     # web app on http://localhost:5173
 ```
 
-Open Settings and choose an LLM mode:
+The app opens on the first run ([docs/ONBOARDING.md](docs/ONBOARDING.md)): pick the bundled probability pack, a subject to generate, or your own files; write down whatever you already know about it; pick a tutor; say how much time you have most days. It ends on a Today with a lesson ready.
 
-- **Demo (mock)**: default, no key; a deterministic stand-in tutor so every flow works offline.
+The tutor choice, also on Settings afterwards:
+
+- **Demo (mock)**: default, no key; a deterministic stand-in so every flow works offline, though it cannot really teach.
 - **Anthropic, bring your own key**: the key is stored in the browser (IndexedDB) and sent directly to the API from the page.
 - **Anthropic via proxy**: run `ANTHROPIC_API_KEY=... pnpm --filter @epistemics/server dev` and the app talks to `/api/anthropic` with a daily budget.
 - **Ollama**: a local model at `http://localhost:11434` (reduced quality).
-
-Then Shelf → enrol in the probability pack (or Setup → build a course from a subject or your own files) → Today.
 
 To sync between devices: create a Supabase project, apply `supabase/migrations`, and enter the project URL and anon key on the Account screen (or set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`). See [supabase/README.md](supabase/README.md).
 
