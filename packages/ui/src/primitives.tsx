@@ -143,20 +143,27 @@ export function Switch({ checked, onChange, label, description, disabled, classN
         <label htmlFor={id} className={`block text-[15px] leading-tight ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>{label}</label>
         {description ? <p className="mt-1 text-[13px] leading-snug text-muted">{description}</p> : null}
       </div>
-      <button
-        id={id}
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        disabled={disabled}
-        onClick={() => onChange(!checked)}
-        data-testid={testId}
-        className={`relative inline-flex h-[30px] w-[50px] shrink-0 items-center rounded-full transition-colors duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-accent' : 'bg-fill-strong'}`}
-      >
-        <span className={`inline-block h-[26px] w-[26px] rounded-full bg-white shadow-raised transition-transform duration-200 ease-out ${checked ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} aria-hidden="true" />
-      </button>
+      <SwitchControl id={id} checked={checked} onChange={onChange} label={label} disabled={disabled} testId={testId} />
     </div>
+  );
+}
+
+/** The switch on its own, for a row that draws its own label (a provider's name and mark, say). */
+export function SwitchControl({ checked, onChange, label, disabled, id, testId }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean; id?: string; testId?: string }) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      data-testid={testId}
+      className={`relative inline-flex h-[30px] w-[50px] shrink-0 items-center rounded-full transition-colors duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-accent' : 'bg-fill-strong'}`}
+    >
+      <span className={`inline-block h-[26px] w-[26px] rounded-full bg-white shadow-raised transition-transform duration-200 ease-out ${checked ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} aria-hidden="true" />
+    </button>
   );
 }
 

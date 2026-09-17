@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { getCurriculum } from '@epistemics/db';
 import type { Curriculum, CurriculumManifest } from '@epistemics/core';
-import { Banner, Button, Card, EmptyState, ErrorBanner, Page, PageHeader, Pill, Skeleton, Tabs } from '@epistemics/ui';
+import { Banner, Button, Card, EmptyState, ErrorBanner, Page, PageHeader, PaneButton, Pill, Skeleton, ViewTabs } from '@epistemics/ui';
+import { useScreenChrome } from '../../app/chrome.js';
 import { useApp, useQuery } from '../../lib/app-state.js';
 import { dateShort } from '../../lib/format.js';
 import { CurriculumBuilder, builtUnitCount, curriculumKey, isFullyBuilt, unitBuilds, unitStatus } from '../../lib/services/build.js';
@@ -119,21 +120,38 @@ export function ShelfScreen() {
 
   const loading = (label: string) => <Card><Skeleton lines={3} label={label} /></Card>;
 
+  /* Which list you are looking at is a view of one screen, so it lives in the window's header row. */
+  useScreenChrome(() => ({
+    header: (
+      <ViewTabs
+        label="Shelf views"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { id: 'bundled', label: 'Bundled' },
+          { id: 'built', label: `Built by you (${builtQ.data?.length ?? 0})` },
+          { id: 'library', label: 'Library' },
+          { id: 'mine', label: `My courses (${app.courses.length})` },
+        ]}
+      />
+    ),
+    actions: (
+      <>
+        <PaneButton onClick={doImport} disabled={busy === 'import'} data-testid="import-pack" title="Load a .epistemics.json pack someone exported">Import a pack</PaneButton>
+        <PaneButton icon="plus" onClick={() => navigate('/setup')} data-testid="build-course-entry" title="Generate a new pack from a subject or your own files">Build a course</PaneButton>
+      </>
+    ),
+    // `doImport` and `navigate` are re-made every render; listing them here would re-set the chrome forever.
+  }), [tab, builtQ.data, app.courses.length, busy]);
+
   return (
     <Page>
       <PageHeader
         title="Shelf"
         description="Courses are built from packs: a versioned curriculum of units, lessons, concepts and review questions."
-        actions={
-          <>
-            <Button variant="secondary" onClick={doImport} disabled={busy === 'import'} data-testid="import-pack" title="Load a .epistemics.json pack someone exported">Import a pack</Button>
-            <Button variant="secondary" onClick={() => navigate('/setup')} data-testid="build-course-entry" title="Generate a new pack from a subject or your own files">Build a course</Button>
-          </>
-        }
       />
       {noCourse ? <Banner tone="info" data-testid="shelf-no-course">No course yet. <strong>Enrol</strong> in a pack below to start one; <strong>Build</strong> generates a new pack from a subject or your own files; <strong>Import</strong> loads a pack someone exported.</Banner> : null}
       {message ? <Banner tone={message.tone} data-testid="shelf-message">{message.text}</Banner> : null}
-      <Tabs tabs={[{ id: 'bundled', label: 'Bundled' }, { id: 'built', label: `Built by you (${builtQ.data?.length ?? 0})` }, { id: 'library', label: 'Library' }, { id: 'mine', label: `My courses (${app.courses.length})` }]} value={tab} onChange={setTab} />
 
       {tab === 'built' ? (
         builtQ.error ? <ErrorBanner message={builtQ.error} onRetry={builtQ.refresh} /> : builtQ.loading && !builtQ.data ? loading('Loading your builds') : !builtQ.data?.length ? (

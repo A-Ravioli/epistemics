@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { conceptDepths, type Concept, type ConceptState, type Receipt } from '@epistemics/core';
 import { getCardsForConcept, getReceipts, listConceptStates } from '@epistemics/db';
-import { Button, Card, Disclosure, ErrorBanner, IconButton, Page, PageHeader, PanelSection, Pill, Skeleton, Workspace } from '@epistemics/ui';
+import { Button, Card, Disclosure, ErrorBanner, IconButton, InspectorSection, Page, PageHeader, PaneButton, Pill, Skeleton } from '@epistemics/ui';
+import { useScreenChrome } from '../../app/chrome.js';
 import { useCourse, useQuery } from '../../lib/app-state.js';
 import { WIDE_QUERY, useMediaQuery } from '../../lib/use-media.js';
 import { allConcepts, findConcept } from '../../lib/services/courses.js';
@@ -43,7 +44,6 @@ const LEGEND = [
 /** Prerequisite graph laid out in layers by depth (longest prerequisite chain). Colour = mastery. */
 export function MapScreen() {
   const ctx = useCourse();
-  const navigate = useNavigate();
   const wide = useMediaQuery(WIDE_QUERY);
   const [selected, setSelected] = useState<string | undefined>();
   const [hideItems, setHideItems] = useState(false);
@@ -82,35 +82,13 @@ export function MapScreen() {
   const sel = selected ? findConcept(ctx.curriculum, selected) : undefined;
   const nodeList = [...layout.nodes.values()];
   const detail = sel ? <ConceptDetail concept={sel.concept} state={q.data.states.find((s) => s.conceptId === sel.concept.id)} receipts={q.data.receipts.filter((r) => r.conceptId === sel.concept.id)} onClose={() => setSelected(undefined)} /> : null;
-  const aside = (
-    <div>
-      {wide && detail ? detail : (
-        <PanelSection title="Concept">
-          <p className="text-[13px] leading-relaxed text-muted">Select a concept (click, or Tab to it and press Enter) to see its questions and your graded attempts here.</p>
-        </PanelSection>
-      )}
-      <PanelSection title="Legend">
-        <ul className="space-y-1.5 text-[13px] text-muted" aria-label="Legend">
-          {LEGEND.map((l) => (
-            <li key={l.label} className="flex items-center gap-2"><i className="inline-block h-3.5 w-3.5 rounded-[4px] border border-hairline" style={{ background: masteryTone(l.m).bg }} aria-hidden="true" /> {l.label}</li>
-          ))}
-          <li className="flex items-center gap-2"><span aria-hidden="true" className="inline-block w-3.5 text-center">→</span> prerequisite</li>
-        </ul>
-      </PanelSection>
-    </div>
-  );
   return (
-    <Workspace aside={aside} asideLabel="Map detail">
+    <>
+      <MapChrome detail={detail} hideItems={hideItems} onToggleNames={() => setHideItems(!hideItems)} />
       <Page width="full" className="max-w-5xl">
       <PageHeader
         title="Course map"
         description="Every concept, arranged so prerequisites sit to the left of what they unlock. Colour shows how well you know each one."
-        actions={
-          <>
-            <Button variant="secondary" size="sm" onClick={() => setHideItems(!hideItems)} aria-pressed={hideItems} title="Hide the names and try to recall what each box is">{hideItems ? 'Show names' : 'Map from memory'}</Button>
-            <IconButton icon="back" label="Back to Today" onClick={() => navigate('/today')} />
-          </>
-        }
       />
       <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted lg:hidden" aria-label="Legend">
         {LEGEND.map((l) => (
@@ -160,8 +138,54 @@ export function MapScreen() {
       </div>
       {!wide ? (detail ?? <p className="text-sm text-muted">Select a concept (click, or Tab to it and press Enter) to see its questions and your graded attempts.</p>) : null}
       </Page>
-    </Workspace>
+    </>
   );
+}
+
+/**
+ * The map's half of the window chrome: the one action that changes what the graph shows, and an inspector
+ * holding whatever concept is selected, then the legend. It is its own component so the map body can set
+ * the chrome from inside a render that has already returned early for loading and error states.
+ */
+function MapChrome({ detail, hideItems, onToggleNames }: { detail: ReactNode; hideItems: boolean; onToggleNames: () => void }) {
+  useScreenChrome(() => ({
+    header: <span className="truncate text-[14px] font-medium text-ink">Course map</span>,
+    actions: (
+      <PaneButton onClick={onToggleNames} aria-pressed={hideItems} title="Hide the names and try to recall what each box is">
+        {hideItems ? 'Show names' : 'Map from memory'}
+      </PaneButton>
+    ),
+    inspector: [
+      {
+        id: 'concept',
+        label: 'Concept',
+        testId: 'inspector-concept',
+        render: () =>
+          detail ? (
+            <InspectorSection>{detail}</InspectorSection>
+          ) : (
+            <InspectorSection>
+              <p className="text-[13px] leading-relaxed text-muted">Select a concept (click, or Tab to it and press Enter) to see its questions and your graded attempts here.</p>
+            </InspectorSection>
+          ),
+      },
+      {
+        id: 'legend',
+        label: 'Legend',
+        render: () => (
+          <InspectorSection title="What the colours mean">
+            <ul className="space-y-1.5 text-[13px] text-muted" aria-label="Legend">
+              {LEGEND.map((l) => (
+                <li key={l.label} className="flex items-center gap-2"><i className="inline-block h-3.5 w-3.5 rounded-[4px] border border-hairline" style={{ background: masteryTone(l.m).bg }} aria-hidden="true" /> {l.label}</li>
+              ))}
+              <li className="flex items-center gap-2"><span aria-hidden="true" className="inline-block w-3.5 text-center">→</span> prerequisite</li>
+            </ul>
+          </InspectorSection>
+        ),
+      },
+    ],
+  }), [detail, hideItems]);
+  return null;
 }
 
 function ConceptDetail({ concept, state, receipts, onClose }: { concept: Concept; state?: ConceptState; receipts: Receipt[]; onClose: () => void }) {
