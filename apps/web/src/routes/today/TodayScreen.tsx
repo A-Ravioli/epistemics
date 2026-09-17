@@ -121,18 +121,18 @@ function TodayBody() {
       {ahead.error ? <Banner tone="warn">Could not prepare the next unit: {ahead.error}</Banner> : null}
       {notice ? <Banner tone="warn" data-testid="today-notice">{notice}</Banner> : null}
 
-      <Card className="p-5 sm:p-7" data-testid="next-up">
+      <Card className="p-5 sm:p-8" data-testid="next-up">
         <div className="flex items-center justify-between gap-3">
           <Pill tone={kind.tone}>{kind.label}</Pill>
           <span className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Next up</span>
         </div>
-        <h2 className="mt-4 text-[22px] font-semibold leading-tight tracking-[-0.02em] sm:text-[24px]">{primary.title}</h2>
+        <h2 className="mt-4 type-title sm:text-[24px]">{primary.title}</h2>
         <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-muted">{primary.body}</p>
         <div className="mt-5">
           {primary.to && primary.label ? (
-            <Link to={primary.to} className="inline-block w-full sm:w-auto"><Button className="w-full sm:w-auto" data-testid={primary.testId}>{primary.label}</Button></Link>
+            <Link to={primary.to} className="inline-block w-full sm:w-auto"><Button size="lg" className="w-full sm:w-auto" data-testid={primary.testId}>{primary.label}</Button></Link>
           ) : (
-            <Link to="/map" className="inline-block w-full sm:w-auto"><Button variant="secondary" className="w-full sm:w-auto">Course map</Button></Link>
+            <Link to="/map" className="inline-block w-full sm:w-auto"><Button size="lg" variant="secondary" className="w-full sm:w-auto">Course map</Button></Link>
           )}
         </div>
       </Card>

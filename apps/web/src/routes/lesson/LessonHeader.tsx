@@ -54,7 +54,7 @@ export function LessonHeader({ view }: { view: LessonView }) {
         <Breadcrumbs crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: `${view.isRemediation ? 'Repair' : 'Lesson'} · ${lesson.title}` }]} />
       </TopBar>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h1 className="min-w-0 text-[22px] font-semibold leading-tight tracking-[-0.02em]">{view.isRemediation ? 'Repair: ' : ''}{lesson.title}</h1>
+        <h1 className="min-w-0 type-title">{view.isRemediation ? 'Repair: ' : ''}{lesson.title}</h1>
         <span className="text-[13px] text-muted">Concept {Math.min(state.conceptIndex + 1, state.conceptIds.length)} of {state.conceptIds.length}{concept ? `: ${concept.name}` : ''}</span>
       </div>
       <ol className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-full bg-fill p-0.5" aria-label="Lesson phases" data-testid="phase-indicator" data-phase={current}>
@@ -63,7 +63,7 @@ export function LessonHeader({ view }: { view: LessonView }) {
           const active = p === current;
           return (
             <li key={p} aria-current={active ? 'step' : undefined}>
-              <span title={`${p}: ${PHASE_HELP[p]}`} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${active ? 'bg-surface text-ink shadow-chip' : done ? 'text-green-fg' : 'text-muted'}`}>
+              <span title={`${p}: ${PHASE_HELP[p]}`} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${active ? 'bg-surface text-ink shadow-raised' : done ? 'text-green-fg' : 'text-muted'}`}>
                 {done && !active ? <Icon name="check" size={11} /> : null}
                 {PHASE_LABEL[p]}
               </span>

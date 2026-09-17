@@ -27,7 +27,7 @@ export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[
     ));
 
   const tutorNote = demo ? (
-    <div data-testid="mock-banner" className="rounded-[12px] bg-yellow-bg px-3 py-2 text-xs leading-snug text-yellow-fg" title="A deterministic stand-in tutor. Choose a real model in Settings.">
+    <div data-testid="mock-banner" className="rounded-input bg-yellow-bg px-3 py-2 text-xs leading-snug text-yellow-fg" title="A deterministic stand-in tutor. Choose a real model in Settings.">
       <span className="font-semibold">Demo tutor</span> (mock model)
     </div>
   ) : (
@@ -36,19 +36,19 @@ export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[
 
   return (
     <>
-      <aside className="panel hidden w-[232px] shrink-0 flex-col border-r border-hairline p-3 md:flex" aria-label="Primary">
-        <div className="mb-4 px-3 pt-2">
-          <div className="text-[15px] font-semibold leading-tight tracking-[-0.01em]">Epistemics</div>
+      <aside className="pane-nav hidden w-[240px] shrink-0 flex-col border-r border-hairline-soft p-3 md:flex" aria-label="Primary">
+        <div className="mb-5 px-3 pt-2">
+          <div className="type-heading">Epistemics</div>
           <div className="mt-0.5 truncate text-xs text-muted" title={courseTitle}>{courseTitle ?? 'No course yet'}</div>
         </div>
         <nav className="flex flex-col gap-0.5" aria-label="Screens">{links()}</nav>
         <div className="mt-auto pt-4">{tutorNote}</div>
       </aside>
 
-      <div className="panel sticky top-0 z-30 border-b border-hairline md:hidden">
+      <div className="pane-nav sticky top-0 z-30 border-b border-hairline-soft backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5">
           <div className="min-w-0">
-            <div className="text-[15px] font-semibold leading-tight tracking-[-0.01em]">Epistemics</div>
+            <div className="type-heading">Epistemics</div>
             <div className="truncate text-xs text-muted" title={courseTitle}>{courseTitle ?? 'No course yet'}</div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -64,7 +64,7 @@ export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[
           </div>
         </div>
         {open ? (
-          <nav id="mobile-nav" className="flex flex-col gap-0.5 border-t border-hairline p-2" aria-label="Screens" data-testid="mobile-nav">
+          <nav id="mobile-nav" className="flex flex-col gap-0.5 border-t border-hairline-soft p-2" aria-label="Screens" data-testid="mobile-nav">
             {links(() => setOpen(false))}
           </nav>
         ) : null}

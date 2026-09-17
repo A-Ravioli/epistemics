@@ -1,8 +1,8 @@
-import { useEffect, useId, useState, type HTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useState, type HTMLAttributes, type ReactNode } from 'react';
 import type { Confidence, Rating } from '@epistemics/core';
 import { Icon } from './Icon.js';
 import { Markdown } from './Markdown.js';
-import { Button, Eyebrow, SegmentedGroup } from './primitives.js';
+import { Button, Eyebrow, SegmentedGroup, Switch } from './primitives.js';
 
 // ---------------------------------------------------------------------------
 // Dialog
@@ -19,11 +19,11 @@ export function Dialog({ open, onClose, title, children, footer }: { open: boole
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4" onClick={onClose} role="presentation">
-      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded-card border border-hairline bg-surface p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
-        <h2 className="mb-3 text-[15px] font-semibold">{title}</h2>
-        <div className="space-y-3 text-sm">{children}</div>
-        {footer ? <div className="mt-4 flex justify-end gap-2">{footer}</div> : null}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4 backdrop-blur-[2px]" onClick={onClose} role="presentation">
+      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded-surface border border-hairline-soft bg-surface p-6 shadow-window" onClick={(e) => e.stopPropagation()}>
+        <h2 className="mb-4 type-title">{title}</h2>
+        <div className="space-y-3 text-[15px]">{children}</div>
+        {footer ? <div className="mt-6 flex justify-end gap-2">{footer}</div> : null}
       </div>
     </div>
   );
@@ -43,7 +43,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: 
           role="tab"
           aria-selected={t.id === value}
           onClick={() => onChange(t.id)}
-          className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm transition-[background-color,box-shadow,color] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${t.id === value ? 'bg-surface font-medium text-ink shadow-chip' : 'text-muted hover:text-ink'}`}
+          className={`shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-[background-color,box-shadow,color] duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${t.id === value ? 'bg-surface font-medium text-ink shadow-raised' : 'text-muted hover:text-ink'}`}
         >
           {t.label}
         </button>
@@ -59,8 +59,8 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: 
 export function Stat({ label, value, hint, tone = 'neutral' }: { label: string; value: ReactNode; hint?: ReactNode; tone?: 'neutral' | 'good' | 'warn' | 'bad' }) {
   const tones = { neutral: 'text-ink', good: 'text-green-fg', warn: 'text-yellow-fg', bad: 'text-red-fg' } as const;
   return (
-    <div className="min-w-0 rounded-card border border-hairline bg-surface p-4">
-      <div className="text-xs font-medium text-muted">{label}</div>
+    <div className="min-w-0 rounded-card border border-hairline-soft bg-surface p-4 shadow-raised">
+      <div className="text-[13px] font-medium text-muted">{label}</div>
       <div className={`mt-1 text-[26px] font-semibold leading-none tracking-[-0.02em] tabular-nums ${tones[tone]}`}>{value}</div>
       {hint ? <div className="mt-2 text-xs leading-snug text-muted">{hint}</div> : null}
     </div>
@@ -172,7 +172,7 @@ export { CONFIDENCE_LABELS, RATING_LABELS, RATING_HELP };
 export function Spinner({ label = 'Working' }: { label?: string }) {
   return (
     <span className="inline-flex items-center gap-2 text-sm text-muted" role="status" aria-live="polite">
-      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-hairline border-t-ink" aria-hidden="true" />
+      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-fill-strong border-t-ink" aria-hidden="true" />
       {label}
     </span>
   );
@@ -202,26 +202,21 @@ export function ErrorBanner({ message, onRetry, retryLabel = 'Try again', title 
   );
 }
 
-export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  const id = useId();
-  return (
-    <label htmlFor={id} className="flex cursor-pointer items-center gap-2 text-sm">
-      <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-primary" />
-      {label}
-    </label>
-  );
+/** Thin wrapper kept for call sites that only need a label and a value; `Switch` is the primitive. */
+export function Toggle({ label, checked, onChange, description, disabled, testId }: { label: string; checked: boolean; onChange: (v: boolean) => void; description?: ReactNode; disabled?: boolean; testId?: string }) {
+  return <Switch label={label} checked={checked} onChange={onChange} description={description} disabled={disabled} testId={testId} />;
 }
 
 /** Small disclosure used for receipts and details. */
 export function Disclosure({ summary, children, defaultOpen = false, testId }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean; testId?: string }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-input border border-hairline bg-surface" data-testid={testId}>
-      <button type="button" onClick={() => setOpen(!open)} className="flex w-full items-center justify-between gap-2 rounded-input px-3.5 py-2.5 text-left text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-expanded={open}>
+    <div className="overflow-hidden rounded-input bg-nested" data-testid={testId}>
+      <button type="button" onClick={() => setOpen(!open)} className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium transition-[background-color] duration-150 ease-out hover:bg-fill focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" aria-expanded={open}>
         <span className="min-w-0">{summary}</span>
         <Icon name="chevron-down" className={`text-muted transition-transform duration-150 ease-out ${open ? 'rotate-180' : ''}`} />
       </button>
-      {open ? <div className="border-t border-hairline px-3.5 py-3 text-sm">{children}</div> : null}
+      {open ? <div className="border-t border-hairline px-4 pb-3.5 pt-3 text-sm">{children}</div> : null}
     </div>
   );
 }

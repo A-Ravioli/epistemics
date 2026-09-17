@@ -128,7 +128,7 @@ export function ShelfScreen() {
         actions={
           <>
             <Button variant="secondary" onClick={doImport} disabled={busy === 'import'} data-testid="import-pack" title="Load a .epistemics.json pack someone exported">Import a pack</Button>
-            <Button onClick={() => navigate('/setup')} data-testid="build-course-entry" title="Generate a new pack from a subject or your own files">Build a course</Button>
+            <Button variant="secondary" onClick={() => navigate('/setup')} data-testid="build-course-entry" title="Generate a new pack from a subject or your own files">Build a course</Button>
           </>
         }
       />

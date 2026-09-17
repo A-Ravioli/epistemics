@@ -88,7 +88,7 @@ function CheckpointView({ runner }: { runner: CheckpointRunner }) {
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div className="min-w-0">
             <Eyebrow>Checkpoint · no tutor, no hints</Eyebrow>
-            <h1 className="mt-1 text-[22px] font-semibold leading-tight tracking-[-0.02em]">{v.unit.title}</h1>
+            <h1 className="mt-1 type-title">{v.unit.title}</h1>
           </div>
           <span className="text-[13px] text-muted">Question {Math.min(v.index + 1, v.total)} of {v.total}</span>
         </div>

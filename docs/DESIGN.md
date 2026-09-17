@@ -437,6 +437,8 @@ Everything else, including the entire UI, the session engine, the scheduler, the
 
 ## 10. UX surface
 
+The visual system — wallpaper and window materials, colour, elevation, the type ramp, and the component rules — is specified in [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md).
+
 Screens (all keyboard-navigable; chat and cards render Markdown with KaTeX and highlighted code):
 
 1. **Today**: warm-up, review queue with debt meter, next lesson (locked/unlocked with reason), checkpoint, teach-back suggestions, streak of *reviews cleared* (not days opened).

@@ -39,7 +39,7 @@ export function DiagnosticScreen() {
       <header className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <Eyebrow>Placement</Eyebrow>
-          <h1 className="mt-1 text-[22px] font-semibold leading-tight tracking-[-0.02em]">What do you already know?</h1>
+          <h1 className="mt-1 type-title">What do you already know?</h1>
         </div>
         <span className="text-[13px] text-muted">Question {v.state.probes + 1} · level {v.probe?.depth ?? '-'} of {v.state.maxDepth}</span>
       </header>

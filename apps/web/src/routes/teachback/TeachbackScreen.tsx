@@ -74,7 +74,7 @@ function TeachbackView({ runner }: { runner: TeachbackRunner }) {
         <Breadcrumbs crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: `Teach it back · ${v.concept.name}` }]} />
       </TopBar>
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em]">Teach it back: {v.concept.name}</h1>
+        <h1 className="type-title">Teach it back: {v.concept.name}</h1>
         <span className="text-[13px] text-muted">Turn {v.state.learnerTurns} of {MAX_TURNS}</span>
       </header>
       <p className="text-sm leading-relaxed text-muted">You are the teacher. The student has read nothing: explain the concept, answer their questions and give an example. Your whole explanation is graded blind afterwards and counts as a review of this concept.</p>
@@ -93,10 +93,10 @@ function TeachbackView({ runner }: { runner: TeachbackRunner }) {
       ) : v.done ? (
         <Card className="space-y-3"><p className="text-sm">The session ended without an explanation, so nothing was graded.</p><Link to="/today" className="inline-block"><Button>Back to Today</Button></Link></Card>
       ) : (
-        <div className="rounded-card border border-hairline bg-nested p-3 shadow-chip transition-[box-shadow,border-color] duration-150 ease-out focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25">
+        <div className="rounded-card bg-fill p-3 transition-[box-shadow,background-color] duration-150 ease-out focus-within:bg-surface focus-within:ring-2 focus-within:ring-accent">
           <label htmlFor="teachback-input" className="sr-only">Your explanation</label>
           <textarea id="teachback-input" ref={input} className="min-h-24 w-full resize-y bg-transparent px-1 py-1 text-[15px] leading-relaxed text-ink placeholder:text-muted focus:outline-none disabled:cursor-not-allowed disabled:opacity-60" value={text} onChange={(e) => setText(e.target.value)} disabled={disabled} placeholder="Explain it to the student in plain words, then give an example" data-testid="teachback-input" onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void send(); }} />
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-2">
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hairline-soft pt-2">
             <span className="text-[11px] text-muted"><Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd> sends</span>
             <div className="flex flex-wrap gap-2">
               <Button variant="ghost" onClick={() => runner.end()} disabled={disabled} title="End the conversation and grade what you have said so far">Stop and grade</Button>

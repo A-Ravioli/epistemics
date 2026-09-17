@@ -3,9 +3,17 @@
 @source "../../../packages/ui/src";
 
 /*
- * Tokens. Chrome is neutral grey; the accent is used only for focus rings and links. `muted` is the one
- * secondary-text colour and clears 4.5:1 on every fill it sits on (white 5.8, panel 5.4, fill-strong 4.8;
- * dark: 7.2 / 5.9 / 4.8). Status tones are pastel fills with a dark label (all ≥ 5.5:1).
+ * Epistemics design system. See docs/DESIGN-SYSTEM.md for the reasoning; the short version:
+ *
+ *  - All the colour in a screen comes from the wallpaper behind the window, never from the chrome.
+ *  - The app is one floating, translucent window: a large radius, a hairline, a two-stage shadow.
+ *  - Inside it everything is neutral grey except one accent (system blue), used only for the thing
+ *    that matters on the screen: the primary action, the chosen option, a link, the focus ring.
+ *  - Controls are filled and borderless. Hairlines separate regions; they never outline a control.
+ *  - Elevation has three steps (window, raised pill, flat) and nothing else lifts.
+ *
+ * `muted` is the one secondary-text colour and clears 4.5:1 on every material it sits on (window 4.9,
+ * content 5.5, fill 5.2; dark: 6.8 / 7.1 / 5.4). Status tones are pastel fills with a dark label (all ≥ 5.5:1).
  */
 @theme {
   --color-ink: #1d1d1f;
@@ -13,14 +21,16 @@
   --color-surface: #ffffff;
   --color-panel: #f7f7f8;
   --color-nested: #fafafa;
-  --color-fill: #f2f2f4;
-  --color-fill-strong: #e9e9ec;
-  --color-hairline: rgba(0, 0, 0, 0.08);
-  --color-hairline-soft: rgba(0, 0, 0, 0.06);
-  --color-accent: #0a66c2;
-  --color-primary: #111111;
+  --color-fill: #ececef;
+  --color-fill-strong: #e2e2e6;
+  --color-hairline: rgba(0, 0, 0, 0.09);
+  --color-hairline-soft: rgba(0, 0, 0, 0.055);
+  --color-accent: #0071e3;
+  --color-accent-hover: #0062c4;
+  --color-on-accent: #ffffff;
+  --color-primary: #1d1d1f;
   --color-on-primary: #ffffff;
-  --color-scrim: rgba(0, 0, 0, 0.35);
+  --color-scrim: rgba(0, 0, 0, 0.32);
 
   --color-blue-bg: #e6f0ff;
   --color-blue-fg: #1e4f8f;
@@ -35,33 +45,67 @@
   --color-lime-bg: #eef7d8;
   --color-lime-fg: #4d6b0f;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", Roboto, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Charter", "Iowan Old Style", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
+  /* Radii climb with the size of the thing: control → input → card → window; actions are pills. */
   --radius-control: 10px;
   --radius-input: 12px;
   --radius-card: 16px;
-  --radius-surface: 22px;
+  --radius-surface: 28px;
 
-  --shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 40px rgba(0, 0, 0, 0.08);
-  --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
-  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.08);
+  /* Three elevations and one hover lift. Nothing else in the app casts a shadow. */
+  --shadow-window: 0 0 0 0.5px rgba(0, 0, 0, 0.05), 0 6px 20px rgba(0, 0, 0, 0.09), 0 28px 60px -12px rgba(0, 0, 0, 0.22);
+  --shadow-raised: 0 0.5px 1px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.05);
+  --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 22px rgba(0, 0, 0, 0.09);
+  --shadow-accent: 0 1px 2px rgba(0, 90, 200, 0.18), 0 4px 12px rgba(0, 90, 200, 0.16);
+  /* Aliases kept so older utility names (`shadow-surface`, `shadow-chip`) still resolve. */
+  --shadow-surface: var(--shadow-window);
+  --shadow-chip: var(--shadow-raised);
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.25, 1);
 }
 
-/* Dark theme: same structure, darker backdrop. Applied by system preference unless the learner forced a theme. */
+/*
+ * Materials. The window is a near-opaque white that blurs and over-saturates what is behind it, so the
+ * wallpaper tints it faintly — warm where the wallpaper is warm, cool where it is cool. The nav pane is
+ * the same material minus some white, which is why it reads a shade darker and more colourful than the
+ * content pane next to it.
+ */
+:root {
+  --material-window: rgba(255, 255, 255, 0.9);
+  --material-content: rgba(255, 255, 255, 0.55);
+  --material-nav: rgba(244, 244, 247, 0.5);
+  --blur-window: blur(48px) saturate(180%);
+
+  /* The wallpaper: five very large, very blurred colour fields — cream and jade at the top, sky on the
+     right, cobalt across the bottom. Nothing in the UI is this saturated. */
+  --backdrop:
+    radial-gradient(74% 60% at 6% 2%, rgba(247, 233, 190, 0.95), transparent 60%),
+    radial-gradient(56% 46% at 34% -4%, rgba(146, 212, 203, 0.9), transparent 62%),
+    radial-gradient(52% 50% at 96% 14%, rgba(126, 182, 232, 0.9), transparent 62%),
+    radial-gradient(74% 62% at 82% 106%, rgba(12, 92, 214, 0.95), transparent 60%),
+    radial-gradient(66% 58% at -4% 98%, rgba(24, 88, 200, 0.9), transparent 58%),
+    #3b7bd4;
+  color-scheme: light dark;
+}
+
+/* Dark theme: same structure, a deeper wallpaper and a graphite window. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --color-ink: #f5f5f7;
-    --color-muted: #a8a8ad;
+    --color-muted: #a1a1a8;
     --color-surface: #1c1c1e;
     --color-panel: #2c2c2e;
     --color-nested: #232325;
-    --color-fill: #2c2c2e;
-    --color-fill-strong: #3a3a3c;
-    --color-hairline: rgba(255, 255, 255, 0.08);
+    --color-fill: #2e2e31;
+    --color-fill-strong: #3c3c40;
+    --color-hairline: rgba(255, 255, 255, 0.1);
     --color-hairline-soft: rgba(255, 255, 255, 0.06);
-    --color-accent: #6db3f8;
+    --color-accent: #4da2ff;
+    --color-accent-hover: #6fb5ff;
+    --color-on-accent: #06203d;
     --color-primary: #f5f5f7;
     --color-on-primary: #1d1d1f;
     --color-scrim: rgba(0, 0, 0, 0.6);
@@ -77,23 +121,34 @@
     --color-red-fg: #f4a0a0;
     --color-lime-bg: #2e3d14;
     --color-lime-fg: #c6e08c;
-    --shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px rgba(0, 0, 0, 0.5);
-    --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.5);
-    --backdrop: radial-gradient(60% 50% at 15% 0%, rgba(80, 120, 190, 0.22), transparent 70%), radial-gradient(50% 45% at 100% 100%, rgba(180, 140, 60, 0.14), transparent 70%), #111111;
+    --shadow-window: 0 0 0 0.5px rgba(255, 255, 255, 0.07), 0 6px 20px rgba(0, 0, 0, 0.45), 0 28px 60px -12px rgba(0, 0, 0, 0.6);
+    --shadow-raised: 0 0.5px 1px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+    --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 22px rgba(0, 0, 0, 0.45);
+    --shadow-accent: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 40, 90, 0.5);
+    --material-window: rgba(28, 28, 30, 0.88);
+    --material-content: rgba(28, 28, 30, 0.5);
+    --material-nav: rgba(12, 12, 14, 0.4);
+    --backdrop:
+      radial-gradient(70% 55% at 10% 0%, rgba(38, 78, 140, 0.75), transparent 62%),
+      radial-gradient(50% 45% at 40% -5%, rgba(24, 92, 96, 0.6), transparent 62%),
+      radial-gradient(60% 55% at 96% 20%, rgba(28, 60, 120, 0.7), transparent 62%),
+      radial-gradient(74% 60% at 80% 106%, rgba(12, 44, 120, 0.85), transparent 60%),
+      #0a0a12;
   }
 }
 :root[data-theme="dark"] {
   --color-ink: #f5f5f7;
-  --color-muted: #a8a8ad;
+  --color-muted: #a1a1a8;
   --color-surface: #1c1c1e;
   --color-panel: #2c2c2e;
   --color-nested: #232325;
-  --color-fill: #2c2c2e;
-  --color-fill-strong: #3a3a3c;
-  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-fill: #2e2e31;
+  --color-fill-strong: #3c3c40;
+  --color-hairline: rgba(255, 255, 255, 0.1);
   --color-hairline-soft: rgba(255, 255, 255, 0.06);
-  --color-accent: #6db3f8;
+  --color-accent: #4da2ff;
+  --color-accent-hover: #6fb5ff;
+  --color-on-accent: #06203d;
   --color-primary: #f5f5f7;
   --color-on-primary: #1d1d1f;
   --color-scrim: rgba(0, 0, 0, 0.6);
@@ -109,16 +164,19 @@
   --color-red-fg: #f4a0a0;
   --color-lime-bg: #2e3d14;
   --color-lime-fg: #c6e08c;
-  --shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px rgba(0, 0, 0, 0.5);
-  --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.5);
-  --backdrop: radial-gradient(60% 50% at 15% 0%, rgba(80, 120, 190, 0.22), transparent 70%), radial-gradient(50% 45% at 100% 100%, rgba(180, 140, 60, 0.14), transparent 70%), #111111;
-}
-
-:root {
-  /* Soft wallpaper: pale sky blue at the top, pale cream bottom-left, mostly near-white. */
-  --backdrop: radial-gradient(70% 55% at 20% 0%, rgba(219, 232, 247, 0.9), transparent 70%), radial-gradient(55% 50% at 0% 100%, rgba(243, 236, 212, 0.85), transparent 70%), radial-gradient(60% 40% at 100% 60%, rgba(219, 232, 247, 0.5), transparent 70%), #f5f6f8;
-  color-scheme: light dark;
+  --shadow-window: 0 0 0 0.5px rgba(255, 255, 255, 0.07), 0 6px 20px rgba(0, 0, 0, 0.45), 0 28px 60px -12px rgba(0, 0, 0, 0.6);
+  --shadow-raised: 0 0.5px 1px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 22px rgba(0, 0, 0, 0.45);
+  --shadow-accent: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 40, 90, 0.5);
+  --material-window: rgba(28, 28, 30, 0.88);
+  --material-content: rgba(28, 28, 30, 0.5);
+  --material-nav: rgba(12, 12, 14, 0.4);
+  --backdrop:
+    radial-gradient(70% 55% at 10% 0%, rgba(38, 78, 140, 0.75), transparent 62%),
+    radial-gradient(50% 45% at 40% -5%, rgba(24, 92, 96, 0.6), transparent 62%),
+    radial-gradient(60% 55% at 96% 20%, rgba(28, 60, 120, 0.7), transparent 62%),
+    radial-gradient(74% 60% at 80% 106%, rgba(12, 44, 120, 0.85), transparent 60%),
+    #0a0a12;
 }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }
@@ -126,10 +184,12 @@
 html, body, #root { height: 100%; }
 body {
   background: var(--backdrop);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.5;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -146,25 +206,46 @@ body {
 }
 
 @layer components {
-  /* The one floating window the app lives in: white, large radius, hairline, diffuse shadow; edge to edge on phones. */
+  /*
+   * The one floating window the app lives in. Translucent and blurred so the wallpaper tints it, with a
+   * hairline and the deepest of the three shadows. Edge to edge on phones, where there is no room to float.
+   */
   .surface {
-    background: var(--color-surface);
-    box-shadow: var(--shadow-surface);
+    background: var(--material-window);
+    box-shadow: var(--shadow-window);
     border: 1px solid var(--color-hairline-soft);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .surface { -webkit-backdrop-filter: var(--blur-window); backdrop-filter: var(--blur-window); }
   }
   @media (min-width: 768px) { .surface { border-radius: var(--radius-surface); } }
   @media (max-width: 767.98px) { .surface { border-radius: 0; border-left: 0; border-right: 0; } }
 
-  /* Light-grey nav panel. It sits on the opaque surface, so a blur would cost repaints for nothing visible. */
-  .panel { background: var(--color-panel); }
+  /* The two panes inside the window. The nav pane lets more wallpaper through than the content pane,
+     which is what makes it read as a shade cooler without a single coloured pixel of its own. */
+  .pane-nav { background: var(--material-nav); }
+  .pane-content { background: var(--material-content); }
+  /* Kept as the alias older screens use for a light panel inside a card. */
+  .panel { background: var(--material-nav); }
+
+  /* Typographic ramp. Screens pick a step, never a size. */
+  .type-display { font-size: 28px; line-height: 1.15; font-weight: 600; letter-spacing: -0.021em; }
+  .type-title { font-size: 21px; line-height: 1.25; font-weight: 600; letter-spacing: -0.017em; }
+  .type-heading { font-size: 17px; line-height: 1.35; font-weight: 600; letter-spacing: -0.012em; }
+  .type-body { font-size: 15px; line-height: 1.5; letter-spacing: -0.005em; }
+  .type-secondary { font-size: 13px; line-height: 1.45; letter-spacing: 0; color: var(--color-muted); }
+  .type-caption { font-size: 12px; line-height: 1.4; letter-spacing: 0; color: var(--color-muted); }
 
   /* Learner-facing reading text: tutor turns, item prompts, definitions. */
-  .reading { font-family: var(--font-serif); font-size: 17px; line-height: 1.6; }
-  .reading-sm { font-family: var(--font-serif); font-size: 15.5px; line-height: 1.55; }
+  .reading { font-family: var(--font-serif); font-size: 17px; line-height: 1.6; letter-spacing: 0; }
+  .reading-sm { font-family: var(--font-serif); font-size: 15.5px; line-height: 1.55; letter-spacing: 0; }
 
   /* Interactive cards lift a hair on hover. */
-  .liftable { transition: box-shadow 150ms ease, transform 150ms ease; }
+  .liftable { transition: box-shadow 180ms var(--ease-out), transform 180ms var(--ease-out); }
   .liftable:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+
+  /* A passage the tutor or a receipt is pointing at: pale accent wash under an accent rule. */
+  .marked { background: color-mix(in srgb, var(--color-accent) 12%, transparent); box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--color-accent) 45%, transparent); border-radius: 3px; padding: 0 1px; }
 }
 
 .prose-epi { line-height: inherit; overflow-wrap: anywhere; }

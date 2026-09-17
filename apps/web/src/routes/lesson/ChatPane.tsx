@@ -72,14 +72,14 @@ export function ChatPane({ view, runner, above }: { view: LessonView; runner: Le
           </div>
         </div>
       </div>
-      <div className="shrink-0 border-t border-hairline bg-surface px-4 py-3 md:px-8 md:py-4">
+      <div className="shrink-0 border-t border-hairline-soft bg-surface/70 px-4 py-3 backdrop-blur-xl md:px-8 md:py-4">
         <div className="mx-auto w-full max-w-[680px] space-y-3">
           {needsConfidence ? (
             <Explainer storageKey="confidence" title="Why say how sure you are?">
               <p>You commit before you find out. A lucky guess then does not count as knowing, and a confident miss gets extra attention: that is how the app tells the two apart.</p>
             </Explainer>
           ) : null}
-          <div className="rounded-card border border-hairline bg-nested p-3 shadow-chip transition-[box-shadow,border-color] duration-150 ease-out focus-within:border-accent/60 focus-within:shadow-lift">
+          <div className="rounded-card bg-fill p-3 transition-[box-shadow,background-color] duration-150 ease-out focus-within:bg-surface focus-within:ring-2 focus-within:ring-accent">
             {needsConfidence ? (
               <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span className="text-[13px] font-medium">How sure are you?</span>
@@ -104,7 +104,7 @@ export function ChatPane({ view, runner, above }: { view: LessonView; runner: Le
               data-testid="lesson-input"
               aria-describedby="lesson-input-help"
             />
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-2">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-hairline-soft pt-2">
               <span id="lesson-input-help" className="text-[11px] text-muted">
                 Answer the question above; this is not a chat. <Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd> sends.
                 {sendBlocker && !disabled ? <span className="ml-1 text-yellow-fg" data-testid="send-blocker">{sendBlocker}.</span> : null}

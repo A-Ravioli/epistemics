@@ -173,7 +173,7 @@ function ConceptDetail({ concept, state, receipts, onClose }: { concept: Concept
     <div className="space-y-4" data-testid="concept-detail">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[17px] font-semibold leading-snug">{concept.name}</h2>
+          <h2 className="type-heading">{concept.name}</h2>
           <p className="reading-sm mt-1.5 text-ink">{concept.definition}</p>
           <div className="mt-2.5 flex flex-wrap gap-1.5 text-xs">
             <Pill tone={state && state.mastery >= 0.85 ? 'good' : 'neutral'} title="Retention × spaced-session progress; mastered at 85% with an 80% unaided pass rate">mastery {Math.round((state?.mastery ?? 0) * 100)}%</Pill>
