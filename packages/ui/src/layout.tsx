@@ -3,14 +3,18 @@ import { Eyebrow } from './primitives.js';
 
 const widths = { sm: 'max-w-2xl', md: 'max-w-3xl', lg: 'max-w-5xl', reading: 'max-w-[680px]', full: 'max-w-none' } as const;
 
-/** The centre column of a screen: a padded, centred stack of sections. */
+/**
+ * The column a screen is written in: a padded stack of sections against the left edge of the content pane,
+ * the way a document sits in a window. The pane is already the right width, so the column never centres —
+ * centring only ever produced a lonely strip with the inspector open on one side.
+ */
 export function Page({ width = 'md', className = '', ...rest }: HTMLAttributes<HTMLDivElement> & { width?: keyof typeof widths }) {
-  return <div className={`mx-auto w-full ${widths[width]} space-y-5 px-4 py-5 md:px-8 md:py-7 ${className}`} {...rest} />;
+  return <div className={`w-full ${widths[width]} space-y-5 px-5 py-6 md:px-7 md:py-7 ${className}`} {...rest} />;
 }
 
 /**
- * Centre panel plus a hairline-separated right panel (~300px) for secondary context, shown from `lg`.
- * The two scroll independently; below `lg` the caller shows the same context another way (a disclosure).
+ * Centre panel plus a right panel (~300px) for secondary context, shown from `lg`. Superseded by the
+ * window's own inspector (`useScreenChrome`); kept for screens whose context is part of the screen itself.
  */
 export function Workspace({ children, aside, asideLabel, asideTestId, className = '', ...rest }: HTMLAttributes<HTMLDivElement> & { aside?: ReactNode; asideLabel?: string; asideTestId?: string }) {
   return (

@@ -20,6 +20,20 @@ const PATHS = {
   today: <><rect x="2.5" y="3.5" width="11" height="10" rx="2" /><path d="M2.5 7h11M5.5 2v3M10.5 2v3" /></>,
   shelf: <><path d="M2.5 3.5h11M2.5 8h11M2.5 12.5h11" /><path d="M4.5 3.5V8M8 8v4.5M11.5 3.5V8" /></>,
   menu: <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" />,
+  sidebar: <><rect x="2" y="3" width="12" height="10" rx="2" /><path d="M6.5 3v10" /></>,
+  compose: <><path d="M13 2.5 8 7.5l-.5 2 2-.5 5-5a1.06 1.06 0 0 0-1.5-1.5z" /><path d="M12.5 9.5v3a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h3" /></>,
+  more: <><circle cx="3.5" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="12.5" cy="8" r="1" fill="currentColor" stroke="none" /></>,
+  lock: <><rect x="3.5" y="7" width="9" height="6.5" rx="2" /><path d="M5.75 7V5.25a2.25 2.25 0 0 1 4.5 0V7" /></>,
+  cube: <><path d="M8 2 13.5 5v6L8 14 2.5 11V5z" /><path d="M2.5 5 8 8l5.5-3M8 8v6" /></>,
+  spark: <><path d="M8 2.5 9.3 6.2 13 7.5l-3.7 1.3L8 12.5 6.7 8.8 3 7.5l3.7-1.3z" /></>,
+  comment: <><path d="M13.5 8.5a4.5 4.5 0 0 1-4.5 4.5H5l-2.5 1.5.75-2.4A4.5 4.5 0 0 1 6.5 4h2a4.5 4.5 0 0 1 5 4.5z" /></>,
+  plug: <><path d="M6 2v3.5M10 2v3.5" /><path d="M4 5.5h8v2a4 4 0 0 1-4 4 4 4 0 0 1-4-4z" /><path d="M8 11.5V14" /></>,
+  bolt: <path d="M9 2 4 9h3.5L7 14l5-7H8.5z" />,
+  'check-square': <><rect x="2.5" y="2.5" width="11" height="11" rx="3" /><path d="M5.5 8.2 7.3 10l3.2-3.6" /></>,
+  command: <path d="M5.5 2.5a1.5 1.5 0 1 0 0 3h5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3v5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3h-5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" />,
+  'arrow-right': <><path d="M3 8h10" /><path d="M9 4l4 4-4 4" /></>,
+  play: <path d="M5.5 3.5 12 8l-6.5 4.5z" />,
+  trash: <><path d="M3.5 4.5h9" /><path d="M6.5 4.5V3h3v1.5" /><path d="M4.75 4.5 5.3 13a1 1 0 0 0 1 .9h3.4a1 1 0 0 0 1-.9l.55-8.5" /></>,
 } as const;
 
 export type IconName = keyof typeof PATHS;

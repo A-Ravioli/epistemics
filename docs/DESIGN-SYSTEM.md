@@ -1,8 +1,9 @@
 # Epistemics design system
 
-A saturated wallpaper, one floating translucent window, and inside it almost nothing: text, space, and a
-single blue action. The app is a conversation with a tutor, so every screen is built as one column of
-things said in order — never a dashboard of panels.
+A saturated wallpaper, one translucent window, and inside it almost nothing: text, space, and a single blue
+action. The window is a macOS document window — a toolbar across the top, then a sidebar, the screen, and an
+inspector — and each screen inside it is still one column of things said in order, never a dashboard of
+panels. The same build draws that window in a browser tab and in the desktop shell; §6 is the difference.
 
 Implementation: tokens and materials in [`apps/web/src/styles.css`](../apps/web/src/styles.css);
 components in [`packages/ui/src`](../packages/ui/src).
@@ -16,14 +17,15 @@ the wallpaper is warm and a cool one where it is cool; the nav pane lets slightl
 it reads as a different material without having a colour of its own. Because the frame is colourful, the
 chrome can be pure neutral and the whole thing still looks rich.
 
-**Nothing is drawn that space can do instead.** No card outlines, no dividers, no boxed panels, no rules
-between rows, no shadows, no uppercase eyebrows, no breadcrumbs, no status chips repeating what the
-sentence already says. Grouping comes from whitespace, headings and weight. The only filled shapes on a
-screen are the things you act on — buttons, inputs, the selected row, a chat bubble — and the only
-saturated one is the single accent action.
+**Nothing is drawn that space can do instead.** No card outlines, no boxed panels, no rules between rows,
+no uppercase eyebrows, no status chips repeating what the sentence already says. Grouping comes from
+whitespace, headings and weight. The only filled shapes on a screen are the things you act on — buttons,
+inputs, the selected row, a chat bubble — and the only saturated one is the single accent action.
 
-Two exceptions, and they are the whole list: the window itself (hairline, radius, shadow) and a dialog,
-because both really are floating above something.
+The exceptions are the window's own structure, and they are the whole list: the window (hairline, radius,
+shadow), a dialog and a menu (both really do float above something), the hairlines that separate the
+toolbar and the three panes, and the raised white pills of the chrome — toolbar buttons, view tabs, pane
+actions. Chrome may be raised; content may not. Inside a pane, the rule above still holds.
 
 ## 2. Screens are conversations
 
@@ -97,11 +99,14 @@ All in `@epistemics/ui`:
 - **`Disclosure`** — a line of text that opens. It is how secondary detail is kept out of the way.
 - **`Banner` / `ErrorBanner`** — the one tinted block, for a state the learner must notice.
 - **`ListRow` / `navRowClass`** — one line per row; selection is a fill.
+- **Chrome** — `Toolbar`, `ToolbarSearch`, `MenuPill` / `Menu`, `TrafficLights`, `SidebarGroup`,
+  `PaneHeader` / `ViewTabs` / `PaneButton`, `Inspector` / `NoteCard` / `InspectorSection`. See §6.
 
 ## 5. Rules for new UI
 
 1. Before adding a container, ask what a blank line would do instead. Usually the same thing.
-2. Never add a border, a divider or a shadow. If two things need separating, space them.
+2. Never add a border, a divider or a shadow *inside a pane*. If two things need separating, space them.
+   The window's own structure (§6) is where hairlines and the one raised step live.
 3. One accent action per screen, and only if the screen has one obvious next step.
 4. Say it once. If the page title, the next step and a panel all name the same lesson, delete two of them.
 5. State goes in the sentence ("Locked: reviews are due"), not in a chip beside it.
@@ -111,7 +116,31 @@ All in `@epistemics/ui`:
    name, and every animation respects `prefers-reduced-motion`.
 9. Check both themes; they are the same tokens.
 
-## 6. Checking a change
+## 6. The window
+
+The window is one sheet with a 52px toolbar across the top and, under it, up to three panes divided by
+hairlines.
+
+| Part | What is in it |
+| --- | --- |
+| **Toolbar** (`Toolbar`) | Window buttons, the sidebar toggle and "build a course"; a search field in the middle that opens the command palette (`⌘K`); then the tutor in use (`MenuPill`) and the window's one blue action. |
+| **Sidebar** (`AppSidebar`, `SidebarGroup`, `sidebarRowClass`) | Your courses, then the screens in three groups. Rows are names: no icons, no second line. Selection is a soft fill. It toggles from the toolbar and remembers its state. |
+| **Pane header** (`PaneHeader`, `ViewTabs`, `PaneButton`) | On the left, the screen's views as raised pill tabs (Shelf: bundled / built / library / mine) or, with only one view, its name in muted type. On the right, at most two flat actions. |
+| **Inspector** (`Inspector`, `NoteCard`, `InspectorSection`) | The right panel, from `lg`: tabs on the same line as the pane header, then a column of cards. Today puts the day's agenda there, the map the selected concept and the legend. Below `lg` it is not rendered, and the screen says the same thing inline — never both. |
+
+A screen fills the header and the inspector with `useScreenChrome(() => ({ header, actions, inspector }), deps)`.
+The deps are what the slots read; a value re-made every render (a handler, `navigate`) must not be listed.
+
+Two screens take the whole window and have none of this: a checkpoint and a diagnostic (sat without help),
+and the first-launch provider screen, which also strips the toolbar down to the window buttons.
+
+**Browser and desktop.** The browser build floats the sheet on the wallpaper with a margin, rounded corners
+and a shadow, and draws three decorative stoplight dots at the left of the toolbar so a tab still reads as
+one window. The desktop build (`titleBarStyle: "Overlay"`, `hiddenTitle: true`) has no title bar of its own:
+the sheet goes edge to edge, the toolbar *is* the title bar — a drag handle, with `--window-controls-w`
+reserved at its left for the real stoplight buttons — and the OS supplies the corners and the shadow.
+
+## 7. Checking a change
 
 ```bash
 pnpm --filter @epistemics/web build
@@ -120,4 +149,6 @@ pnpm --filter @epistemics/web e2e     # Playwright, Chromium
 
 The e2e suite drives the real screens, so a layout that breaks a flow fails there. For a visual check, run
 `pnpm dev` and look at Today, a lesson, Settings and the Shelf in both themes — those four cover every
-component in this document.
+component in this document. Check the window itself too: collapse the sidebar, open the palette with `⌘K`,
+and narrow the viewport past `lg` (the inspector goes and its content must reappear inline) and past `md`
+(the sidebar becomes the toolbar's menu).

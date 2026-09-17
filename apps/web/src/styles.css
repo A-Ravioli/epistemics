@@ -53,7 +53,12 @@
   --radius-control: 10px;
   --radius-input: 12px;
   --radius-card: 16px;
-  --radius-surface: 28px;
+  --radius-surface: 22px;
+
+  /* Window chrome metrics: the toolbar across the top, the header row the panes share, the sidebar. */
+  --toolbar-h: 52px;
+  --pane-header-h: 48px;
+  --sidebar-w: 268px;
 
   /* Three elevations and one hover lift. Nothing else in the app casts a shadow. */
   --shadow-window: 0 0 0 0.5px rgba(0, 0, 0, 0.05), 0 6px 20px rgba(0, 0, 0, 0.09), 0 28px 60px -12px rgba(0, 0, 0, 0.22);
@@ -77,7 +82,11 @@
   --material-window: rgba(255, 255, 255, 0.9);
   --material-content: rgba(255, 255, 255, 0.55);
   --material-nav: rgba(244, 244, 247, 0.5);
+  --material-toolbar: rgba(252, 252, 253, 0.55);
+  --material-inspector: rgba(255, 255, 255, 0.42);
   --blur-window: blur(48px) saturate(180%);
+  /* Space the desktop build reserves at the left of the toolbar for the OS window buttons. */
+  --window-controls-w: 0px;
 
   /* The wallpaper: five very large, very blurred colour fields — cream and jade at the top, sky on the
      right, cobalt across the bottom. Nothing in the UI is this saturated. */
@@ -128,6 +137,8 @@
     --material-window: rgba(28, 28, 30, 0.88);
     --material-content: rgba(28, 28, 30, 0.5);
     --material-nav: rgba(12, 12, 14, 0.4);
+    --material-toolbar: rgba(30, 30, 33, 0.5);
+    --material-inspector: rgba(28, 28, 30, 0.38);
     --backdrop:
       radial-gradient(70% 55% at 10% 0%, rgba(38, 78, 140, 0.75), transparent 62%),
       radial-gradient(50% 45% at 40% -5%, rgba(24, 92, 96, 0.6), transparent 62%),
@@ -171,6 +182,8 @@
   --material-window: rgba(28, 28, 30, 0.88);
   --material-content: rgba(28, 28, 30, 0.5);
   --material-nav: rgba(12, 12, 14, 0.4);
+  --material-toolbar: rgba(30, 30, 33, 0.5);
+  --material-inspector: rgba(28, 28, 30, 0.38);
   --backdrop:
     radial-gradient(70% 55% at 10% 0%, rgba(38, 78, 140, 0.75), transparent 62%),
     radial-gradient(50% 45% at 40% -5%, rgba(24, 92, 96, 0.6), transparent 62%),
@@ -221,12 +234,40 @@ body {
   @media (min-width: 768px) { .surface { border-radius: var(--radius-surface); } }
   @media (max-width: 767.98px) { .surface { border-radius: 0; border-left: 0; border-right: 0; } }
 
-  /* The two panes inside the window. The nav pane lets more wallpaper through than the content pane,
-     which is what makes it read as a shade cooler without a single coloured pixel of its own. */
+  /* The panes inside the window. The nav pane lets more wallpaper through than the content pane, which is
+     what makes it read as a shade cooler without a single coloured pixel of its own; the inspector sits
+     between the two. Hairlines, not gaps, separate them, because the window is one sheet. */
   .pane-nav { background: var(--material-nav); }
   .pane-content { background: var(--material-content); }
+  .pane-inspector { background: var(--material-inspector); }
   /* Kept as the alias older screens use for a light panel inside a card. */
   .panel { background: var(--material-nav); }
+
+  /*
+   * The toolbar spans the whole window above the panes: a shade lighter than the content pane, with the one
+   * hairline under it. On the desktop build it is the window's drag handle, and the OS draws its stoplight
+   * buttons over the space `--window-controls-w` reserves at its left.
+   */
+  .toolbar {
+    background: var(--material-toolbar);
+    border-bottom: 1px solid var(--color-hairline-soft);
+    padding-left: calc(0.75rem + var(--window-controls-w));
+  }
+  [data-window-drag="on"] .toolbar { -webkit-app-region: drag; app-region: drag; }
+  [data-window-drag="on"] .no-drag, [data-window-drag="on"] .toolbar button, [data-window-drag="on"] .toolbar input {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+  /* The desktop window: the OS stoplights need ~70px before anything of ours starts. */
+  [data-window-controls="overlay"] { --window-controls-w: 70px; }
+
+  /*
+   * On the desktop build the OS window *is* the window: it already has the rounded corners, the edge and
+   * the shadow, and its stoplight buttons sit at its own top-left corner. So the sheet goes edge to edge
+   * there, and the toolbar lines up under the buttons. In a browser tab the sheet floats on the wallpaper.
+   */
+  [data-shell="desktop"] .app-frame { padding: 0; }
+  [data-shell="desktop"] .surface { border: 0; border-radius: 0; box-shadow: none; }
 
   /* Typographic ramp. Screens pick a step, never a size. */
   .type-display { font-size: 28px; line-height: 1.15; font-weight: 600; letter-spacing: -0.021em; }
