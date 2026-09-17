@@ -84,7 +84,7 @@ function LessonView({ runner }: { runner: LessonRunner }) {
     return (
       <Page width="sm" data-testid="lesson-done">
         <PageHeader
-          crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: lesson.title }]}
+          back={{ label: 'Today', to: '/today' }}
           title={`${isRemediation ? 'Repair complete' : 'Lesson complete'}: ${lesson.title}`}
           description={`Unaided check passed on ${passed} of ${state.conceptIds.length} concept${state.conceptIds.length === 1 ? '' : 's'}. Their review cards are now active and will come due on Today.`}
         />

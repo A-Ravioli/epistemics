@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { adjustRatingForConfidence, isCorrect, type Card as CardT, type Confidence, type Item, type Rating } from '@epistemics/core';
 import { createSession, endSession, getReceiptsForSession, setReceiptDisputed } from '@epistemics/db';
-import { Banner, Breadcrumbs, Button, Card, ConfidenceButtons, EmptyState, ErrorBanner, Explainer, Eyebrow, IconButton, Kbd, Markdown, Page, PageHeader, PanelSection, Pill, Progress, RatingButtons, Skeleton, Spinner, Stepper, TopBar, Workspace, inputClass } from '@epistemics/ui';
+import { Back, Banner, Button, Card, ConfidenceButtons, EmptyState, ErrorBanner, Explainer, Eyebrow, IconButton, Kbd, Markdown, Page, PageHeader, PanelSection, Pill, Progress, RatingButtons, Skeleton, Spinner, Stepper, TopBar, Workspace, inputClass } from '@epistemics/ui';
 import { useCourse } from '../../lib/app-state.js';
 import { WIDE_QUERY, useMediaQuery } from '../../lib/use-media.js';
 import { getQueueFirst, markDayCleared, setQueueFirst } from '../../lib/settings.js';
@@ -237,12 +237,11 @@ export function ReviewScreen() {
     return () => window.removeEventListener('keydown', onKey);
   }, [busy, current, step, confidence, graded, grade, rate, continueFromAnswer]);
 
-  const crumbs = [{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: 'Review' }];
   if (loadError) return <Page width="sm"><ErrorBanner title="Could not load the review queue" message={loadError} onRetry={boot} /></Page>;
   if (finished) {
     return (
       <Page width="sm">
-        <PageHeader crumbs={crumbs} title="Reviews cleared" />
+        <PageHeader back={{ label: 'Today', to: '/today' }} title="Reviews cleared" />
         <EmptyState
           title="Reviews cleared"
           body={`${done} card${done === 1 ? '' : 's'} answered. Nothing more is due today, so the lesson gate is open.`}
@@ -275,7 +274,7 @@ export function ReviewScreen() {
         <div className="text-[15px] font-semibold leading-snug">{conceptName}</div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Pill tone={learning ? 'accent' : 'neutral'} title="Learning cards repeat within the session; review cards come back after days">{CARD_STATE_LABEL[current.card.state] ?? 'Review'}</Pill>
-          <Pill tone="purple" title={`Item type: ${current.item.type}`}>{ITEM_TYPE_LABEL[current.item.type]}</Pill>
+          <Pill tone="neutral" title={`Item type: ${current.item.type}`}>{ITEM_TYPE_LABEL[current.item.type]}</Pill>
         </div>
       </PanelSection>
       {receipt ? <PanelSection title="Blind grade">{receipt}</PanelSection> : null}
@@ -297,7 +296,7 @@ export function ReviewScreen() {
         <div className="mx-auto w-full max-w-[680px] space-y-5 px-4 py-5 md:px-8 md:py-6">
           <header className="space-y-3">
             <TopBar actions={<IconButton icon="back" label="Stop and go to Today" onClick={() => navigate('/today')} data-testid="review-stop" />}>
-              <Breadcrumbs crumbs={crumbs} />
+              <Back label="Today" to="/today" />
             </TopBar>
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <span className="text-[13px] text-muted" data-testid="review-progress">{index + 1} of {total}{done ? ` · ${done} done` : ''}</span>
@@ -311,7 +310,7 @@ export function ReviewScreen() {
               <Eyebrow>{conceptName}</Eyebrow>
               <span className="flex gap-1.5 lg:hidden">
                 <Pill tone={learning ? 'accent' : 'neutral'}>{CARD_STATE_LABEL[current.card.state] ?? 'Review'}</Pill>
-                <Pill tone="purple">{ITEM_TYPE_LABEL[current.item.type]}</Pill>
+                <Pill tone="neutral">{ITEM_TYPE_LABEL[current.item.type]}</Pill>
               </span>
             </div>
             <Markdown className="reading mt-3 text-ink">{current.item.prompt}</Markdown>

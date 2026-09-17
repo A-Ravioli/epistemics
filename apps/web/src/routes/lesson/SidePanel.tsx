@@ -40,7 +40,7 @@ export function ConceptContext({ concept, lesson, phase }: { concept: Concept | 
           <PanelSection title="What you should be able to do">
             <ul className="space-y-2 text-sm">
               {concept.objectives.map((o) => (
-                <li key={o.id} className="flex items-start gap-2"><Pill tone="purple" title={`Bloom level: ${o.bloom}`}>{o.bloom}</Pill><span className="min-w-0 leading-snug">{o.text}</span></li>
+                <li key={o.id} className="flex items-start gap-2"><Pill tone="neutral" title={`Bloom level: ${o.bloom}`}>{o.bloom}</Pill><span className="min-w-0 leading-snug">{o.text}</span></li>
               ))}
             </ul>
           </PanelSection>

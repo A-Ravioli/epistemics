@@ -173,7 +173,7 @@ export function SetupScreen() {
     <Page width="sm" data-testid="setup-screen" data-step={step}>
       <PageHeader
         title={title}
-        crumbs={[{ label: 'Shelf', to: '/shelf' }, { label: title }]}
+        back={{ label: 'Shelf', to: '/shelf' }}
         actions={<IconButton icon="back" label="Back to the Shelf" onClick={() => navigate('/shelf')} data-testid="setup-back" />}
         description={
           step === 'source' ? 'Pick a pack from the Shelf, name a subject, or upload your own material.'

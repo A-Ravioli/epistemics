@@ -74,7 +74,7 @@ export function ChatPane({ view, runner, above }: { view: LessonView; runner: Le
       </div>
       <div className="shrink-0 border-t border-hairline bg-surface px-4 py-3 md:px-8 md:py-4">
         <div className="mx-auto w-full max-w-[680px] space-y-3">
-          <div className="rounded-card border border-hairline bg-nested p-3 shadow-chip transition-[box-shadow,border-color] duration-150 ease-out focus-within:border-accent/60 focus-within:shadow-lift">
+          <div className="rounded-card border border-hairline bg-surface p-3 transition-[border-color] duration-150 ease-out focus-within:border-accent">
             {needsConfidence ? (
               <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span className="text-[13px] font-medium" title="You commit before you find out: a lucky guess then does not count as knowing, and a confident miss gets extra attention.">How sure are you?</span>

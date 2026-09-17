@@ -162,7 +162,7 @@ export function SettingsScreen() {
 
   return (
     <Page width="sm">
-      <PageHeader title="Settings" crumbs={[{ label: 'Settings' }]} description="Three groups: the tutor (which model talks to you), scheduling (how much review each day), and your data." />
+      <PageHeader title="Settings" description="Three groups: the tutor (which model talks to you), scheduling (how much review each day), and your data." />
       {saved ? <Banner tone="good" data-testid="settings-saved">{saved}</Banner> : null}
       {error ? <ErrorBanner message={error} /> : null}
 

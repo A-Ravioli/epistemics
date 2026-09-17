@@ -25,7 +25,7 @@ export function ProgressScreen() {
 
   return (
     <Page>
-      <PageHeader title="Progress" crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: 'Progress' }]} description="Only unaided results count toward mastery; everything here is measured that way." />
+      <PageHeader title="Progress" back={{ label: 'Today', to: '/today' }} description="Only unaided results count toward mastery; everything here is measured that way." />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Mastered" value={`${p.mastered}/${p.total}`} hint={`concepts fully learned; ${p.started} started`} tone={p.mastered > 0 ? 'good' : 'neutral'} />
         <Stat label="Unaided pass" value={pct(p.unassistedRate)} hint="share of checks passed with no help; this is what counts" />

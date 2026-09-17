@@ -7,128 +7,115 @@
  * secondary-text colour and clears 4.5:1 on every fill it sits on (white 5.8, panel 5.4, fill-strong 4.8;
  * dark: 7.2 / 5.9 / 4.8). Status tones are pastel fills with a dark label (all ≥ 5.5:1).
  */
+/*
+ * Tokens. One brand colour (a deep teal-green) does the work of both the primary button and the accent:
+ * links, focus rings, progress fills and the active nav row. Everything else is neutral. Status tones are
+ * four pastel fills with a dark label; `muted` is the one secondary-text colour and clears 4.5:1 on white,
+ * on `panel` and on `fill` in both themes.
+ *
+ * Surfaces are flat. There is no floating window, no wallpaper and no elevation: a card is white with a
+ * visible hairline, and the page behind it is white too. Depth comes from the hairlines and the nav rail.
+ */
 @theme {
-  --color-ink: #1d1d1f;
-  --color-muted: #65656b;
+  --color-ink: #21242c;
+  --color-muted: #5c6066;
   --color-surface: #ffffff;
-  --color-panel: #f7f7f8;
-  --color-nested: #fafafa;
-  --color-fill: #f2f2f4;
-  --color-fill-strong: #e9e9ec;
-  --color-hairline: rgba(0, 0, 0, 0.08);
-  --color-hairline-soft: rgba(0, 0, 0, 0.06);
-  --color-accent: #0a66c2;
-  --color-primary: #111111;
+  --color-panel: #f7f8fa;
+  --color-nested: #f7f8fa;
+  --color-fill: #f0f1f4;
+  --color-fill-strong: #e3e5e9;
+  --color-hairline: #dcdee3;
+  --color-hairline-soft: #e8eaee;
+  --color-accent: #0f7a5a;
+  --color-primary: #0f7a5a;
   --color-on-primary: #ffffff;
-  --color-scrim: rgba(0, 0, 0, 0.35);
+  --color-scrim: rgba(33, 36, 44, 0.45);
 
-  --color-blue-bg: #e6f0ff;
-  --color-blue-fg: #1e4f8f;
-  --color-green-bg: #e6f6ec;
-  --color-green-fg: #1a6b3a;
-  --color-yellow-bg: #fff6d6;
-  --color-yellow-fg: #7a5200;
-  --color-purple-bg: #f0e8ff;
-  --color-purple-fg: #5b2fa8;
-  --color-red-bg: #fde8e8;
-  --color-red-fg: #a32626;
-  --color-lime-bg: #eef7d8;
-  --color-lime-fg: #4d6b0f;
+  --color-blue-bg: #e8f1fe;
+  --color-blue-fg: #14509c;
+  --color-green-bg: #e2f5ec;
+  --color-green-fg: #106245;
+  --color-yellow-bg: #fdf2d6;
+  --color-yellow-fg: #77520a;
+  --color-red-bg: #fdeaea;
+  --color-red-fg: #a02525;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Charter", "Iowan Old Style", Georgia, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --radius-control: 10px;
-  --radius-input: 12px;
-  --radius-card: 16px;
-  --radius-surface: 22px;
+  --radius-control: 6px;
+  --radius-input: 8px;
+  --radius-card: 10px;
 
-  --shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 40px rgba(0, 0, 0, 0.08);
-  --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
-  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-chip: 0 1px 2px rgba(33, 36, 44, 0.06);
+  /* The only elevation left: a dialog genuinely floats over the page. */
+  --shadow-dialog: 0 8px 32px rgba(33, 36, 44, 0.18);
 }
 
-/* Dark theme: same structure, darker backdrop. Applied by system preference unless the learner forced a theme. */
+/* Dark theme: the same structure on a dark neutral, with the brand lightened to hold its contrast. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-ink: #f5f5f7;
-    --color-muted: #a8a8ad;
-    --color-surface: #1c1c1e;
-    --color-panel: #2c2c2e;
-    --color-nested: #232325;
-    --color-fill: #2c2c2e;
-    --color-fill-strong: #3a3a3c;
-    --color-hairline: rgba(255, 255, 255, 0.08);
-    --color-hairline-soft: rgba(255, 255, 255, 0.06);
-    --color-accent: #6db3f8;
-    --color-primary: #f5f5f7;
-    --color-on-primary: #1d1d1f;
+    --color-ink: #f2f3f5;
+    --color-muted: #a2a6ad;
+    --color-surface: #16181c;
+    --color-panel: #1d2026;
+    --color-nested: #1d2026;
+    --color-fill: #23262c;
+    --color-fill-strong: #2e323a;
+    --color-hairline: #31353d;
+    --color-hairline-soft: #262a31;
+    --color-accent: #4fc79b;
+    --color-primary: #4fc79b;
+    --color-on-primary: #0d2a20;
     --color-scrim: rgba(0, 0, 0, 0.6);
-    --color-blue-bg: #1f3350;
-    --color-blue-fg: #9fc4ff;
-    --color-green-bg: #1c3a29;
-    --color-green-fg: #8fdcae;
-    --color-yellow-bg: #3f3210;
-    --color-yellow-fg: #f3d27a;
-    --color-purple-bg: #33245a;
-    --color-purple-fg: #cdb4ff;
-    --color-red-bg: #4a1f1f;
+    --color-blue-bg: #172c49;
+    --color-blue-fg: #9cc3ff;
+    --color-green-bg: #123528;
+    --color-green-fg: #7edcb2;
+    --color-yellow-bg: #3a2e0d;
+    --color-yellow-fg: #f0cf7f;
+    --color-red-bg: #451d1d;
     --color-red-fg: #f4a0a0;
-    --color-lime-bg: #2e3d14;
-    --color-lime-fg: #c6e08c;
-    --shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px rgba(0, 0, 0, 0.5);
     --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.5);
-    --backdrop: radial-gradient(60% 50% at 15% 0%, rgba(80, 120, 190, 0.22), transparent 70%), radial-gradient(50% 45% at 100% 100%, rgba(180, 140, 60, 0.14), transparent 70%), #111111;
+    --shadow-dialog: 0 8px 32px rgba(0, 0, 0, 0.6);
   }
 }
 :root[data-theme="dark"] {
-  --color-ink: #f5f5f7;
-  --color-muted: #a8a8ad;
-  --color-surface: #1c1c1e;
-  --color-panel: #2c2c2e;
-  --color-nested: #232325;
-  --color-fill: #2c2c2e;
-  --color-fill-strong: #3a3a3c;
-  --color-hairline: rgba(255, 255, 255, 0.08);
-  --color-hairline-soft: rgba(255, 255, 255, 0.06);
-  --color-accent: #6db3f8;
-  --color-primary: #f5f5f7;
-  --color-on-primary: #1d1d1f;
+  --color-ink: #f2f3f5;
+  --color-muted: #a2a6ad;
+  --color-surface: #16181c;
+  --color-panel: #1d2026;
+  --color-nested: #1d2026;
+  --color-fill: #23262c;
+  --color-fill-strong: #2e323a;
+  --color-hairline: #31353d;
+  --color-hairline-soft: #262a31;
+  --color-accent: #4fc79b;
+  --color-primary: #4fc79b;
+  --color-on-primary: #0d2a20;
   --color-scrim: rgba(0, 0, 0, 0.6);
-  --color-blue-bg: #1f3350;
-  --color-blue-fg: #9fc4ff;
-  --color-green-bg: #1c3a29;
-  --color-green-fg: #8fdcae;
-  --color-yellow-bg: #3f3210;
-  --color-yellow-fg: #f3d27a;
-  --color-purple-bg: #33245a;
-  --color-purple-fg: #cdb4ff;
-  --color-red-bg: #4a1f1f;
+  --color-blue-bg: #172c49;
+  --color-blue-fg: #9cc3ff;
+  --color-green-bg: #123528;
+  --color-green-fg: #7edcb2;
+  --color-yellow-bg: #3a2e0d;
+  --color-yellow-fg: #f0cf7f;
+  --color-red-bg: #451d1d;
   --color-red-fg: #f4a0a0;
-  --color-lime-bg: #2e3d14;
-  --color-lime-fg: #c6e08c;
-  --shadow-surface: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px rgba(0, 0, 0, 0.5);
   --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.5);
-  --backdrop: radial-gradient(60% 50% at 15% 0%, rgba(80, 120, 190, 0.22), transparent 70%), radial-gradient(50% 45% at 100% 100%, rgba(180, 140, 60, 0.14), transparent 70%), #111111;
+  --shadow-dialog: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
-:root {
-  /* Soft wallpaper: pale sky blue at the top, pale cream bottom-left, mostly near-white. */
-  --backdrop: radial-gradient(70% 55% at 20% 0%, rgba(219, 232, 247, 0.9), transparent 70%), radial-gradient(55% 50% at 0% 100%, rgba(243, 236, 212, 0.85), transparent 70%), radial-gradient(60% 40% at 100% 60%, rgba(219, 232, 247, 0.5), transparent 70%), #f5f6f8;
-  color-scheme: light dark;
-}
+:root { color-scheme: light dark; }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }
 
 html, body, #root { height: 100%; }
 body {
-  background: var(--backdrop);
+  background: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -146,25 +133,19 @@ body {
 }
 
 @layer components {
-  /* The one floating window the app lives in: white, large radius, hairline, diffuse shadow; edge to edge on phones. */
-  .surface {
-    background: var(--color-surface);
-    box-shadow: var(--shadow-surface);
-    border: 1px solid var(--color-hairline-soft);
-  }
-  @media (min-width: 768px) { .surface { border-radius: var(--radius-surface); } }
-  @media (max-width: 767.98px) { .surface { border-radius: 0; border-left: 0; border-right: 0; } }
+  /* The app fills the window: no floating card, no wallpaper, nothing to look at but the content. */
+  .surface { background: var(--color-surface); }
 
-  /* Light-grey nav panel. It sits on the opaque surface, so a blur would cost repaints for nothing visible. */
+  /* The nav rail, a shade off the page so the content column reads as the subject. */
   .panel { background: var(--color-panel); }
 
-  /* Learner-facing reading text: tutor turns, item prompts, definitions. */
-  .reading { font-family: var(--font-serif); font-size: 17px; line-height: 1.6; }
-  .reading-sm { font-family: var(--font-serif); font-size: 15.5px; line-height: 1.55; }
+  /* Learner-facing reading text: tutor turns, item prompts, definitions. Same family as the UI, one size up. */
+  .reading { font-size: 18px; line-height: 1.65; }
+  .reading-sm { font-size: 16px; line-height: 1.6; }
 
-  /* Interactive cards lift a hair on hover. */
-  .liftable { transition: box-shadow 150ms ease, transform 150ms ease; }
-  .liftable:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+  /* Interactive cards take the brand hairline on hover rather than lifting off the page. */
+  .liftable { transition: border-color 150ms ease, background-color 150ms ease; }
+  .liftable:hover { border-color: var(--color-accent); background: var(--color-panel); }
 }
 
 .prose-epi { line-height: inherit; overflow-wrap: anywhere; }

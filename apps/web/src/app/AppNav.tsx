@@ -5,7 +5,6 @@ import { IconButton, ListRow, Pill, navRowClass, type IconName } from '@epistemi
 export interface NavItem {
   readonly to: string;
   readonly label: string;
-  readonly meta: string;
   readonly icon: IconName;
 }
 
@@ -22,7 +21,7 @@ export function AppNav({ nav, courseTitle, tutorMode }: { nav: readonly NavItem[
   const links = (onPick?: () => void) =>
     nav.map((item) => (
       <NavLink key={item.to} to={item.to} onClick={onPick} className={({ isActive }) => navRowClass(isActive)}>
-        {({ isActive }) => <ListRow title={item.label} meta={item.meta} icon={item.icon} active={isActive} />}
+        {({ isActive }) => <ListRow title={item.label} icon={item.icon} active={isActive} />}
       </NavLink>
     ));
 

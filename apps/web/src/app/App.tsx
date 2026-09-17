@@ -18,12 +18,12 @@ import { AppNav, type NavItem } from './AppNav.js';
 import { ErrorBoundary } from './ErrorBoundary.js';
 
 const nav: readonly NavItem[] = [
-  { to: '/today', label: 'Today', meta: 'Your next step', icon: 'today' },
-  { to: '/shelf', label: 'Shelf', meta: 'Courses and packs', icon: 'shelf' },
-  { to: '/map', label: 'Map', meta: 'Prerequisite graph', icon: 'map' },
-  { to: '/progress', label: 'Progress', meta: 'Mastery and calibration', icon: 'chart' },
-  { to: '/settings', label: 'Settings', meta: 'Tutor, scheduling, data', icon: 'gear' },
-  { to: '/account', label: 'Account', meta: 'Sign in and sync', icon: 'user' },
+  { to: '/today', label: 'Today', icon: 'today' },
+  { to: '/shelf', label: 'Shelf', icon: 'shelf' },
+  { to: '/map', label: 'Map', icon: 'map' },
+  { to: '/progress', label: 'Progress', icon: 'chart' },
+  { to: '/settings', label: 'Settings', icon: 'gear' },
+  { to: '/account', label: 'Account', icon: 'user' },
 ];
 
 function Boot({ error }: { error?: string }) {

@@ -35,7 +35,7 @@ export function PanelSection({ title, children, className = '' }: { title?: Reac
   );
 }
 
-/** Slim top row inside the centre panel: breadcrumbs (or a title) on the left, round icon chips on the right. */
+/** Slim top row inside the centre panel: a back link (or a title) on the left, round icon chips on the right. */
 export function TopBar({ children, actions, className = '', ...rest }: HTMLAttributes<HTMLDivElement> & { actions?: ReactNode }) {
   return (
     <div className={`flex min-h-9 flex-wrap items-center justify-between gap-x-4 gap-y-2 ${className}`} {...rest}>

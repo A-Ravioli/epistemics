@@ -79,7 +79,7 @@ export function AccountScreen() {
 
   return (
     <Page width="sm" data-testid="account-screen">
-      <PageHeader title="Account and sync" crumbs={[{ label: 'Settings', to: '/settings' }, { label: 'Account and sync' }]} description="Everything stays on this device until you sign in. Signing in syncs your courses, cards, reviews and sessions to your own Supabase project and to any other device signed in with the same account." />
+      <PageHeader title="Account and sync" back={{ label: 'Settings', to: '/settings' }} description="Everything stays on this device until you sign in. Signing in syncs your courses, cards, reviews and sessions to your own Supabase project and to any other device signed in with the same account." />
       {message ? <Banner tone="good">{message}</Banner> : null}
       {shownError ? <Banner tone="bad" data-testid="account-error">{shownError}</Banner> : null}
 

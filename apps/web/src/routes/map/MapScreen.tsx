@@ -23,10 +23,13 @@ const H = 44;
 const GAP_X = 60;
 const GAP_Y = 16;
 
-/** Pastel fill with a darker label for each mastery band; the not-started band is the neutral fill. */
+/**
+ * Mastery as one colour getting stronger, not five colours to decode: neutral before you start, amber and
+ * red while it is shaky, the brand green pale once you are getting there and solid once it is mastered.
+ */
 function masteryTone(m: number): { bg: string; fg: string } {
-  if (m >= 0.85) return { bg: 'var(--color-green-bg)', fg: 'var(--color-green-fg)' };
-  if (m >= 0.6) return { bg: 'var(--color-lime-bg)', fg: 'var(--color-lime-fg)' };
+  if (m >= 0.85) return { bg: 'var(--color-primary)', fg: 'var(--color-on-primary)' };
+  if (m >= 0.6) return { bg: 'var(--color-green-bg)', fg: 'var(--color-green-fg)' };
   if (m >= 0.3) return { bg: 'var(--color-yellow-bg)', fg: 'var(--color-yellow-fg)' };
   if (m > 0) return { bg: 'var(--color-red-bg)', fg: 'var(--color-red-fg)' };
   return { bg: 'var(--color-fill)', fg: 'var(--color-muted)' };
@@ -104,7 +107,7 @@ export function MapScreen() {
       <Page width="full" className="max-w-5xl">
       <PageHeader
         title="Course map"
-        crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: 'Map' }]}
+        back={{ label: 'Today', to: '/today' }}
         description="Every concept, arranged so prerequisites sit to the left of what they unlock. Colour shows how well you know each one."
         actions={
           <>
@@ -193,7 +196,7 @@ function ConceptDetail({ concept, state, receipts, onClose }: { concept: Concept
             const card = cardsQ.data?.find((c) => c.itemId === i.id);
             return (
               <li key={i.id} className="flex flex-col gap-1 border-t border-hairline py-2 first:border-t-0 first:pt-0">
-                <span className="min-w-0"><Pill tone="purple">{i.type}</Pill> <span>{i.prompt.length > 120 ? `${i.prompt.slice(0, 119)}…` : i.prompt}</span></span>
+                <span className="min-w-0"><Pill tone="neutral">{i.type}</Pill> <span>{i.prompt.length > 120 ? `${i.prompt.slice(0, 119)}…` : i.prompt}</span></span>
                 <span className="shrink-0 text-xs text-muted">{card ? (card.state === 0 ? 'not active yet' : `${['new', 'learning', 'review', 'relearning'][card.state]} · due ${relativeDue(card.due, now)} · ${Math.round(ctx.scheduler.retrievability(card, now) * 100)}% likely recalled`) : ''}</span>
               </li>
             );

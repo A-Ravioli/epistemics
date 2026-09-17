@@ -1,7 +1,6 @@
-import { useNavigate } from 'react-router';
 import type { LessonPhase, Scaffolding } from '@epistemics/core';
 import { MAX_HINT_LEVEL } from '@epistemics/core';
-import { Breadcrumbs, Icon, IconButton, Pill, TopBar } from '@epistemics/ui';
+import { Back, Icon, Pill, TopBar } from '@epistemics/ui';
 import { useCourse } from '../../lib/app-state.js';
 import type { LessonView } from '../../lib/services/lesson.js';
 
@@ -40,7 +39,6 @@ const HINT_PHASES = new Set<LessonPhase>(['DEVELOP', 'EXTEND', 'REMEDIATE']);
 
 export function LessonHeader({ view }: { view: LessonView }) {
   const ctx = useCourse();
-  const navigate = useNavigate();
   const { state, lesson, concept } = view;
   const plan = state.phasePlan;
   const current = state.phase;
@@ -50,8 +48,8 @@ export function LessonHeader({ view }: { view: LessonView }) {
   const scaffold = SCAFFOLDING_LABEL[state.scaffolding];
   return (
     <header className="space-y-3" data-testid="lesson-header">
-      <TopBar actions={<IconButton icon="back" label="Back to Today" onClick={() => navigate('/today')} data-testid="lesson-back" />}>
-        <Breadcrumbs crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: `${view.isRemediation ? 'Repair' : 'Lesson'} · ${lesson.title}` }]} />
+      <TopBar>
+        <Back label="Today" to="/today" testId="lesson-back" />
       </TopBar>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h1 className="min-w-0 text-[22px] font-semibold leading-tight tracking-[-0.02em]">{view.isRemediation ? 'Repair: ' : ''}{lesson.title}</h1>

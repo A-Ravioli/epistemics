@@ -123,8 +123,7 @@ export function ShelfScreen() {
     <Page>
       <PageHeader
         title="Shelf"
-        crumbs={[{ label: 'My courses' }]}
-        description="Courses are built from packs: a versioned curriculum of units, lessons, concepts and review questions."
+                description="Courses are built from packs: a versioned curriculum of units, lessons, concepts and review questions."
         actions={
           <>
             <Button variant="secondary" onClick={doImport} disabled={busy === 'import'} data-testid="import-pack" title="Load a .epistemics.json pack someone exported">Import a pack</Button>

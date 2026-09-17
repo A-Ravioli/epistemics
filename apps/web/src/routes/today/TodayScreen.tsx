@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { Banner, Button, Card, Disclosure, ErrorBanner, IconButton, Meter, Page, PageHeader, Pill, SectionTitle, Skeleton, Stat, type PillTone } from '@epistemics/ui';
+import { Banner, Button, Card, Disclosure, ErrorBanner, Eyebrow, IconButton, Meter, Page, PageHeader, Pill, SectionTitle, Skeleton, Stat, type PillTone } from '@epistemics/ui';
 import { useApp, useCourse, useQuery } from '../../lib/app-state.js';
-import { minutes, plural } from '../../lib/format.js';
+import { longDate, minutes, plural } from '../../lib/format.js';
 import { setGateOverrideDay } from '../../lib/settings.js';
 import { CurriculumBuilder, curriculumKey, unitBuilds, unitsToPrepare } from '../../lib/services/build.js';
 import { loadToday, type TodayModel } from '../../lib/services/today.js';
@@ -45,13 +45,14 @@ interface Primary {
   hero?: { title: string; body: string; to?: string; label?: string; testId?: string };
 }
 
+/** What kind of work is next. The colour carries the state, not the kind: repair is the only warning here. */
 const PRIMARY_KIND: Record<PrimaryKey, { label: string; tone: PillTone }> = {
   resume: { label: 'Lesson in progress', tone: 'accent' },
   review: { label: 'Reviews', tone: 'accent' },
   lesson: { label: 'Lesson', tone: 'good' },
   remediation: { label: 'Repair', tone: 'warn' },
-  checkpoint: { label: 'Checkpoint', tone: 'purple' },
-  teachback: { label: 'Teach it back', tone: 'lime' },
+  checkpoint: { label: 'Checkpoint', tone: 'accent' },
+  teachback: { label: 'Teach it back', tone: 'accent' },
   done: { label: 'Done for today', tone: 'neutral' },
 };
 
@@ -70,12 +71,7 @@ function primaryAction(t: TodayModel): Primary {
 
 /** The header row that marks the single card holding the screen's only primary button. */
 function NextUpHeader({ kind }: { kind: PrimaryKey }) {
-  return (
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <Pill tone={PRIMARY_KIND[kind].tone}>{PRIMARY_KIND[kind].label}</Pill>
-      <span className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Next up</span>
-    </div>
-  );
+  return <Eyebrow tone="accent" className="mb-2">Next up · {PRIMARY_KIND[kind].label}</Eyebrow>;
 }
 
 export function TodayScreen() {
@@ -111,12 +107,12 @@ function TodayBody() {
     <Page data-testid="today-screen">
       <PageHeader
         title="Today"
-        crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title }, { label: 'Today' }]}
+        
         actions={<IconButton icon="gear" label="Settings" onClick={() => navigate('/settings')} />}
         description={ctx.course.title}
         meta={
           <span className="flex flex-wrap items-center gap-3">
-            <time dateTime={t.day}>{t.day}</time>
+            <time dateTime={t.day}>{longDate(t.day)}</time>
             {ahead.status ? (
               <Pill tone="accent" title={ahead.status.event ? describeEvent(ahead.status.event) : undefined}>
                 <span data-testid="unit-build-pill" className="inline-flex items-center gap-1.5">
@@ -133,11 +129,8 @@ function TodayBody() {
 
       {primary.hero ? (
         <Card className="p-5 sm:p-7" data-testid="next-up">
-          <div className="flex items-center justify-between gap-3">
-            <Pill tone={PRIMARY_KIND[primary.key].tone}>{PRIMARY_KIND[primary.key].label}</Pill>
-            <span className="text-xs font-medium uppercase tracking-[0.08em] text-muted">Next up</span>
-          </div>
-          <h2 className="mt-4 text-[22px] font-semibold leading-tight tracking-[-0.02em] sm:text-[24px]">{primary.hero.title}</h2>
+          <Eyebrow tone="accent">Next up · {PRIMARY_KIND[primary.key].label}</Eyebrow>
+          <h2 className="mt-2 text-[22px] font-semibold leading-tight tracking-[-0.02em] sm:text-[24px]">{primary.hero.title}</h2>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-muted">{primary.hero.body}</p>
           <div className="mt-5">
             {primary.hero.to && primary.hero.label ? (

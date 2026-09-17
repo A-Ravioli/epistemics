@@ -20,7 +20,7 @@ export function Dialog({ open, onClose, title, children, footer }: { open: boole
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4" onClick={onClose} role="presentation">
-      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded-card border border-hairline bg-surface p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded-card border border-hairline bg-surface p-5 shadow-dialog" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-3 text-[15px] font-semibold">{title}</h2>
         <div className="space-y-3 text-sm">{children}</div>
         {footer ? <div className="mt-4 flex justify-end gap-2">{footer}</div> : null}

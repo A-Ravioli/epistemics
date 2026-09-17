@@ -64,23 +64,22 @@ export function SectionTitle({ children, className = '', as: Tag = 'h2' }: { chi
 }
 
 /** Tiny uppercase label for a group of things (a panel section, a phase, a card eyebrow). */
-export function Eyebrow({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`text-[11px] font-semibold uppercase tracking-[0.08em] text-muted ${className}`}>{children}</div>;
+export function Eyebrow({ children, className = '', tone = 'muted' }: { children: ReactNode; className?: string; tone?: 'muted' | 'accent' }) {
+  return <div className={`text-[11px] font-semibold uppercase tracking-[0.08em] ${tone === 'accent' ? 'text-accent' : 'text-muted'} ${className}`}>{children}</div>;
 }
 
 // ---------------------------------------------------------------------------
 // Pills, keys
 // ---------------------------------------------------------------------------
 
-export type PillTone = 'neutral' | 'good' | 'warn' | 'bad' | 'accent' | 'purple' | 'lime';
+/** Four meanings, four fills. Anything that is merely a label is `neutral`; colour is reserved for status. */
+export type PillTone = 'neutral' | 'good' | 'warn' | 'bad' | 'accent';
 export const PILL_TONES: Record<PillTone, string> = {
   neutral: 'bg-fill text-ink',
   good: 'bg-green-bg text-green-fg',
   warn: 'bg-yellow-bg text-yellow-fg',
   bad: 'bg-red-bg text-red-fg',
   accent: 'bg-blue-bg text-blue-fg',
-  purple: 'bg-purple-bg text-purple-fg',
-  lime: 'bg-lime-bg text-lime-fg',
 };
 
 export function Pill({ tone = 'neutral', children, title, className = '' }: { tone?: PillTone; children: ReactNode; title?: string; className?: string }) {
@@ -144,55 +143,42 @@ export function Skeleton({ lines = 3, className = '', label = 'Loading' }: { lin
 }
 
 // ---------------------------------------------------------------------------
-// Page header with breadcrumbs
+// Page header
 // ---------------------------------------------------------------------------
 
-export interface Crumb {
+export interface BackLink {
   label: string;
-  /** Route path (HashRouter): rendered as `#path`. The last crumb is the current page and has none. */
-  to?: string;
+  /** Route path (HashRouter): rendered as `#path`. */
+  to: string;
 }
 
-/** Slim breadcrumb row: "My courses / Probability / Lesson 3" in small muted text, the current crumb in ink. */
-export function Breadcrumbs({ crumbs, className = '', testId }: { crumbs: Crumb[]; className?: string; testId?: string }) {
+/** One step back, named: "← Today". Replaces a three-level breadcrumb that only ever had one useful link. */
+export function Back({ label, to, className = '', testId = 'back-link' }: BackLink & { className?: string; testId?: string }) {
   return (
-    <nav aria-label="Breadcrumb" className={`min-w-0 ${className}`} data-testid={testId}>
-      <ol className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px] text-muted">
-        {crumbs.map((c, i) => {
-          const last = i === crumbs.length - 1;
-          return (
-            <li key={`${c.label}-${i}`} className="flex min-w-0 items-center gap-1.5">
-              {c.to && !last ? (
-                <a href={`#${c.to}`} className="truncate rounded-sm hover:text-ink hover:underline" data-testid={i === 0 ? 'crumb-root' : undefined}>{c.label}</a>
-              ) : (
-                <span className={`truncate ${last ? 'font-medium text-ink' : ''}`} aria-current={last ? 'page' : undefined}>{c.label}</span>
-              )}
-              {!last ? <span aria-hidden="true" className="select-none text-muted opacity-50">/</span> : null}
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+    <a href={`#${to}`} className={`inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink hover:underline ${className}`} data-testid={testId}>
+      <span aria-hidden="true">←</span>
+      {label}
+    </a>
   );
 }
 
 /**
- * Consistent page header: an optional slim top row (breadcrumbs left, round icon chips or buttons right),
+ * Consistent page header: an optional slim top row (a back link on the left, round icon chips or buttons right),
  * then the title, one-line description and meta.
  */
-export function PageHeader({ title, crumbs, description, actions, meta, as: Tag = 'h1', testId, className = '' }: { title: ReactNode; crumbs?: Crumb[]; description?: ReactNode; actions?: ReactNode; meta?: ReactNode; as?: 'h1' | 'h2'; testId?: string; className?: string }) {
+export function PageHeader({ title, back, description, actions, meta, as: Tag = 'h1', testId, className = '' }: { title: ReactNode; back?: BackLink; description?: ReactNode; actions?: ReactNode; meta?: ReactNode; as?: 'h1' | 'h2'; testId?: string; className?: string }) {
   return (
     <header className={`space-y-3 ${className}`} data-testid={testId}>
-      {crumbs || actions ? (
+      {back || actions ? (
         <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          {crumbs ? <Breadcrumbs crumbs={crumbs} /> : <span />}
+          {back ? <Back {...back} /> : <span />}
           {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
       <div className="space-y-1">
-        <Tag className="text-[26px] font-semibold leading-tight tracking-[-0.02em] sm:text-[28px]">{title}</Tag>
-        {description ? <p className="max-w-2xl text-sm leading-relaxed text-muted">{description}</p> : null}
-        {meta ? <div className="text-[13px] text-muted">{meta}</div> : null}
+        <Tag className="text-[28px] font-bold leading-tight tracking-[-0.02em] sm:text-[32px]">{title}</Tag>
+        {description ? <p className="max-w-2xl text-[15px] leading-relaxed text-muted">{description}</p> : null}
+        {meta ? <div className="text-sm text-muted">{meta}</div> : null}
       </div>
     </header>
   );
@@ -269,14 +255,11 @@ export function navRowClass(active: boolean): string {
 }
 
 /** Two-line nav row body: icon, title and a small muted meta line. */
-export function ListRow({ title, meta, icon, active = false }: { title: ReactNode; meta?: ReactNode; icon?: IconName; active?: boolean }) {
+export function ListRow({ title, icon, active = false }: { title: ReactNode; icon?: IconName; active?: boolean }) {
   return (
     <span className="flex items-center gap-3">
       {icon ? <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? 'bg-surface text-ink shadow-chip' : 'text-muted'}`}><Icon name={icon} /></span> : null}
-      <span className="min-w-0 flex-1">
-        <span className={`block truncate text-sm leading-tight ${active ? 'font-semibold text-ink' : 'font-medium text-ink'}`}>{title}</span>
-        {meta ? <span className="block truncate text-xs leading-tight text-muted">{meta}</span> : null}
-      </span>
+      <span className={`min-w-0 flex-1 truncate text-[15px] leading-tight ${active ? 'font-semibold text-ink' : 'font-medium text-ink'}`}>{title}</span>
     </span>
   );
 }

@@ -60,7 +60,7 @@ function CheckpointView({ runner }: { runner: CheckpointRunner }) {
     return (
       <Page width="sm" data-testid="checkpoint-done">
         <PageHeader
-          crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: 'Checkpoint result' }]}
+          back={{ label: 'Today', to: '/today' }}
           title={v.unit.title}
           description={`${passed} of ${entries.length} concepts passed. A concept passes at 80% or more; each pass counts as one spaced retrieval, and each miss gets a short repair lesson before the next unit.`}
         />

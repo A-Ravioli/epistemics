@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { Breadcrumbs, Button, Card, ChatBubble, ErrorBanner, IconButton, Kbd, Page, SectionTitle, Skeleton, Spinner, TopBar } from '@epistemics/ui';
+import { Back, Button, Card, ChatBubble, ErrorBanner, IconButton, Kbd, Page, SectionTitle, Skeleton, Spinner, TopBar } from '@epistemics/ui';
 import { useCourse } from '../../lib/app-state.js';
 import { useStore } from '../../lib/store.js';
 import { TeachbackRunner } from '../../lib/services/teachback.js';
@@ -71,7 +71,7 @@ function TeachbackView({ runner }: { runner: TeachbackRunner }) {
   return (
     <Page width="reading" data-testid="teachback-screen">
       <TopBar actions={<IconButton icon="back" label="Back to Today" onClick={() => navigate('/today')} />}>
-        <Breadcrumbs crumbs={[{ label: 'My courses', to: '/shelf' }, { label: ctx.course.title, to: '/today' }, { label: `Teach it back · ${v.concept.name}` }]} />
+        <Back label="Today" to="/today" />
       </TopBar>
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em]">Teach it back: {v.concept.name}</h1>
