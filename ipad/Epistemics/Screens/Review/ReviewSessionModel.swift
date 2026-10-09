@@ -71,7 +71,14 @@ final class ReviewSessionModel {
         self.reading = ReadingService(provider: ctx.provider, onDevice: app.onDevice)
     }
 
-    var total: Int { max(order.count, answered) }
+    /// Everything due when the session opened, plus confident misses asked again.
+    private(set) var dueAtStart = 0
+    var total: Int { max(dueAtStart + reasked.count, answered) }
+    /// The number of the item on screen (the receipt still belongs to the item just answered).
+    var position: Int {
+        if case .receipt = phase { return answered }
+        return answered + 1
+    }
     var typedMode: Bool { app.settings.typedAnswers && !(current.map { [.sketch, .map].contains($0.item.type) } ?? false) }
     var readingContext: ReadingContext? {
         current.map { ReadingContext(itemType: $0.item.type, paper: $0.area.paper, prompt: $0.item.prompt,
@@ -96,17 +103,18 @@ final class ReviewSessionModel {
         let q = try await service.loadQueue(recentlyShown: shownConcepts, queueFirst: await service.queueFirst())
         order = q.order
         index = 0
+        if dueAtStart == 0 { dueAtStart = q.queue.dueToday }
         minutesLeft = q.minutes
-        try showCurrent()
+        await showCurrent()
     }
 
-    private func showCurrent() throws {
+    private func showCurrent() async {
         guard index < order.count else {
-            Task { await finish() }
+            await finish()
             return
         }
         let card = order[index]
-        guard let item = ctx.curriculum.item(card.itemId) else { index += 1; try showCurrent(); return }
+        guard let item = ctx.curriculum.item(card.itemId) else { index += 1; await showCurrent(); return }
         let ink = inkPaper(for: item)
         current = Current(card: card, item: item, area: InkAreaModel(paper: ink.paper, minHeight: InkAreaModel.defaultHeight(for: ink.paper, lines: ink.lines)))
         confidence = nil
@@ -262,7 +270,7 @@ final class ReviewSessionModel {
     func next() async {
         index += 1
         if index < order.count {
-            try? showCurrent()
+            await showCurrent()
         } else {
             do { try await loadQueue() } catch { phase = .failed("\(error)") }
         }
@@ -286,8 +294,8 @@ final class ReviewSessionModel {
     }
 
     static func dueText(_ ms: Int) -> String {
-        if ms < 3_600_000 { return "again in \(max(1, ms / 60_000)) minutes" }
-        if ms < 86_400_000 { return "again in \(ms / 3_600_000) hours" }
+        if ms < 3_600_000 { let m = max(1, ms / 60_000); return "again in \(m) minute\(m == 1 ? "" : "s")" }
+        if ms < 86_400_000 { let h = ms / 3_600_000; return "again in \(h) hour\(h == 1 ? "" : "s")" }
         let d = Int((Double(ms) / 86_400_000).rounded())
         return d == 1 ? "next due tomorrow" : "next due in \(d) days"
     }

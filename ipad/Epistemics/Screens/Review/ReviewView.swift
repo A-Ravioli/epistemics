@@ -10,7 +10,7 @@ struct ReviewView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SessionHeader(title: model.phase == .done ? "Reviews" : "Review · \(min(model.answered + 1, max(model.total, 1))) of \(max(model.total, 1))",
+            SessionHeader(title: model.phase == .done ? "Reviews" : "Review · \(min(model.position, max(model.total, 1))) of \(max(model.total, 1))",
                           closeLabel: "Stop reviewing", onClose: { app.dismissSession() }) {
                 if model.minutesLeft > 0, model.phase != .done {
                     Text("about \(model.minutesLeft) min left").font(.secondary).foregroundStyle(Theme.muted)

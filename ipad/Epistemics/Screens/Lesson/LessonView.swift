@@ -122,7 +122,7 @@ struct LessonView: View {
     private var input: some View {
         if let p = model.pendingConfirmation {
             ConfirmReadingView(reading: p.reading) { text in Task { await model.confirmPending(text: text) } }
-        } else if model.canWrite {
+        } else if model.canWrite || model.busy == .reading {
             switch model.inputMode {
             case .answer, .answerConfidence:
                 InkArea(area: model.activeArea, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing)

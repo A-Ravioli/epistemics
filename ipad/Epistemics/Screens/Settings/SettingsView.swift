@@ -60,6 +60,9 @@ struct SettingsView: View {
                         }
                     }
                 }
+                #if DEBUG
+                DeveloperTools()
+                #endif
             }
             .padding(.top, 56).padding(.horizontal, 32).padding(.bottom, 60)
         }

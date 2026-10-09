@@ -389,7 +389,7 @@ private struct ReviewSession {
         reviewTime = now
         var interval = 0
         if card.state != .new, let lastReview = card.lastReview {
-            interval = dateDiffInDays(lastReview, now)
+            interval = max(0, dateDiffInDays(lastReview, now)) // ts-fsrs throws on a negative delta
         }
         current.lastReview = now
         elapsedDays = interval

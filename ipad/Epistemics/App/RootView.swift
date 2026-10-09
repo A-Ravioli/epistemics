@@ -96,7 +96,7 @@ struct SessionHost: View {
                 case .warmup(let id): WarmupView(model: WarmupModel(app: app, ctx: ctx, lessonId: id))
                 case .checkpoint(let id): CheckpointView(model: CheckpointSessionModel(app: app, ctx: ctx, unitId: id))
                 case .map(let id): MapFromMemoryView(model: MapSessionModel(app: app, ctx: ctx, unitId: id))
-                case .teachback: Text("Teach-back is not built yet.").onTapGesture { app.dismissSession() }
+                case .teachback(let id): TeachbackView(model: TeachbackSessionModel(app: app, ctx: ctx, conceptId: id))
                 }
             }
         }

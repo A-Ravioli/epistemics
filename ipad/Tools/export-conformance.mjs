@@ -102,6 +102,7 @@ const allConcepts = (cur) => cur.units.flatMap((u) => u.lessons.flatMap((l) => l
 
   const words = ['card-1', 'card-10', 'card-2', 'Card-2', 'a_b', 'aB', 'a-b', 'ab', 'r0', 'r10', 'sim-card-12', 'sim-card-3', 'A', 'a', '',
     'b1', 'B1', '01934c5e-0d3f-7a2b-8c1d-aaaaaaaaaaaa', '01934c5e-0d3f-7a2b-8c1d-aaaaaaaaaaab', '01934c5e-0d3f-7a2c-0000-000000000000', 'c4#check', 'c4-i2'];
+  for (const ch of ' _-,;:!?.\'"()[]{}@*/\\&#%`^+<=>|~$09aAzZ') words.push(`x${ch}y`);
   const localeCompare = [];
   for (const a of words) for (const b of words) localeCompare.push([a, b, Math.sign(a.localeCompare(b))]);
 

@@ -18,6 +18,8 @@ struct TodayState {
     var teachback: [(conceptId: String, name: String, mastery: Double)]
     var streak: Int
     var openLesson: (lessonId: String, title: String)?
+    /// The next untaught lesson when prerequisites hold it back (mastery below 0.7).
+    var waitingLesson: Lesson?
     var dueCount: Int { queue.queue.dueToday }
 }
 
@@ -82,11 +84,13 @@ extension CourseService {
             return (id, ctx.curriculum.lesson(id)?.title ?? "your lesson")
         }
 
+        let waiting = next == nil ? ctx.curriculum.allLessons.first { !completed.contains($0.id) } : nil
+
         return TodayState(day: day, queue: queue, warmup: try await warmupLesson(day: day), nextLesson: next,
                           lessonLocked: locked, lockReason: reason, overrideUsedToday: overrideUsedToday,
                           recoveryMode: queue.queue.recoveryMode, completedLessonIds: completed,
                           checkpoint: checkpoint.map { (unit: $0.0, ready: $0.1, reason: $0.2) }, mapDue: mapDue,
-                          remediation: remediation, teachback: Array(teachback), streak: streak, openLesson: openLesson)
+                          remediation: remediation, teachback: Array(teachback), streak: streak, openLesson: openLesson, waitingLesson: waiting)
     }
 
     /// The warm-up for today: the last finished lesson, unless the warm-up was already done today.

@@ -12,10 +12,11 @@ let package = Package(
         .library(name: "EpistemicsLLM", targets: ["EpistemicsLLM"]),
     ],
     targets: [
-        .target(name: "EpistemicsCore"),
+        .target(name: "EpistemicsCore", exclude: ["API.md"]),
         .target(
             name: "EpistemicsLLM",
             dependencies: ["EpistemicsCore"],
+            exclude: ["API.md"],
             resources: [.copy("Prompts")]
         ),
         .testTarget(

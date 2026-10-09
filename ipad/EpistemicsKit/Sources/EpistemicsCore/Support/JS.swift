@@ -176,16 +176,31 @@ func jsCompareCodeUnits(_ a: String, _ b: String) -> Int {
     }
 }
 
-/// `a.localeCompare(b)` for the identifiers the core compares (UUIDs and slugs). V8 uses the ICU root
-/// collation; for ASCII it orders punctuation < digits < letters and compares case only as a tie-break.
-/// Checked against Node in the conformance fixtures.
+/// `a.localeCompare(b)` as V8 does it (ICU root collation, CLDR/DUCET order), for the strings the core
+/// compares: card ids, UUIDs and slugs. ASCII is exact: whitespace < punctuation and symbols (in DUCET order)
+/// < digits < letters at the primary level, letters compared case-insensitively, then lowercase before
+/// uppercase. Other scalars sort after ASCII by code point, which is not ICU's order but never arises for ids.
 func jsLocaleCompare(_ a: String, _ b: String) -> Int {
     if a == b { return 0 }
-    switch a.compare(b, options: [], range: nil, locale: Locale(identifier: "en_US_POSIX")) {
-    case .orderedAscending: return -1
-    case .orderedDescending: return 1
-    case .orderedSame: return jsCompareCodeUnits(a, b)
+    let pa = a.unicodeScalars.map(primaryWeight), pb = b.unicodeScalars.map(primaryWeight)
+    if pa != pb { return pa.lexicographicallyPrecedes(pb) ? -1 : 1 }
+    for (x, y) in zip(a.unicodeScalars, b.unicodeScalars) where x != y {
+        let lx = x.properties.isUppercase, ly = y.properties.isUppercase
+        if lx != ly { return lx ? 1 : -1 }
     }
+    return jsCompareCodeUnits(a, b)
+}
+
+private let collationOrder: [Unicode.Scalar: Int] = {
+    var m: [Unicode.Scalar: Int] = [:]
+    let order = "\t\n\u{0B}\u{0C}\r _-,;:!?.'\"()[]{}@*/\\&#%`^+<=>|~$0123456789abcdefghijklmnopqrstuvwxyz"
+    for (i, u) in order.unicodeScalars.enumerated() { m[u] = i }
+    return m
+}()
+
+private func primaryWeight(_ u: Unicode.Scalar) -> Int {
+    let lower = (u.value >= 0x41 && u.value <= 0x5A) ? Unicode.Scalar(u.value + 0x20)! : u
+    return collationOrder[lower] ?? 1000 + Int(u.value)
 }
 
 // MARK: - Insertion-ordered map (JS `Map`)

@@ -55,7 +55,7 @@ final class CheckpointSessionModel {
                 let mastery = try await app.store.conceptStates(course: ctx.course.id).mapValues(\.mastery)
                 let previous = ctx.curriculum.units.filter { $0.ordinal < unit.ordinal }
                 let items = composeCheckpoint(ComposeCheckpointInput(unit: unit, previousUnits: previous, conceptMastery: mastery,
-                                                                     rng: mulberry32(UInt32(truncatingIfNeeded: ctx.now() % 2_147_483_647))))
+                                                                     rng: mulberry32(ctx.now() % 2_147_483_647)))
                 state = createCheckpointState(sessionId: s.id, courseId: ctx.course.id, unitId: unit.id, items: items)
                 try await app.store.saveSessionState(s.id, state!)
             }

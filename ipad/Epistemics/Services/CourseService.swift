@@ -70,7 +70,9 @@ struct CourseService {
             let first = Set(queueFirst)
             order = order.filter { first.contains($0.conceptId) } + order.filter { !first.contains($0.conceptId) }
         }
-        let minutes = estimateMinutesByHand(queue, itemsByCard: info)
+        // Everything due today, including siblings held back to a later pass, at measured-by-hand speeds.
+        let due = queue.learning + queue.reviews + queue.buried
+        let minutes = Int((due.reduce(0.0) { $0 + (info[$1.id].map { secondsByHand($0.type) } ?? DEFAULT_SECONDS_PER_ITEM) } / 60).rounded(.up))
         return LoadedQueue(queue: queue, cards: cards, items: items, reviewsDoneToday: done, order: order, minutes: minutes)
     }
 

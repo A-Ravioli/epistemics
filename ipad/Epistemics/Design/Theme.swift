@@ -49,26 +49,46 @@ extension Font {
 struct PrimaryButtonStyle: ButtonStyle {
     var large = false
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: large ? 17 : 15, weight: .semibold))
-            .foregroundStyle(Theme.onGraphite)
-            .padding(.horizontal, large ? 28 : 22)
-            .frame(minHeight: large ? 50 : 44)
-            .background(Capsule().fill(Theme.graphite.opacity(configuration.isPressed ? 0.8 : 1)))
-            .contentShape(Capsule())
+        Styled(configuration: configuration, large: large)
+    }
+
+    private struct Styled: View {
+        let configuration: Configuration
+        let large: Bool
+        @Environment(\.isEnabled) private var isEnabled
+        var body: some View {
+            configuration.label
+                .font(.system(size: large ? 17 : 15, weight: .semibold))
+                .foregroundStyle(Theme.onGraphite)
+                .padding(.horizontal, large ? 28 : 22)
+                .frame(minHeight: large ? 50 : 44)
+                .background(Capsule().fill(Theme.graphite.opacity(configuration.isPressed ? 0.8 : 1)))
+                .opacity(isEnabled ? 1 : 0.35)
+                .contentShape(Capsule())
+        }
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
     var height: CGFloat = 44
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: height >= 56 ? 17 : 15))
-            .foregroundStyle(Theme.graphite)
-            .padding(.horizontal, height >= 56 ? 26 : 18)
-            .frame(minHeight: height)
-            .background(Capsule().fill(configuration.isPressed ? Theme.fillStrong : Theme.fill))
-            .contentShape(Capsule())
+        Styled(configuration: configuration, height: height)
+    }
+
+    private struct Styled: View {
+        let configuration: Configuration
+        let height: CGFloat
+        @Environment(\.isEnabled) private var isEnabled
+        var body: some View {
+            configuration.label
+                .font(.system(size: height >= 56 ? 17 : 15))
+                .foregroundStyle(Theme.graphite)
+                .padding(.horizontal, height >= 56 ? 26 : 18)
+                .frame(minHeight: height)
+                .background(Capsule().fill(configuration.isPressed ? Theme.fillStrong : Theme.fill))
+                .opacity(isEnabled ? 1 : 0.4)
+                .contentShape(Capsule())
+        }
     }
 }
 

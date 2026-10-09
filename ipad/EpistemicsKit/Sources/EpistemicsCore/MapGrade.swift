@@ -44,6 +44,9 @@ public struct MapGrade: Codable, Sendable, Hashable {
     }
 }
 
+/// Head nouns too generic to require on a map node (compared after `normalizedMapWord`).
+public let MAP_GENERIC_WORDS: Set<String> = ["theorem", "principle", "distribution", "definition", "property", "formula", "concept", "idea"]
+
 /// Lowercase word with possessive and plural endings removed, for matching handwriting to names.
 func normalizedMapWord(_ w: String) -> String {
     var s = w
@@ -62,7 +65,11 @@ func mapMatchScore(_ label: String, _ conceptName: String) -> Int? {
     if jsIncludes(text, conceptName.lowercased()) { return distinctive.count + 1 }
     if namesConcept(text, bag, conceptName) { return distinctive.count }
     let loose = Set(bag.map(normalizedMapWord))
-    let wanted = distinctive.map(normalizedMapWord)
+    // A drawn node is a label, not a sentence: "Bayes" names "Bayes' theorem", "binomial" names "The binomial
+    // distribution". Generic head nouns are dropped unless nothing else would be left.
+    let all = distinctive.map(normalizedMapWord)
+    let specific = all.filter { !MAP_GENERIC_WORDS.contains($0) }
+    let wanted = specific.isEmpty ? all : specific
     if !wanted.isEmpty && wanted.allSatisfy(loose.contains) { return wanted.count }
     return nil
 }

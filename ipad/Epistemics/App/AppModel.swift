@@ -131,7 +131,7 @@ final class AppModel {
         context = ctx
     }
 
-    nonisolated static func now() -> EpochMs { Int(Date().timeIntervalSince1970 * 1000) }
+    nonisolated static func now() -> EpochMs { Int(Date().timeIntervalSince1970 * 1000) + DeveloperClock.offsetMs }
 
     // MARK: Settings
 

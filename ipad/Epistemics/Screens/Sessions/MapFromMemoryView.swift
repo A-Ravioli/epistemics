@@ -23,10 +23,8 @@ struct MapComparison: Equatable {
         // Match each drawn node to at most one concept, by the onboarding matcher run on its label.
         var placed: [String: String] = [:]
         var nodeConcept: [String: String] = [:]
-        let unitOnly = Curriculum.single(concepts)
         for node in diagram.nodes {
-            let named = conceptsNamed(unitOnly, node.label, limit: 1)
-            if let name = named.first, let c = concepts.first(where: { $0.name == name }), placed[c.id] == nil {
+            if let c = conceptNamed(by: node.label, in: concepts.filter { placed[$0.id] == nil }) {
                 placed[c.id] = node.label
                 nodeConcept[node.id] = c.id
             }
@@ -58,14 +56,20 @@ struct MapComparison: Equatable {
     }
 }
 
-private extension Curriculum {
-    /// A one-lesson curriculum wrapper, so the onboarding matcher can run on a subset of concepts.
-    static func single(_ concepts: [Concept]) -> Curriculum {
-        Curriculum(manifest: .init(id: "map", version: 1, parentVersion: nil, title: "", subject: "", description: "", level: "",
-                                   contentHash: "", generator: .init(name: "", version: "", model: nil, promptVersion: nil), createdAt: 0, licence: nil),
-                   units: [Unit(id: "u", ordinal: 0, title: "", summary: "", lessons: [Lesson(id: "l", ordinal: 0, title: "", summary: nil, concepts: concepts)])],
-                   edges: [], sources: [])
+/// The onboarding matcher (web onboarding.ts `conceptsNamed`) applied to one drawn label: a concept counts as
+/// named when its full name appears, or every distinctive word of its name does.
+private func conceptNamed(by label: String, in concepts: [Concept]) -> Concept? {
+    let words = { (s: String) -> [String] in
+        s.lowercased().split(whereSeparator: { !($0.isLetter || $0 == "'" || $0 == "-") }).map(String.init).filter { $0.count >= 3 }
     }
+    let text = label.lowercased()
+    let bag = Set(words(text))
+    // Prefer the most specific name, so "conditional probability" beats "probability".
+    for c in concepts.sorted(by: { $0.name.count > $1.name.count }) {
+        let distinctive = words(c.name).filter { !ONBOARDING_STOP_WORDS.contains($0) }
+        if text.contains(c.name.lowercased()) || (!distinctive.isEmpty && distinctive.allSatisfy(bag.contains)) { return c }
+    }
+    return nil
 }
 
 @Observable @MainActor

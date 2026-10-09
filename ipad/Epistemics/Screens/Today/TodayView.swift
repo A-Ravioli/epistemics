@@ -47,6 +47,11 @@ struct TodayView: View {
             ForEach(quietLines(t, skipping: next.kind), id: \.self) { line in
                 Text(line).font(.body15).foregroundStyle(Theme.muted)
             }
+            if let tb = t.teachback.first {
+                Button("Explain \(tb.name) to a student who has never heard of it") { app.present(.teachback(conceptId: tb.conceptId)) }
+                    .buttonStyle(.ghost)
+                    .padding(.leading, -16)
+            }
             if t.lessonLocked && !t.overrideUsedToday && !t.recoveryMode, t.nextLesson != nil, next.kind != .lesson {
                 Button("Override the gate for today") { Task { await app.service?.overrideGateToday(); app.didChangeLearnerState() } }
                     .buttonStyle(.ghost)
@@ -114,14 +119,17 @@ struct TodayView: View {
                 lines.append("\(lesson.title) is ready.")
             }
         }
+        if let w = t.waitingLesson {
+            lines.append("\(w.title) opens once the ideas it builds on are secure: each has to come back right on a few separate days.")
+        }
         if let c = t.checkpoint, !c.ready, let reason = c.reason {
             lines.append("\(c.unit.title)'s checkpoint: \(reason)")
         }
         if kind != .map, let unit = t.mapDue {
             lines.append("\(unit.title)'s map from memory is due.")
         }
-        if !t.teachback.isEmpty {
-            lines.append("Worth explaining to someone: " + t.teachback.map(\.name).joined(separator: ", ") + ".")
+        if t.teachback.count > 1 {
+            lines.append("Also worth explaining: " + t.teachback.dropFirst().map(\.name).joined(separator: ", ") + ".")
         }
         if t.streak > 0 {
             lines.append("Reviews cleared \(t.streak) day\(t.streak == 1 ? "" : "s") running.")
