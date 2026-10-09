@@ -7,7 +7,7 @@ enum TutorMode: String, Codable, CaseIterable, Sendable {
     case demo
     /// Claude with the learner's own API key, kept in the Keychain.
     case claudeKey
-    /// Claude through a proxy that holds the key (the Supabase edge function or `web/apps/server`).
+    /// Claude through a proxy that holds the key (`web/apps/server`).
     case proxy
 }
 

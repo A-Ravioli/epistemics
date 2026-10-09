@@ -182,7 +182,7 @@ struct TutorChoice: View {
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.sheet))
             }
             option(.proxy, "Claude, through your server",
-                   "A proxy that holds the key, such as the Supabase edge function or the web app's server. Nothing secret on this iPad.") {
+                   "A proxy that holds the key, such as the web app's server (web/apps/server). Nothing secret on this iPad.") {
                 TextField("https://…/functions/v1/anthropic", text: $proxyURL)
                     .keyboardType(.URL)
                     .autocorrectionDisabled()

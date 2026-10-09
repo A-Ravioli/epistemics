@@ -22,16 +22,16 @@ public enum TextUtil {
     /// JS `\s` (ICU's `\s` differs slightly: no \v, no U+FEFF).
     static let ws = "\\t\\n\\u000b\\f\\r \\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff"
 
-    nonisolated(unsafe) private static let combining = re("[\\u0300-\\u036f]")
-    nonisolated(unsafe) private static let nonWord = re("[^\\p{L}\\p{N}\(ws).-]")
-    nonisolated(unsafe) private static let sentencePeriod = re("(?<![0-9])\\.|\\.(?![0-9])")
-    nonisolated(unsafe) private static let dash = re("(?<![A-Za-z0-9_])-|-(?![A-Za-z0-9_])")
-    nonisolated(unsafe) private static let spaces = re("[\(ws)]+")
-    nonisolated(unsafe) private static let fencedCode = re("```[\\s\\S]*?```")
-    nonisolated(unsafe) private static let inlineCode = re("`[^`\\n]*`")
-    nonisolated(unsafe) private static let deltaToken = re("[^\(ws)]+[\(ws)]*|[\(ws)]+")
-    nonisolated(unsafe) private static let questionRun = re("\\?+")
-    nonisolated(unsafe) private static let stemExempt = re("(ss|us|is)$")
+    private static let combining = re("[\\u0300-\\u036f]")
+    private static let nonWord = re("[^\\p{L}\\p{N}\(ws).-]")
+    private static let sentencePeriod = re("(?<![0-9])\\.|\\.(?![0-9])")
+    private static let dash = re("(?<![A-Za-z0-9_])-|-(?![A-Za-z0-9_])")
+    private static let spaces = re("[\(ws)]+")
+    private static let fencedCode = re("```[\\s\\S]*?```")
+    private static let inlineCode = re("`[^`\\n]*`")
+    private static let deltaToken = re("[^\(ws)]+[\(ws)]*|[\(ws)]+")
+    private static let questionRun = re("\\?+")
+    private static let stemExempt = re("(ss|us|is)$")
 
     static func replace(_ r: NSRegularExpression, in s: String, with t: String) -> String {
         r.stringByReplacingMatches(in: s, range: NSRange(s.startIndex..., in: s), withTemplate: NSRegularExpression.escapedTemplate(for: t))
