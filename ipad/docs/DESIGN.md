@@ -3,7 +3,7 @@
 *The same structured, Socratic, spaced-retrieval course as the web app, but on an iPad, where every answer
 the learner gives is written by hand with Apple Pencil.*
 
-Status: v0.1 design, 2026-10-09. Nothing here is built yet.
+Status: v0.1, 2026-10-09. Built: see the [README](../README.md) for what runs and what is not done yet. Where the build differs from this document, the difference is noted in §13.
 
 This document only covers what is different. The pedagogy, the vocabulary (curriculum, unit, lesson,
 concept, item, course), the lesson state machine, the review gate, mastery and the blind grader are all
@@ -232,18 +232,40 @@ Restraint rules, matching the tutor's turn rules:
 
 ### 6.1 First run
 
-The web's four steps ([ONBOARDING.md](../../web/docs/ONBOARDING.md)) carry over, with two changes:
+Four steps: **what to learn**, **who marks the answers**, **a placement test**, and **the time and the one
+rule**. It departs from the web's onboarding ([ONBOARDING.md](../../web/docs/ONBOARDING.md)) in two ways:
 
-- **Step 2 ("what do you already know?") is handwritten**, on dotted paper. The first thing anyone does in
-  the app is retrieve something by hand. That is the app's argument made by doing it, and it doubles as
-  the Pencil tutorial. The concept-matching reflection runs on the on-device reading, so it still needs no
-  model call and no tutor.
+- **The web's "what do you already know?" free recall is replaced by a placement test.** Asking people what
+  they know measures confidence, not knowledge. The placement *finds out*, by hand, and skips the lessons
+  the learner doesn't need. The first thing anyone does in the app is still retrieve something by hand, so
+  it still makes the app's argument and doubles as the Pencil tutorial.
 - **Handedness** is asked once, as one line in step 1 (*"Which hand do you write with?"*), because rule 3
   needs it before the first ink area appears.
 
-On the iPad, step 3 (choosing the tutor) defaults to the account's hosted tutor (the Supabase edge
-function the web already has, §13.3), because pasting an API key on an iPad is miserable. Bring-your-own-key
-stays available, stored in the Keychain.
+**The placement** (`EpistemicsCore/Session/Placement.swift`) is a knowledge-space test in the style of
+ALEKS, run on the course's prerequisite graph:
+
+- A correct answer settles the concept **and all its prerequisites** as known. A wrong answer or *"I don't
+  know"* settles the concept **and everything built on it** as not known yet.
+- Each question goes to the unsettled concept whose answer, either way, settles the most concepts in the
+  worst case. On a chain that is a binary search; on a branching graph each branch is placed on its own.
+- It stops when every concept is settled or after 12 questions. Whatever is still unsettled counts as not
+  known: under-placing costs a lesson, over-placing costs a learner who is lost.
+- It is quiet, because it measures rather than teaches: no blue marks, no answers shown, no tutor. Answers
+  are read, confirmed under the review policy, and graded blind like any other. A pass needs a
+  confidence-adjusted rating of Good or better, so a lucky guess is not knowing.
+- What it finds: each known concept's cards are seeded as provisional reviews (stability 21 days), so
+  placing out of something does not excuse it from being remembered: it has to hold up in reviews, and if
+  it doesn't, it is scheduled again like anything else. Lessons whose concepts are all known are skipped.
+  Scaffolding is set from the share known, from evidence rather than self-report.
+- *"I'm new to this, start at the beginning"* skips it. Today keeps offering the placement until the
+  first lesson is finished.
+
+Choosing the tutor comes **before** the placement, because something has to read and mark it. This breaks
+the web's rule of never asking for a key before showing the app working; the placement is that showing.
+Later, step 2 should default to the account's hosted tutor (the Supabase edge function the web already
+has, §13.3), because pasting an API key on an iPad is miserable. Bring-your-own-key stays available, stored
+in the Keychain. A device that already has a tutor skips step 2.
 
 ### 6.2 Today
 
@@ -495,16 +517,21 @@ ipad/
     Reading/        on-device recognition, maths recogniser client, Reader role, confirm model
     LLM/            Anthropic Messages API over URLSession (streaming, structured output, caching),
                     roles, prompt loading, usage ledger
-    Store/          SQLite via GRDB; schema mirrors the web's (§13.2)
+    Store/          SQLite (the system library, no GRDB); the web's tables, each row's record kept as JSON (§13.2)
   Resources/
     packs/          bundled .epistemics.json (copied from web/content/packs at build time)
     prompts/        web/content/prompts + reader.md, plus ink amendments to tutor-charter.md
   Fixtures/         conformance scenarios exported from the TS core tests
 ```
 
-**Minimum OS: iPadOS 27**, for `PKStrokeRecognizer` (on-device handwriting recognition with bounding
-boxes, announced at WWDC26). Its exact API needs checking against the iPadOS 27 SDK, which needs Xcode 27.
-The machine this was written on has Xcode 26.6.
+**Minimum OS: iPadOS 27**, for `PKStrokeRecognizer` (on-device handwriting recognition; `search(_:)` returns
+stroke ids and bounds, which is what places the marks). Confirmed in the iPadOS 27 SDK.
+
+**As built.** The folders differ slightly from the sketch above: the app target holds `App`, `Design`, `Ink`,
+`Reading`, `Store`, `Services` and `Screens`, and the package `EpistemicsKit` holds `EpistemicsCore` (the core
+port) and `EpistemicsLLM` (the LLM port plus the Reader). Storage uses the system SQLite directly rather than
+GRDB, keeping the dependency count at zero. No maths recogniser is integrated yet: the Claude Reader reads
+maths from the image, with the on-device draft as a hint. The hosted tutor (§13.3) waits on account sign-in.
 
 ### 13.2 Data
 

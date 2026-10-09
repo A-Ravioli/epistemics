@@ -26,6 +26,7 @@ enum Presented: Identifiable, Hashable {
     case checkpoint(unitId: String)
     case map(unitId: String)
     case teachback(conceptId: String)
+    case placement
 
     var id: String {
         switch self {
@@ -35,6 +36,7 @@ enum Presented: Identifiable, Hashable {
         case .checkpoint(let id): "checkpoint:\(id)"
         case .map(let id): "map:\(id)"
         case .teachback(let id): "teachback:\(id)"
+        case .placement: "placement"
         }
     }
 }

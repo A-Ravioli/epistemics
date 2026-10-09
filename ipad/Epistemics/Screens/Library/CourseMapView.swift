@@ -7,6 +7,7 @@ struct CourseMapView: View {
     @Environment(AppModel.self) private var app
     @State private var states: [String: ConceptState] = [:]
     @State private var completed: Set<String> = []
+    @State private var placedOut: Set<String> = []
 
     var body: some View {
         ScrollView {
@@ -19,7 +20,7 @@ struct CourseMapView: View {
                             MaterialText(unit.summary, font: .readingSmall, color: Theme.muted)
                             ForEach(unit.lessons.sorted { $0.ordinal < $1.ordinal }) { lesson in
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(lesson.title + (completed.contains(lesson.id) ? "" : " · not yet taught"))
+                                    Text(lesson.title + (placedOut.contains(lesson.id) ? " · placed out" : completed.contains(lesson.id) ? "" : " · not yet taught"))
                                         .font(.heading).foregroundStyle(completed.contains(lesson.id) ? Theme.graphite : Theme.muted)
                                     ForEach(lesson.concepts) { concept in
                                         HStack(alignment: .firstTextBaseline) {
@@ -49,11 +50,13 @@ struct CourseMapView: View {
             try? await service.refreshAllMastery()
             states = (try? await app.store.conceptStates(course: service.course.id)) ?? [:]
             completed = (try? await service.completedLessons()) ?? []
+            let placed = Set(await service.placedConcepts())
+            placedOut = Set(lessonsPlacedOut(service.ctx.curriculum, knownConceptIds: placed).map(\.id))
         }
     }
 
     private func status(_ c: Concept, ctx: CourseContext) -> String {
-        guard let s = states[c.id], s.unassistedN + s.assistedN > 0 else { return "new" }
+        guard let s = states[c.id], s.unassistedN + s.assistedN > 0 || s.successfulSessions > 0 else { return "new" }
         if isMastered(s.mastery, unassistedPassRate(s)) { return "mastered" }
         return "\(Int((s.mastery * 100).rounded()))% · \(s.successfulSessions) of 3 spaced successes"
     }

@@ -2,6 +2,7 @@ import Foundation
 import PencilKit
 import Testing
 import EpistemicsCore
+import EpistemicsLLM
 @testable import Epistemics
 
 /// End-to-end flows through the real session models, the store, the core reducers and the demo (mock)
@@ -255,5 +256,91 @@ import EpistemicsCore
         #expect(session.endedAt != nil)
         #expect(try await app.store.ink(owner: session.id).count >= 3, "each explanation keeps its ink")
         #expect(try await app.store.receipts(session: session.id).count == 1)
+    }
+
+    // MARK: Placement
+
+    /// A tutor under which every placement answer is right: the reader reads the reference, the grader passes it.
+    static func allKnowingProvider(_ pack: Curriculum) -> MockProvider {
+        let answers = pack.allItems.map { ($0.prompt, $0.reference.exact ?? $0.reference.answer) }
+        return MockProvider(.init(respond: { req in
+            let text = req.messages.map(\.content).joined(separator: "\n")
+            switch req.role {
+            case .reader:
+                let answer = answers.first { text.contains($0.0) }?.1 ?? "(blank)"
+                return .value(ReaderOutput(text: answer))
+            case .grader:
+                return .value(GradeResult(criteria: [], score: 1, feedback: "Right.", confidence: 1))
+            default:
+                return nil
+            }
+        }))
+    }
+
+    @Test(.timeLimit(.minutes(2))) func aNewcomerWhoKnowsNothingStartsAtTheBeginning() async throws {
+        let app = try await Self.enrolledApp()
+        let ctx = try #require(app.context)
+        let placement = PlacementModel(app: app, ctx: ctx)
+        await placement.begin()
+        var questions = 0
+        while placement.phase == .answering {
+            questions += 1
+            await placement.dontKnow()
+        }
+        #expect(placement.phase == .result)
+        #expect(questions <= 8, "a novice is placed in a handful of questions, took \(questions)")
+        #expect(placement.result?.knownConceptIds.isEmpty == true)
+        #expect(placement.startingLesson?.id == ctx.curriculum.allLessons.first?.id)
+        let service = try #require(app.service)
+        #expect(await service.placementDecided())
+        #expect(try await service.loadToday().nextLesson?.id == ctx.curriculum.allLessons.first?.id)
+        #expect(try await app.store.course(ctx.course.id)?.scaffolding == .novice)
+    }
+
+    @Test(.timeLimit(.minutes(3))) func someoneWhoKnowsItAllPlacesOutOfEveryLesson() async throws {
+        let app = try await Self.enrolledApp()
+        var ctx = try #require(app.context)
+        ctx.provider = Self.allKnowingProvider(ctx.curriculum)
+        let placement = PlacementModel(app: app, ctx: ctx)
+        await placement.begin()
+        var i = 0
+        while i < 40 {
+            switch placement.phase {
+            case .answering:
+                placement.area.drawing = Self.scribble(i)
+                await placement.handIn(.certain)
+            case .confirming(let r):
+                await placement.confirm(r, text: r.text)
+            case .failed(let m):
+                Issue.record("placement failed: \(m)"); return
+            default:
+                break
+            }
+            if placement.phase == .result { break }
+            i += 1
+        }
+        #expect(placement.phase == .result)
+        let known = Set(placement.result?.knownConceptIds ?? [])
+        #expect(known == Set(ctx.curriculum.allConcepts.map(\.id)))
+        #expect((placement.result?.probes ?? 99) <= PLACEMENT_DEFAULT_MAX_PROBES)
+
+        let service = try #require(app.service)
+        #expect(try await service.completedLessons() == Set(ctx.curriculum.allLessons.map(\.id)), "every lesson is placed out of")
+        let cards = try await app.store.cards(course: ctx.course.id)
+        #expect(cards.allSatisfy { $0.state == .review && $0.provisional }, "placed concepts enter review provisionally")
+        #expect(cards.allSatisfy { $0.due > AppModel.now() }, "and are not due today")
+        let states = try await app.store.conceptStates(course: ctx.course.id)
+        #expect(states.values.allSatisfy { $0.successfulSessions >= 3 })
+        #expect(try await app.store.course(ctx.course.id)?.scaffolding == .advanced)
+    }
+
+    @Test(.timeLimit(.minutes(1))) func skippingThePlacementKeepsTheOfferOnToday() async throws {
+        let app = try await Self.enrolledApp()
+        let ctx = try #require(app.context)
+        let placement = PlacementModel(app: app, ctx: ctx)
+        await placement.skip()
+        #expect(placement.phase == .result)
+        #expect(try await app.store.cards(course: ctx.course.id).allSatisfy { $0.state == .new })
+        #expect(try await app.service!.loadToday().offersPlacement)
     }
 }

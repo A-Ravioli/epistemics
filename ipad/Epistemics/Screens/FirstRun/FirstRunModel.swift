@@ -1,36 +1,35 @@
 import SwiftUI
 import EpistemicsCore
 
+/// The first run (ipad DESIGN §6.1): what to learn, who marks it, a placement test, and the time and the one
+/// rule. The placement replaces the web's free-recall step: rather than asking what the learner knows, it
+/// finds out, and skips the lessons they don't need.
 @Observable @MainActor
 final class FirstRunModel {
-    enum Step: Int, Codable { case subject, recall, reflection, tutor, commitment }
+    enum Step: Int, Codable { case subject, tutor, placement, commitment }
 
     var step: Step = .subject { didSet { saveDraft() } }
     var packs: [Curriculum] = []
     var pack: Curriculum?
-    let recallArea = InkAreaModel(paper: .dotted, minHeight: 420)
-    var recallText = ""
-    var named: [String] = []
-    var reading = false
     var needsTutor = true
     var tutorMode: TutorMode = .claudeKey
     var apiKey = ""
     var proxyURL = ""
     var minutesPerDay = 20
-    var enrolling = false
+    var working = false
     var error: String?
+    var placement: PlacementModel?
     private weak var app: AppModel?
 
     var stepCount: Int { needsTutor ? 4 : 3 }
     var stepNumber: Int {
         switch step {
         case .subject: 1
-        case .recall, .reflection: 2
-        case .tutor: 3
+        case .tutor: 2
+        case .placement: needsTutor ? 3 : 2
         case .commitment: needsTutor ? 4 : 3
         }
     }
-    var subjectName: String { pack?.manifest.subject.lowercased() ?? "this" }
     var reviewsPerDay: Int { schedulingFor(minutesPerDay).reviewsPerDay }
 
     var tutorChoiceComplete: Bool {
@@ -41,18 +40,6 @@ final class FirstRunModel {
         }
     }
 
-    var reflection: String {
-        if !named.isEmpty {
-            let n = named.count
-            return n == 1
-                ? "You already named one of this course's concepts. I will check it early rather than teach it from scratch."
-                : "You already named \(n) of this course's concepts. I will check them early rather than teach them from scratch."
-        }
-        return recallText.isEmpty
-            ? "Nothing at all is a fine place to start, and the tutor will pitch the first lessons accordingly."
-            : "That goes to the tutor, so the first lessons start from what you wrote rather than from nothing."
-    }
-
     func load(app: AppModel) async {
         self.app = app
         packs = (try? await app.store.curricula()) ?? AppModel.bundledPacks()
@@ -61,11 +48,21 @@ final class FirstRunModel {
         needsTutor = app.settings.tutorMode == .demo && Secrets.get(Secrets.anthropicKey) == nil
         if !needsTutor { tutorMode = app.settings.tutorMode }
         minutesPerDay = app.settings.minutesPerDay
-        if let draft = try? await app.store.setting("firstRun", as: FirstRunDraft.self) {
-            if let id = draft.packId, let p = packs.first(where: { $0.manifest.id == id }) { pack = p }
-            recallText = draft.recallText ?? ""
-            if let s = Step(rawValue: draft.step), s != .recall { step = s }
-            if let pack { named = conceptsNamed(pack, recallText) }
+        guard let draft = try? await app.store.setting("firstRun", as: FirstRunDraft.self) else { return }
+        if let id = draft.packId, let p = packs.first(where: { $0.manifest.id == id }) { pack = p }
+        // Resume: a course already enrolled in this flow goes back to its placement or to the time step.
+        switch Step(rawValue: draft.step) {
+        case .placement?, .commitment?:
+            if let ctx = app.context, ctx.course.curriculumId == pack?.manifest.id {
+                if draft.step == Step.commitment.rawValue {
+                    step = .commitment
+                } else {
+                    placement = PlacementModel(app: app, ctx: ctx)
+                    step = .placement
+                }
+            }
+        case .tutor?: step = .tutor
+        default: break
         }
     }
 
@@ -83,47 +80,68 @@ final class FirstRunModel {
         }
     }
 
-    /// Reads the recall on device: no model, no tutor yet, so the reflection works offline (ONBOARDING §3).
-    func finishRecall(app: AppModel, empty: Bool) async {
-        if empty {
-            recallArea.reset()
-            recallText = ""
-        } else {
-            reading = true
-            recallText = await app.onDevice.read(recallArea.drawing)
-            reading = false
-        }
-        if let pack { named = conceptsNamed(pack, recallText) }
-        step = .reflection
+    func continueFromSubject(app: AppModel) async {
+        if needsTutor { step = .tutor } else { await startPlacement(app: app) }
     }
 
-    func saveTutor(app: AppModel) {
+    func saveTutor(app: AppModel) async {
         switch tutorMode {
         case .claudeKey: Secrets.set(Secrets.anthropicKey, apiKey.trimmingCharacters(in: .whitespaces))
         case .proxy: app.settings.proxyURL = proxyURL.trimmingCharacters(in: .whitespaces)
         case .demo: break
         }
         app.settings.tutorMode = tutorMode
+        app.refreshProvider()
+        await startPlacement(app: app)
     }
 
-    func finish(app: AppModel) async {
-        guard let pack else { step = .subject; return }
-        enrolling = true
-        defer { enrolling = false }
+    /// Enrols now, because the placement records receipts and seeds cards; the time step adjusts it after.
+    private func startPlacement(app: AppModel) async {
+        guard let pack else { return }
+        working = true
+        defer { working = false }
         do {
-            app.settings.minutesPerDay = minutesPerDay
-            try await app.enroll(pack: pack, recall: recallText, minutesPerDay: minutesPerDay,
-                                 recallDrawing: recallArea.isEmpty ? nil : recallArea)
-            try? await app.store.setSetting("firstRun", FirstRunDraft())
-            app.settings.onboarded = true
+            if app.context?.course.curriculumId != pack.manifest.id {
+                try await app.enroll(pack: pack, recall: "", minutesPerDay: minutesPerDay, recallDrawing: nil)
+            }
+            guard let ctx = app.context else { return }
+            placement = PlacementModel(app: app, ctx: ctx)
+            step = .placement
         } catch {
             self.error = "Couldn't start the course: \(error)"
         }
     }
 
+    func finish(app: AppModel) async {
+        working = true
+        defer { working = false }
+        do {
+            app.settings.minutesPerDay = minutesPerDay
+            try await app.applySchedule(minutesPerDay: minutesPerDay)
+            try? await app.store.setSetting("firstRun", FirstRunDraft())
+            app.settings.onboarded = true
+        } catch {
+            self.error = "Couldn't save your schedule: \(error)"
+        }
+    }
+
     private func saveDraft() {
         guard let app else { return }
-        let draft = FirstRunDraft(step: step.rawValue, packId: pack?.manifest.id, recallText: recallText)
+        let draft = FirstRunDraft(step: step.rawValue, packId: pack?.manifest.id)
         Task { try? await app.store.setSetting("firstRun", draft) }
+    }
+}
+
+extension AppModel {
+    /// Minutes a day set the whole review load (ONBOARDING §5, with the iPad's by-hand rate).
+    func applySchedule(minutesPerDay: Int) async throws {
+        guard var course = context?.course else { return }
+        let derived = schedulingFor(minutesPerDay)
+        course.settings.reviewsPerDay = derived.reviewsPerDay
+        course.settings.desiredRetention = derived.desiredRetention
+        course.goals.weeklyMinutes = derived.weeklyMinutes
+        course.updatedAt = Self.now()
+        try await store.saveCourse(course)
+        try await open(courseId: course.id)
     }
 }

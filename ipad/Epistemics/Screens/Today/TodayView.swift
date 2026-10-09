@@ -47,6 +47,11 @@ struct TodayView: View {
             ForEach(quietLines(t, skipping: next.kind), id: \.self) { line in
                 Text(line).font(.body15).foregroundStyle(Theme.muted)
             }
+            if t.offersPlacement {
+                Button("Know some of this already? Take the placement test and skip what you don't need") { app.present(.placement) }
+                    .buttonStyle(.ghost)
+                    .padding(.leading, -16)
+            }
             if let tb = t.teachback.first {
                 Button("Explain \(tb.name) to a student who has never heard of it") { app.present(.teachback(conceptId: tb.conceptId)) }
                     .buttonStyle(.ghost)

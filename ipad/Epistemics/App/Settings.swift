@@ -32,9 +32,6 @@ struct AppSettings: Codable, Sendable, Equatable {
 struct FirstRunDraft: Codable, Sendable, Equatable {
     var step = 0
     var packId: String?
-    var recallInkId: String?
-    var recallText: String?
-    var placementOffered = false
 }
 
 /// Keychain storage for the API key. The key never leaves the device.

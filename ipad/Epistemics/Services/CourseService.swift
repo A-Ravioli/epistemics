@@ -235,7 +235,43 @@ struct CourseService {
             guard let id = s.lessonId, !id.hasPrefix(LessonService.remediationPrefix), s.summary?["remediation"]?.boolValue != true else { continue }
             out.insert(id)
         }
+        // Lessons placed out of are done: placement skips their teaching (DESIGN §6.1).
+        let placed = Set(await placedConcepts())
+        for lesson in lessonsPlacedOut(ctx.curriculum, knownConceptIds: placed) { out.insert(lesson.id) }
         return out
+    }
+
+    // MARK: Placement
+
+    /// Concepts settled as known by placement.
+    func placedConcepts() async -> [String] { (try? await store.setting(key("placed"), as: [String].self)) ?? [] }
+    /// Whether placement was taken or declined for this course.
+    func placementDecided() async -> Bool { (try? await store.setting(key("placementDone"), as: Bool.self)) ?? false }
+    func markPlacementDecided() async { try? await store.setSetting(key("placementDone"), true) }
+
+    /// Seeds known concepts as a conservative, provisional memory (web DESIGN §6.4, ported from the web
+    /// DiagnosticRunner): cards in Review with stability 21 days, due when that says, demoted on their first
+    /// miss; concept state with three spaced successes so their dependents unlock.
+    func applyPlacement(knownConceptIds: [String]) async throws {
+        let n = now
+        let known = Set(knownConceptIds)
+        let cards = try await store.cards(course: course.id).filter { known.contains($0.conceptId) && $0.state == .new && !$0.suspended }
+        let seeded = cards.map { c -> Card in
+            var c = c
+            c.due = n
+            return ctx.scheduler.seedKnownCard(c, n)
+        }
+        try await store.saveCards(seeded)
+        let states = try await store.conceptStates(course: course.id)
+        for id in knownConceptIds {
+            var s = states[id] ?? ConceptState(courseId: course.id, conceptId: id, updatedAt: n)
+            s.successfulSessions = max(s.successfulSessions, 3)
+            s.lastSuccessDay = studyDayKey()
+            try await recomputeMastery(s)
+        }
+        let previous = await placedConcepts()
+        try await store.setSetting(key("placed"), Array(Set(previous).union(known)).sorted())
+        await markPlacementDecided()
     }
 }
 

@@ -11,8 +11,13 @@ struct ConfirmReadingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Read as").font(.secondary).foregroundStyle(Theme.muted)
-            MaterialText(confirmedText, font: .readingSmall)
-                .accessibilityLabel("Your answer, read as: \(confirmedText)")
+            if confirmedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text("Nothing on the page could be read as words.")
+                    .font(.body15).foregroundStyle(Theme.muted)
+            } else {
+                MaterialText(confirmedText, font: .readingSmall)
+                    .accessibilityLabel("Your answer, read as: \(confirmedText)")
+            }
 
             ForEach(Array(reading.uncertain.enumerated()), id: \.offset) { index, span in
                 VStack(alignment: .leading, spacing: 8) {

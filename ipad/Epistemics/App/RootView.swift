@@ -97,6 +97,7 @@ struct SessionHost: View {
                 case .checkpoint(let id): CheckpointView(model: CheckpointSessionModel(app: app, ctx: ctx, unitId: id))
                 case .map(let id): MapFromMemoryView(model: MapSessionModel(app: app, ctx: ctx, unitId: id))
                 case .teachback(let id): TeachbackView(model: TeachbackSessionModel(app: app, ctx: ctx, conceptId: id))
+                case .placement: PlacementSessionView(model: PlacementModel(app: app, ctx: ctx))
                 }
             }
         }

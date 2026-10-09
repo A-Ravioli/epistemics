@@ -83,6 +83,7 @@ struct NotebookView: View {
     private func title(_ ink: InkRecord, session: Session?, ctx: CourseContext) -> String {
         switch ink.ownerKind {
         case .firstRun: return "What you knew on day one"
+        case .placement: return "Placement"
         case .warmup: return "Warm-up" + (session?.lessonId.flatMap { ctx.curriculum.lesson($0)?.title }.map { ": \($0)" } ?? "")
         case .review: return "Reviews"
         case .lessonTurn, .lessonSummary:

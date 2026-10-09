@@ -20,6 +20,8 @@ struct TodayState {
     var openLesson: (lessonId: String, title: String)?
     /// The next untaught lesson when prerequisites hold it back (mastery below 0.7).
     var waitingLesson: Lesson?
+    /// The placement test, until it is taken or a lesson is finished.
+    var offersPlacement: Bool
     var dueCount: Int { queue.queue.dueToday }
 }
 
@@ -85,12 +87,14 @@ extension CourseService {
         }
 
         let waiting = next == nil ? ctx.curriculum.allLessons.first { !completed.contains($0.id) } : nil
+        let placementDecided = await placementDecided()
 
         return TodayState(day: day, queue: queue, warmup: try await warmupLesson(day: day), nextLesson: next,
                           lessonLocked: locked, lockReason: reason, overrideUsedToday: overrideUsedToday,
                           recoveryMode: queue.queue.recoveryMode, completedLessonIds: completed,
                           checkpoint: checkpoint.map { (unit: $0.0, ready: $0.1, reason: $0.2) }, mapDue: mapDue,
-                          remediation: remediation, teachback: Array(teachback), streak: streak, openLesson: openLesson, waitingLesson: waiting)
+                          remediation: remediation, teachback: Array(teachback), streak: streak, openLesson: openLesson, waitingLesson: waiting,
+                          offersPlacement: completed.isEmpty && !placementDecided)
     }
 
     /// The warm-up for today: the last finished lesson, unless the warm-up was already done today.
