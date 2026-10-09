@@ -1,17 +1,26 @@
+# shared
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# web/ (pnpm monorepo)
 node_modules/
 dist/
 .turbo/
 *.tsbuildinfo
-apps/desktop/src-tauri/target/
-apps/desktop/src-tauri/gen/
-.env
-.env.*
-!.env.example
 coverage/
 playwright-report/
 test-results/
-*.log
-.DS_Store
 evals/out/
 .vitest/
-apps/web/.ux-audit/
+web/apps/desktop/src-tauri/target/
+web/apps/desktop/src-tauri/gen/
+web/apps/web/.ux-audit/
+
+# ipad/ (Xcode)
+xcuserdata/
+DerivedData/
+*.xcuserstate
+.build/

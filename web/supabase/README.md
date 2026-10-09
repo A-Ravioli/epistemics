@@ -6,7 +6,7 @@ key-less tutor through an edge function. Protocol and conflict policy: [docs/SYN
 ## 1. Create a project
 
 1. Create a project at https://supabase.com (or `supabase start` for a local stack).
-2. Install the CLI (`npm i -g supabase`), then from the repository root:
+2. Install the CLI (`npm i -g supabase`), then from `web/`:
    ```sh
    supabase login
    supabase link --project-ref <your-project-ref>

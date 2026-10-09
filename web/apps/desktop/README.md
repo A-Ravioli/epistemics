@@ -6,7 +6,7 @@ browser it talks to `apps/server`, inside Tauri it talks to the Rust commands be
 
 ## Prerequisites
 
-- Node 22 and pnpm (`corepack enable`), plus `pnpm install` at the repo root.
+- Node 22 and pnpm (`corepack enable`), plus `pnpm install` in `web/`.
 - Rust stable (1.77.2 or newer; `rustup` recommended).
 - Tauri's system dependencies, per OS (from <https://v2.tauri.app/start/prerequisites/>):
   - **macOS**: Xcode command line tools (`xcode-select --install`).
@@ -20,7 +20,7 @@ browser it talks to `apps/server`, inside Tauri it talks to the Rust commands be
 ## Run and build
 
 ```sh
-pnpm tauri dev      # from apps/desktop, or `pnpm tauri dev` at the repo root
+pnpm tauri dev      # from apps/desktop, or `pnpm tauri dev` from `web/`
 pnpm tauri build    # produces installers in src-tauri/target/release/bundle/
 ```
 
