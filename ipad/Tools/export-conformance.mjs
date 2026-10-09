@@ -193,7 +193,7 @@ const compactLog = (l) => [l.rating, l.stateBefore, l.elapsedDays, l.scheduledDa
       });
       card = res.card;
     }
-    sequences.push({ config: ci, initial, id: card.id, itemId: card.itemId, conceptId: card.conceptId, steps });
+    sequences.push({ config: ci, initial, initialBits: [bitsOf(initial[3]), bitsOf(initial[4])], id: card.id, itemId: card.itemId, conceptId: card.conceptId, steps });
   }
 
   const intervals = configs.map((_, ci) => [0.001, 0.4, 1, 2.3, 7.77, 21, 100, 365.25, 9999].map((st) => schedulers[ci].intervalForStability(st)));

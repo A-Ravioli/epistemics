@@ -184,11 +184,21 @@ final class LessonSessionModel {
     private func resume() async {
         guard let s = state, !s.done else { return }
         if let pending = s.pendingGrades.values.first, entries.last?.kind == .learner {
-            await run(.gradeItem(GradeItemEffect(itemKind: pending.kind, itemId: pending.itemId, conceptId: pending.conceptId,
-                                                 answer: pending.answer, confidence: pending.confidence, assisted: pending.assisted,
-                                                 rubricSource: pending.kind == .transfer ? .scriptTransfer
-                                                     : pending.kind == .consolidate ? (pending.itemId.contains("#") ? .scriptPretest : .item) : .scriptPretest)))
-            await pump()
+            // A grade was in flight when the app quit: grade the last answer again.
+            let source: RubricSource = pending.kind == .transfer ? .scriptTransfer
+                : pending.kind == .consolidate ? (pending.itemId.contains("#") ? .scriptPretest : .item) : .scriptPretest
+            do {
+                busy = .grading
+                let target = try GradingService.target(itemId: pending.itemId, rubricSource: source, kind: pending.kind, in: ctx.curriculum)
+                let graded = try await GradingService.grade(ctx.provider, target: target, answer: pending.answer,
+                                                            confidence: pending.assisted ? nil : pending.confidence)
+                busy = nil
+                lastGrade = graded
+                await dispatch(.grade(itemKind: pending.kind, itemId: pending.itemId, grade: graded.grade, rating: graded.rating))
+            } catch {
+                busy = nil
+                self.error = error.localizedDescription
+            }
             return
         }
         let waitingForTutor = s.lastControl != nil && entries.last?.kind != .tutor && s.phase != .wrap

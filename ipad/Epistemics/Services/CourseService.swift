@@ -95,8 +95,8 @@ struct CourseService {
     func applyReview(card: Card, rating: Rating, source: ReviewSource, assisted: Bool, confidence: Confidence?,
                      durationMs: Int?, receipt: ReceiptInput?, implicitCredit allowImplicit: Bool = true) async throws -> AppliedReview {
         let n = now
-        let outcome = ctx.scheduler.applyRating(card, rating, now: n,
-                                                context: ReviewContext(source: source, assisted: assisted, confidence: confidence, durationMs: durationMs))
+        let outcome = ctx.scheduler.applyRating(card, rating, n,
+                                                ReviewContext(source: source, assisted: assisted, confidence: confidence, durationMs: durationMs))
         var next = outcome.card
         let leech = isLeech(next)
         if leech { next.suspended = true }
@@ -184,7 +184,7 @@ struct CourseService {
         let n = now
         let cards = try await store.cards(course: course.id).filter { $0.conceptId == state.conceptId && Self.isActivated($0, now: n) }
         let scheduler = ctx.scheduler
-        let retention = conceptRetention(cards, now: n) { scheduler.retrievability($0, $1) }
+        let retention = conceptRetention(cards, n) { scheduler.retrievability($0, $1) }
         var next = state
         next.mastery = conceptMastery(retention, state.successfulSessions)
         next.updatedAt = max(state.updatedAt, n)
