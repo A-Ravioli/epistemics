@@ -26,7 +26,7 @@ final class ReadingService {
     }
 
     /// Short self-graded answers are read on device only; everything else goes through the Reader.
-    static func usesReader(_ ctx: ReadingContext) -> Bool {
+    nonisolated static func usesReader(_ ctx: ReadingContext) -> Bool {
         !(ctx.paper == .short && (ctx.itemType == .recall || ctx.itemType == .cloze))
     }
 
@@ -72,13 +72,13 @@ final class ReadingService {
         let now = AppModel.now()
         let draft = await onDevice.read(drawing)
         guard usesReader(context), let png = await MainActor.run(body: { InkRenderer.png(drawing) }) else {
-            return InkReading(id: uuidv7(now: now), inkId: "", source: .onDevice, model: nil, text: draft, boxed: nil, diagram: nil,
+            return InkReading(id: uuidv7(now), inkId: "", source: .onDevice, model: nil, text: draft, boxed: nil, diagram: nil,
                               crossedOut: [], uncertain: [], draft: draft, createdAt: now)
         }
         let out = try await Reader.read(provider, ReaderInput(image: png, draft: draft, itemType: context.itemType,
                                                               paper: context.paper, prompt: context.prompt, metadata: context.metadata))
         let r = out.value
-        return InkReading(id: uuidv7(now: now), inkId: "", source: provider.name == "mock" ? .demo : .reader, model: out.usage.model,
+        return InkReading(id: uuidv7(now), inkId: "", source: provider.name == "mock" ? .demo : .reader, model: out.usage.model,
                           text: r.text, boxed: r.boxed,
                           diagram: r.diagram.map { d in InkDiagram(nodes: d.nodes.map { .init(id: $0.id, label: $0.label) },
                                                                     edges: d.edges.map { .init(from: $0.from, to: $0.to, label: $0.label) }) },
@@ -94,7 +94,7 @@ final class ReadingService {
 
 extension InkAreaModel {
     /// A storable record of this ink area.
-    func record(courseId: String, owner: InkOwner, ownerId: String, itemId: String?, id: String = uuidv7(now: AppModel.now())) -> InkRecord {
+    func record(courseId: String, owner: InkOwner, ownerId: String, itemId: String?, id: String = uuidv7(AppModel.now())) -> InkRecord {
         let now = AppModel.now()
         return InkRecord(id: id, courseId: courseId, ownerKind: owner, ownerId: ownerId, itemId: itemId, paper: paper,
                          drawing: drawing.dataRepresentation(), width: Theme.readingWidth, height: height,

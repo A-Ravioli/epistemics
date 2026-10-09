@@ -31,7 +31,7 @@ final class FirstRunModel {
         }
     }
     var subjectName: String { pack?.manifest.subject.lowercased() ?? "this" }
-    var reviewsPerDay: Int { schedulingFor(minutesPerDay: minutesPerDay).reviewsPerDay }
+    var reviewsPerDay: Int { schedulingFor(minutesPerDay).reviewsPerDay }
 
     var tutorChoiceComplete: Bool {
         switch tutorMode {
@@ -65,7 +65,7 @@ final class FirstRunModel {
             if let id = draft.packId, let p = packs.first(where: { $0.manifest.id == id }) { pack = p }
             recallText = draft.recallText ?? ""
             if let s = Step(rawValue: draft.step), s != .recall { step = s }
-            if let pack { named = conceptsNamed(pack, recall: recallText) }
+            if let pack { named = conceptsNamed(pack, recallText) }
         }
     }
 
@@ -93,7 +93,7 @@ final class FirstRunModel {
             recallText = await app.onDevice.read(recallArea.drawing)
             reading = false
         }
-        if let pack { named = conceptsNamed(pack, recall: recallText) }
+        if let pack { named = conceptsNamed(pack, recallText) }
         step = .reflection
     }
 

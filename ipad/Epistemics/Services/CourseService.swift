@@ -19,12 +19,14 @@ struct CourseService {
 
     static func isActivated(_ card: Card, now: EpochMs) -> Bool { card.due < now + unactivatedThresholdMs }
 
+    var dayConfig: DayConfig { DayConfig(timezone: course.settings.timezone, dayStartHour: course.settings.dayStartHour) }
+
     func studyDayKey(_ at: EpochMs? = nil) -> String {
-        studyDay(at ?? now, timezone: course.settings.timezone, dayStartHour: course.settings.dayStartHour)
+        studyDay(at ?? now, dayConfig)
     }
 
     func dayStart() -> EpochMs {
-        studyDayStart(now, timezone: course.settings.timezone, dayStartHour: course.settings.dayStartHour)
+        studyDayStart(now, dayConfig)
     }
 
     // MARK: Queue
@@ -59,7 +61,7 @@ struct CourseService {
         var rng = SystemRandomNumberGenerator()
         let queue = buildQueue(BuildQueueInput(
             cards: cards, now: n, settings: course.settings, itemsByCard: info,
-            retrievability: { scheduler.retrievability($0, now: n) },
+            retrievability: { scheduler.retrievability($0, n) },
             recentlyShownConceptIds: recentlyShown,
             rng: { Double.random(in: 0..<1, using: &rng) },
             reviewsDoneToday: done))
@@ -68,8 +70,7 @@ struct CourseService {
             let first = Set(queueFirst)
             order = order.filter { first.contains($0.conceptId) } + order.filter { !first.contains($0.conceptId) }
         }
-        let byCard = Dictionary(order.compactMap { c in items[c.itemId].map { (c.id, $0) } }, uniquingKeysWith: { a, _ in a })
-        let minutes = estimateInkMinutes(cards: order, itemsByCard: byCard)
+        let minutes = estimateMinutesByHand(queue, itemsByCard: info)
         return LoadedQueue(queue: queue, cards: cards, items: items, reviewsDoneToday: done, order: order, minutes: minutes)
     }
 
@@ -135,7 +136,7 @@ struct CourseService {
         guard !mine.isEmpty else { return [] }
         let activated = mine.map { c -> Card in var c = c; c.due = n; return c }
         let outs = activated.map {
-            ctx.scheduler.applyRating($0, firstRating, now: n, context: ReviewContext(source: .lesson, assisted: false))
+            ctx.scheduler.applyRating($0, firstRating, n, ReviewContext(source: .lesson, assisted: false))
         }
         try await store.saveCards(outs.map(\.card))
         try await store.appendReviewLog(outs.map(\.log))
@@ -149,7 +150,7 @@ struct CourseService {
             $0.conceptId == conceptId && Self.isActivated($0, now: n) && $0.state != .new && !$0.suspended
         }
         guard !mine.isEmpty else { return }
-        let outs = mine.map { ctx.scheduler.applyRating($0, .again, now: n, context: ReviewContext(source: source, assisted: false)) }
+        let outs = mine.map { ctx.scheduler.applyRating($0, .again, n, ReviewContext(source: source, assisted: false)) }
         try await store.saveCards(outs.map(\.card))
         try await store.appendReviewLog(outs.map(\.log))
     }
@@ -161,7 +162,7 @@ struct CourseService {
                        grade: GradeResult?, rating: Rating, assisted: Bool, inkId: String? = nil,
                        modality: AnswerModality? = nil) async throws -> Receipt {
         let n = now
-        let receipt = Receipt(id: uuidv7(now: n), sessionId: sessionId, courseId: course.id, itemId: itemId, conceptId: conceptId,
+        let receipt = Receipt(id: uuidv7(n), sessionId: sessionId, courseId: course.id, itemId: itemId, conceptId: conceptId,
                               answer: answer, confidence: confidence, grade: grade, rating: rating, assisted: assisted,
                               createdAt: n, inkId: inkId, modality: modality ?? (inkId == nil ? nil : .ink))
         try await store.saveReceipt(receipt)
@@ -183,9 +184,9 @@ struct CourseService {
         let n = now
         let cards = try await store.cards(course: course.id).filter { $0.conceptId == state.conceptId && Self.isActivated($0, now: n) }
         let scheduler = ctx.scheduler
-        let retention = conceptRetention(cards, now: n) { scheduler.retrievability($0, now: $1) }
+        let retention = conceptRetention(cards, now: n) { scheduler.retrievability($0, $1) }
         var next = state
-        next.mastery = conceptMastery(retention: retention, successfulSessions: state.successfulSessions)
+        next.mastery = conceptMastery(retention, state.successfulSessions)
         next.updatedAt = max(state.updatedAt, n)
         try await store.saveConceptStates([next])
     }
@@ -240,30 +241,30 @@ extension AppModel {
     /// Enrol in a pack: a course with derived settings and one unactivated card per item (ONBOARDING §5).
     func enroll(pack: Curriculum, recall: String, minutesPerDay: Int, recallDrawing: InkAreaModel?) async throws {
         let n = Self.now()
-        let derived = schedulingFor(minutesPerDay: minutesPerDay)
+        let derived = schedulingFor(minutesPerDay)
         let background = recall.trimmingCharacters(in: .whitespacesAndNewlines)
         var settings = CourseSettings()
         settings.reviewsPerDay = derived.reviewsPerDay
         settings.desiredRetention = derived.desiredRetention
-        let course = Course(id: uuidv7(now: n), curriculumId: pack.manifest.id, curriculumVersion: pack.manifest.version,
+        let course = Course(id: uuidv7(n), curriculumId: pack.manifest.id, curriculumVersion: pack.manifest.version,
                             title: pack.manifest.title,
                             goals: CourseGoals(purpose: .understand, weeklyMinutes: derived.weeklyMinutes,
                                                background: background.isEmpty ? nil : background),
                             settings: settings,
-                            scaffolding: scaffoldingFromBackground(background.isEmpty ? nil : background, depth: .working),
+                            scaffolding: scaffoldingFromBackground(background.isEmpty ? nil : background, .working),
                             createdAt: n, updatedAt: n)
         try await store.saveCurriculum(pack)
         try await store.saveCourse(course)
         var cards: [Card] = []
         for concept in pack.allConcepts {
             for item in concept.items {
-                cards.append(Card(id: uuidv7(now: n), courseId: course.id, itemId: item.id, conceptId: concept.id,
+                cards.append(Card(id: uuidv7(n), courseId: course.id, itemId: item.id, conceptId: concept.id,
                                   due: n + CourseService.unactivatedOffsetMs))
             }
         }
         try await store.saveCards(cards)
         if let recallDrawing {
-            try await store.saveInk(InkRecord(id: uuidv7(now: n), courseId: course.id, ownerKind: .firstRun, ownerId: course.id,
+            try await store.saveInk(InkRecord(id: uuidv7(n), courseId: course.id, ownerKind: .firstRun, ownerId: course.id,
                                               itemId: nil, paper: recallDrawing.paper, drawing: recallDrawing.drawing.dataRepresentation(),
                                               width: Theme.readingWidth, height: recallDrawing.height,
                                               strokeCount: recallDrawing.drawing.strokes.count, writingMs: recallDrawing.writingMs,

@@ -47,7 +47,6 @@ struct CourseContext: Sendable {
     var provider: any LLMProvider
     var now: @Sendable () -> EpochMs
 
-    var dayConfig: (timezone: String, dayStartHour: Int) { (course.settings.timezone, course.settings.dayStartHour) }
 }
 
 @Observable @MainActor
@@ -119,7 +118,7 @@ final class AppModel {
     }
 
     func makeContext(course: Course, curriculum: Curriculum) -> CourseContext {
-        let examCap = course.goals.examDate.map { daysToExam(now: Self.now(), examDate: $0) }
+        let examCap = course.goals.examDate.map { daysToExam(Self.now(), $0) }
         let scheduler = Scheduler(SchedulerParams(desiredRetention: course.settings.desiredRetention,
                                                   maximumIntervalDays: examCap))
         return CourseContext(course: course, curriculum: curriculum, scheduler: scheduler, provider: makeProvider(), now: { Self.now() })
@@ -153,3 +152,6 @@ final class AppModel {
         revision += 1
     }
 }
+
+/// Foundation also has a `Unit`; in this app it always means a course unit.
+typealias Unit = EpistemicsCore.Unit

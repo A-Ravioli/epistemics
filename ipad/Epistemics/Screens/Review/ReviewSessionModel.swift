@@ -83,7 +83,7 @@ final class ReviewSessionModel {
     func start() async {
         guard phase == .loading else { return }
         do {
-            let s = Session(id: uuidv7(now: ctx.now()), courseId: ctx.course.id, type: .review, startedAt: ctx.now())
+            let s = Session(id: uuidv7(ctx.now()), courseId: ctx.course.id, type: .review, startedAt: ctx.now())
             sessionId = s.id
             try await app.store.saveSession(s)
             try await loadQueue()
@@ -129,7 +129,7 @@ final class ReviewSessionModel {
         do {
             let r: InkReading
             if typedMode {
-                r = InkReading(id: uuidv7(now: ctx.now()), inkId: "", source: .typed, text: cur.typed, crossedOut: [], uncertain: [],
+                r = InkReading(id: uuidv7(ctx.now()), inkId: "", source: .typed, text: cur.typed, crossedOut: [], uncertain: [],
                                createdAt: ctx.now())
             } else {
                 let record = cur.area.record(courseId: ctx.course.id, owner: .review, ownerId: sessionId, itemId: cur.item.id)
@@ -192,7 +192,7 @@ final class ReviewSessionModel {
 
     func dontKnow() async {
         guard let cur = current else { return }
-        let r = InkReading(id: uuidv7(now: ctx.now()), inkId: "", source: .typed, text: "(I don't know)", crossedOut: [], uncertain: [],
+        let r = InkReading(id: uuidv7(ctx.now()), inkId: "", source: .typed, text: "(I don't know)", crossedOut: [], uncertain: [],
                            createdAt: ctx.now())
         confidence = nil
         cur.area.isEditable = false

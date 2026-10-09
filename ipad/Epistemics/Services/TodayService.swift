@@ -28,7 +28,7 @@ extension CourseService {
         let states = try await store.conceptStates(course: course.id)
         let mastery = states.mapValues(\.mastery)
         let completed = try await completedLessons()
-        let next = nextAvailableLesson(ctx.curriculum, masteryById: mastery, completedLessonIds: completed)
+        let next = nextAvailableLesson(ctx.curriculum, mastery, completed)
         let overrideUsedToday = await gateOverrideDay() == day
 
         var locked = false
