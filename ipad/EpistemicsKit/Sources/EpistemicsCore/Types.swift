@@ -493,6 +493,11 @@ public struct JudgmentOfLearning: Codable, Sendable, Hashable, Identifiable {
     public var actualOutcome: Bool?
     public var checkedAt: EpochMs?
     public var createdAt: EpochMs
+    public init(id: String, sessionId: String, courseId: String, conceptId: String, predictedRecall: Double,
+                actualOutcome: Bool? = nil, checkedAt: EpochMs? = nil, createdAt: EpochMs) {
+        self.id = id; self.sessionId = sessionId; self.courseId = courseId; self.conceptId = conceptId
+        self.predictedRecall = predictedRecall; self.actualOutcome = actualOutcome; self.checkedAt = checkedAt; self.createdAt = createdAt
+    }
 }
 
 public struct FsrsParams: Codable, Sendable, Hashable {
