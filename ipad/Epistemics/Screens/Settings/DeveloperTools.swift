@@ -25,6 +25,7 @@ struct DeveloperTools: View {
     @Environment(AppModel.self) private var app
     @State private var status: String?
     @State private var running = false
+    @AppStorage("developerPreviewsFixIt") private var previewsFixIt = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -38,6 +39,9 @@ struct DeveloperTools: View {
                 Button("Back to real time") { DeveloperClock.reset(); app.didChangeLearnerState(); status = nil }
                     .buttonStyle(.secondary)
             }
+            Toggle("Demo grader marks the first line of a wrong answer (to preview Fix it)", isOn: $previewsFixIt)
+                .font(.secondary).frame(maxWidth: 560)
+                .onChange(of: previewsFixIt) { app.refreshProvider(); status = nil }
             Button(running ? "Writing the lesson…" : "Finish the next lesson with scribbles") { Task { await autopilot() } }
                 .buttonStyle(.secondary)
                 .disabled(running || app.context == nil)

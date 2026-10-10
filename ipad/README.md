@@ -24,6 +24,8 @@ Built and running in the iPad simulator (iPadOS 27). What works:
   minutes a day.
 - **Today, lessons, reviews, warm-up, checkpoint paper, map from memory, teach-back**, the notebook,
   course map, progress, shelf and settings: every screen in DESIGN §6.
+- **Step-level marking and "Fix it from here"** in reviews, **item variants** (116 in the bundled pack),
+  **mixed progress checks**, and "mastered" earned only out of context: [docs/AUDIT.md](docs/AUDIT.md) #1–#4.
 - **Ink**: PencilKit, Pencil only (a finger scrolls), paper chosen by item type, pages that grow, tool tray
   and hand-in on the free-hand side, left-handed layout.
 - **Reading ink** (DESIGN §5): PencilKit's on-device `PKStrokeRecognizer` draft, then the Claude Reader,

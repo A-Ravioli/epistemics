@@ -49,6 +49,19 @@ describe('curricula', () => {
     expect((await getConcepts(db, 'curr-1', 1)).map((x) => x.id)).toEqual(['c1', 'c2', 'c3']);
   });
 
+  it('keeps item variants through the curriculum JSON and the item projection', async () => {
+    const c = makeCurriculum();
+    const item = c.units[0]!.lessons[0]!.concepts[0]!.items[0]!;
+    item.variants = [{
+      id: `${item.id}~v1`, prompt: 'variant prompt', reference: { answer: 'va', exact: '3' },
+      rubric: [{ id: 'c1', text: 'criterion for the variant' }],
+    }];
+    await saveCurriculum(db, c, NOW);
+    expect((await getItem(db, item.id))?.variants).toEqual(item.variants);
+    expect((await getCurriculum(db, 'curr-1', 1))?.units[0]!.lessons[0]!.concepts[0]!.items[0]!.variants).toEqual(item.variants);
+    expect((await getConcept(db, 'c1'))?.items.find((i) => i.id === item.id)?.variants).toEqual(item.variants);
+  });
+
   it('re-saving replaces projections and keeps versions separate', async () => {
     await saveCurriculum(db, makeCurriculum(1), NOW);
     const v2 = makeCurriculum(2);

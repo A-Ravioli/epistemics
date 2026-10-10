@@ -113,7 +113,7 @@ final class PlacementModel {
                                                         metadata: RequestMetadata(sessionId: sessionId, courseId: ctx.course.id))
             try await service.recordReceipt(sessionId: sessionId, itemId: item.id, conceptId: probe.conceptId, answer: r.gradedText,
                                             confidence: confidence, grade: graded.grade, rating: graded.rating, assisted: false,
-                                            inkId: inkId)
+                                            inkId: inkId, mixed: true)
             // A lucky guess is not knowing: the confidence-adjusted rating has to be Good or better.
             state = recordPlacementResult(state, probe.conceptId, isCorrect(graded.rating))
             await showNext()
@@ -126,7 +126,7 @@ final class PlacementModel {
     func dontKnow() async {
         guard let item, let probe else { return }
         try? await service.recordReceipt(sessionId: sessionId, itemId: item.id, conceptId: probe.conceptId, answer: "(I don't know)",
-                                         confidence: nil, grade: nil, rating: .again, assisted: false)
+                                         confidence: nil, grade: nil, rating: .again, assisted: false, mixed: true)
         state = recordPlacementResult(state, probe.conceptId, false)
         await showNext()
     }

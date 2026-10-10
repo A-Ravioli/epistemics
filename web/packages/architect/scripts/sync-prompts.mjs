@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../../..');
-const STAGES = ['outline', 'concepts', 'graph', 'scripts', 'items', 'itemcheck'];
+const STAGES = ['outline', 'concepts', 'graph', 'scripts', 'items', 'itemcheck', 'variants', 'variantsolve', 'variantjudge'];
 
 mkdirSync(resolve(here, '../src/prompts'), { recursive: true });
 const versions = new Set();

@@ -91,7 +91,12 @@ struct CourseService {
         var grade: GradeResult?
         var inkId: String?
         var modality: AnswerModality?
+        var variantId: String? = nil
     }
+
+    /// Where an answer counts as mixed evidence (docs/AUDIT.md #4): out of context, nothing on the page
+    /// naming the idea. Lesson checks and warm-ups come right after or about one lesson, so they don't.
+    static func isMixed(_ source: ReviewSource) -> Bool { [.review, .checkpoint, .diagnostic].contains(source) }
 
     /// scheduler.applyRating → cards + review log → receipt + concept state → implicit credit (DESIGN §5.3-5.6).
     func applyReview(card: Card, rating: Rating, source: ReviewSource, assisted: Bool, confidence: Confidence?,
@@ -108,7 +113,8 @@ struct CourseService {
         if let receipt {
             saved = try await recordReceipt(sessionId: receipt.sessionId, itemId: card.itemId, conceptId: card.conceptId,
                                             answer: receipt.answer, confidence: confidence, grade: receipt.grade, rating: rating,
-                                            assisted: assisted, inkId: receipt.inkId, modality: receipt.modality)
+                                            assisted: assisted, inkId: receipt.inkId, modality: receipt.modality,
+                                            mixed: Self.isMixed(source), variantId: receipt.variantId)
         }
         if allowImplicit && !assisted && isCorrect(rating) {
             try await grantImplicitCredit(passedConceptId: card.conceptId)
@@ -162,23 +168,53 @@ struct CourseService {
     @discardableResult
     func recordReceipt(sessionId: String, itemId: String, conceptId: String, answer: String, confidence: Confidence?,
                        grade: GradeResult?, rating: Rating, assisted: Bool, inkId: String? = nil,
-                       modality: AnswerModality? = nil) async throws -> Receipt {
+                       modality: AnswerModality? = nil, mixed: Bool = false, variantId: String? = nil) async throws -> Receipt {
         let n = now
         let receipt = Receipt(id: uuidv7(n), sessionId: sessionId, courseId: course.id, itemId: itemId, conceptId: conceptId,
                               answer: answer, confidence: confidence, grade: grade, rating: rating, assisted: assisted,
-                              createdAt: n, inkId: inkId, modality: modality ?? (inkId == nil ? nil : .ink))
+                              createdAt: n, inkId: inkId, modality: modality ?? (inkId == nil ? nil : .ink), variantId: variantId)
         try await store.saveReceipt(receipt)
-        try await foldReceipt(receipt)
+        try await foldReceipt(receipt, mixed: mixed)
         return receipt
     }
 
-    func foldReceipt(_ r: Receipt) async throws {
+    func foldReceipt(_ r: Receipt, mixed: Bool = false) async throws {
         let states = try await store.conceptStates(course: course.id)
         let prev = states[r.conceptId] ?? ConceptState(courseId: course.id, conceptId: r.conceptId, updatedAt: r.createdAt)
         let next = updateConceptStateAfterReceipt(prev, ConceptReceipt(
             rating: r.rating, assisted: r.assisted, misconceptionTags: r.grade?.misconceptionTags ?? [],
-            day: studyDayKey(r.createdAt), at: r.createdAt))
+            day: studyDayKey(r.createdAt), at: r.createdAt, mixed: mixed))
         try await recomputeMastery(next)
+    }
+
+    // MARK: Variants (docs/AUDIT.md #3)
+
+    /// The version of `item` to serve now: each of the item and its variants once, then the one seen longest ago.
+    func serving(_ item: Item) async -> (item: Item, variantId: String?) {
+        guard !(item.variants ?? []).isEmpty else { return (item, nil) }
+        let history = ((try? await store.receipts(course: course.id)) ?? [])
+            .filter { $0.itemId == item.id }
+            .map { VariantUse(variantId: $0.variantId, at: $0.createdAt) }
+        let id = nextVariant(item, history: history)
+        return (item.serving(id), id)
+    }
+
+    // MARK: Demotion (docs/AUDIT.md #4)
+
+    /// A concept that failed out of context goes back: its spaced successes drop to one, so its mastery
+    /// falls under the availability threshold and what depends on it waits. A placed-out concept is no longer
+    /// placed, so its lesson is taught; a taught one gets a remediation lesson.
+    func demote(_ conceptId: String) async throws {
+        let states = try await store.conceptStates(course: course.id)
+        var s = states[conceptId] ?? ConceptState(courseId: course.id, conceptId: conceptId, updatedAt: now)
+        s.successfulSessions = min(s.successfulSessions, 1)
+        try await recomputeMastery(s)
+        let placed = await placedConcepts()
+        if placed.contains(conceptId) {
+            try await store.setSetting(key("placed"), placed.filter { $0 != conceptId })
+        } else {
+            await addPendingRemediation(conceptId)
+        }
     }
 
     /// mastery = retention × min(1, sessions/3), persisted.

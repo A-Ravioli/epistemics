@@ -6,7 +6,7 @@
     "subject": "probability",
     "description": "An introductory probability course for a motivated adult with high-school algebra: sample spaces, counting, the probability rules, conditional probability and Bayes, then random variables, expectation and variance, the named discrete distributions, joint distributions, the law of large numbers and simulation.",
     "level": "intro undergraduate",
-    "contentHash": "02b280a7634d3fd33209c284deb4feee4aa55af1233031351b9d7b854b146ddd",
+    "contentHash": "079d1f4da527d266f576f76332fb9fa5b922f1c89f2dbc4ce30fe97f616d182c",
     "generator": {
       "name": "hand-authored",
       "version": "1.0"
@@ -206,7 +206,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "ccbbe37c28721f3bbffab0414ba780f645106e1afdb66ce6347a893da701bcd9"
+                  "hash": "ccbbe37c28721f3bbffab0414ba780f645106e1afdb66ce6347a893da701bcd9",
+                  "variants": [
+                    {
+                      "id": "i-sample-spaces-events-04~v1",
+                      "prompt": "A two-digit code is set by choosing the first digit from 1 to 5 and then the second digit from 1 to 5 (repeats allowed, every choice equally likely). How many outcomes are in the sample space, and how many outcomes are in the event 'the two digits add to 6'?",
+                      "reference": {
+                        "answer": "The sample space consists of ordered pairs (first digit, second digit): 5 × 5 = 25 outcomes. The digits add to 6 for (1,5), (2,4), (3,3), (4,2), (5,1): 5 outcomes.",
+                        "exact": "25; 5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives 25 as the size of the sample space."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Treats the codes as ordered pairs (or otherwise counts (2,4) and (4,2) separately)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Counts exactly 5 outcomes with digit sum 6."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-sample-spaces-events-04~v2",
+                      "prompt": "A quiz app picks a question number from 1 to 8 at random for round one, and again independently from 1 to 8 for round two (repeats allowed). How many outcomes are in the sample space, and how many outcomes are in the event 'the two question numbers add to 9'?",
+                      "reference": {
+                        "answer": "The sample space consists of ordered pairs (round one, round two): 8 × 8 = 64 outcomes. The sum is 9 for (1,8), (2,7), (3,6), (4,5), (5,4), (6,3), (7,2), (8,1): 8 outcomes.",
+                        "exact": "64; 8"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives 64 as the size of the sample space."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Treats the picks as ordered pairs (or otherwise counts (4,5) and (5,4) separately)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Counts exactly 8 outcomes with sum 9."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-sample-spaces-events-05",
@@ -234,7 +280,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "bece5051476c5aa9eb5f015f2b1e4ee4452132c61ab422f9f11b7d53019b8387"
+                  "hash": "bece5051476c5aa9eb5f015f2b1e4ee4452132c61ab422f9f11b7d53019b8387",
+                  "variants": [
+                    {
+                      "id": "i-sample-spaces-events-05~v1",
+                      "prompt": "A clinical trial records the result for each of 5 patients as R (responds) or N (does not respond). Write the event 'exactly one patient does not respond' as a set of outcomes and state how many outcomes it contains.",
+                      "reference": {
+                        "answer": "Outcomes are strings of five letters. Exactly one N: {NRRRR, RNRRR, RRNRR, RRRNR, RRRRN}, which contains 5 outcomes (out of 2^5 = 32 in the sample space).",
+                        "exact": "5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Represents outcomes as ordered 5-letter strings."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Lists exactly the five outcomes with a single N."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "States the count 5."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-sample-spaces-events-05~v2",
+                      "prompt": "A security guard checks 3 doors on a round, recording each as L (locked) or U (unlocked). Write the event 'exactly one door is unlocked' as a set of outcomes and state how many outcomes it contains.",
+                      "reference": {
+                        "answer": "Outcomes are strings of three letters. Exactly one U: {ULL, LUL, LLU}, which contains 3 outcomes (out of 2^3 = 8 in the sample space).",
+                        "exact": "3"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Represents outcomes as ordered 3-letter strings."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Lists exactly the three outcomes with a single U."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "States the count 3."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-sample-spaces-events-06",
@@ -402,7 +494,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "5a253eacf4ad7cf3fd32685be4bb9e8dcce0819ea02404aff442a7f524f8d0c4"
+                  "hash": "5a253eacf4ad7cf3fd32685be4bb9e8dcce0819ea02404aff442a7f524f8d0c4",
+                  "variants": [
+                    {
+                      "id": "i-equally-likely-outcomes-02~v1",
+                      "prompt": "Two students each pick a whole number from 1 to 8 at random, independently (they may pick the same number). What is the probability that the sum of their numbers is at least 14?",
+                      "reference": {
+                        "answer": "Of the 64 ordered pairs: sum 14 from (6,8), (7,7), (8,6); sum 15 from (7,8), (8,7); sum 16 from (8,8). That is 6 outcomes, so P = 6/64 = 3/32.",
+                        "exact": "3/32"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 64 equally likely ordered pairs as the denominator."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts 6 favourable outcomes (3 + 2 + 1 for sums 14, 15, 16)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 6/64 = 3/32."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-equally-likely-outcomes-02~v2",
+                      "prompt": "A music app plays two tracks, each picked at random from tracks numbered 1 to 10, independently (the same track can be picked twice). What is the probability that the two track numbers add up to at least 18?",
+                      "reference": {
+                        "answer": "Of the 100 ordered pairs: sum 18 from (8,10), (9,9), (10,8); sum 19 from (9,10), (10,9); sum 20 from (10,10). That is 6 outcomes, so P = 6/100 = 3/50.",
+                        "exact": "3/50"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 100 equally likely ordered pairs as the denominator."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts 6 favourable outcomes (3 + 2 + 1 for sums 18, 19, 20)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 6/100 = 3/50."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-equally-likely-outcomes-03",
@@ -430,7 +568,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "402972b018c1b72cdab4e78f9d01070b0b7aff111b8f0274d6d764ae89dd3b8e"
+                  "hash": "402972b018c1b72cdab4e78f9d01070b0b7aff111b8f0274d6d764ae89dd3b8e",
+                  "variants": [
+                    {
+                      "id": "i-equally-likely-outcomes-03~v1",
+                      "prompt": "A raffle drum holds 75 tickets, of which 15 are prize-winning tickets. One ticket is drawn at random. What is the probability that it is not a prize-winning ticket?",
+                      "reference": {
+                        "answer": "75 tickets are equally likely to be drawn and 60 are not prize-winning, so P = 60/75 = 4/5 = 0.8.",
+                        "exact": "4/5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 75 as the total number of equally likely outcomes."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Identifies 60 non-winning tickets as favourable."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 60/75 = 4/5 = 0.8."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-equally-likely-outcomes-03~v2",
+                      "prompt": "A clinic's waiting list has 48 patients, 18 of whom are overdue for a check-up. One patient is selected at random. What is the probability that the patient is not overdue?",
+                      "reference": {
+                        "answer": "48 patients are equally likely to be selected and 30 are not overdue, so P = 30/48 = 5/8 = 0.625.",
+                        "exact": "5/8"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 48 as the total number of equally likely outcomes."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Identifies 30 patients who are not overdue as favourable."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 30/48 = 5/8 = 0.625."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-equally-likely-outcomes-04",
@@ -647,7 +831,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "faf1b465d53f6e1ffa56a4053b9b8ec74e16eae7a2f38758e73d36ceb95026be"
+                  "hash": "faf1b465d53f6e1ffa56a4053b9b8ec74e16eae7a2f38758e73d36ceb95026be",
+                  "variants": [
+                    {
+                      "id": "i-complement-rule-02~v1",
+                      "prompt": "A family has 5 children. Assume each child is equally likely to be a boy or a girl, independently of the others. What is the probability that at least one child is a girl?",
+                      "reference": {
+                        "answer": "P(no girl) = P(all boys) = $(1/2)^5 = 1/32$, so P(at least one girl) = $1 - 1/32 = 31/32 \\approx 0.969$.",
+                        "exact": "31/32"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies the complement as 'all five children are boys'."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes P(all boys) = (1/2)^5 = 1/32."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1 − 1/32 = 31/32."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-complement-rule-02~v2",
+                      "prompt": "A student answers 7 true/false questions by guessing each one at random. What is the probability of getting at least one question right?",
+                      "reference": {
+                        "answer": "P(none right) = P(all seven wrong) = $(1/2)^7 = 1/128$, so P(at least one right) = $1 - 1/128 = 127/128 \\approx 0.992$.",
+                        "exact": "127/128"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies the complement as 'all seven answers are wrong'."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes P(all wrong) = (1/2)^7 = 1/128."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1 − 1/128 = 127/128."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-complement-rule-03",
@@ -676,7 +906,55 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "78fa075a0153c0690d1d85812a93c87b7c3253a822ca7bac618a298da3efbcd2"
+                  "hash": "78fa075a0153c0690d1d85812a93c87b7c3253a822ca7bac618a298da3efbcd2",
+                  "variants": [
+                    {
+                      "id": "i-complement-rule-03~v1",
+                      "prompt": "A traveller's trip has 4 flights, and each flight is independently delayed with probability 0.2. What is the probability that at least one flight is delayed?",
+                      "reference": {
+                        "answer": "P(no flight is delayed) = $0.8^4 = 0.4096$, so P(at least one delayed) = $1 - 0.4096 = 0.5904 \\approx 0.59$.",
+                        "exact": "0.5904",
+                        "notes": "Accept 0.59 or 0.590."
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies the complement 'no flight is delayed'."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes 0.8^4 = 0.4096."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1 − 0.8^4 ≈ 0.59."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-complement-rule-03~v2",
+                      "prompt": "A courier delivers 6 parcels, and each parcel is independently damaged in transit with probability 0.05. What is the probability that at least one parcel is damaged?",
+                      "reference": {
+                        "answer": "P(no parcel is damaged) = $0.95^6 \\approx 0.73509$, so P(at least one damaged) = $1 - 0.73509 = 0.26491 \\approx 0.26$.",
+                        "exact": "0.2649",
+                        "notes": "Accept 0.26 or 0.265."
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies the complement 'no parcel is damaged'."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes 0.95^6 ≈ 0.735."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1 − 0.95^6 ≈ 0.26."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-complement-rule-04",
@@ -900,7 +1178,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "79992077f841e75c791fe6f098d5f8791097579473cf3454cde9be0c103470fd"
+                  "hash": "79992077f841e75c791fe6f098d5f8791097579473cf3454cde9be0c103470fd",
+                  "variants": [
+                    {
+                      "id": "i-multiplication-principle-02~v1",
+                      "prompt": "A ferry booking reference consists of 4 letters (a–z) followed by 1 digit (0–9), with repetition allowed. How many booking references are there?",
+                      "reference": {
+                        "answer": "$26^4 \\times 10 = 456{,}976 \\times 10 = 4{,}569{,}760$.",
+                        "exact": "4569760"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 26 options for each letter position and 10 for the digit position."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Multiplies the five stage counts."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 4,569,760."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-multiplication-principle-02~v2",
+                      "prompt": "A warehouse bin label consists of 1 letter (a–z) followed by 4 digits (0–9), with repetition allowed. How many bin labels are there?",
+                      "reference": {
+                        "answer": "$26 \\times 10^4 = 26 \\times 10{,}000 = 260{,}000$.",
+                        "exact": "260000"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 26 options for the letter position and 10 for each digit position."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Multiplies the five stage counts."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 260,000."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-multiplication-principle-03",
@@ -928,7 +1252,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "18b5e0687f198a19b8dd520a77f98696513fa21f6406c9548b42e6cada1a4e45"
+                  "hash": "18b5e0687f198a19b8dd520a77f98696513fa21f6406c9548b42e6cada1a4e45",
+                  "variants": [
+                    {
+                      "id": "i-multiplication-principle-03~v1",
+                      "prompt": "A lighting panel has 4 switches, each either on or off. How many different settings of the switches are possible? A dimmer dial with 6 positions is added — how many settings then?",
+                      "reference": {
+                        "answer": "$2^4 = 16$ settings; with the dial, $16 \\times 6 = 96$.",
+                        "exact": "16; 96"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives 2^4 = 16 for the four on/off switches."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Multiplies by 6 for the dial."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 96."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-multiplication-principle-03~v2",
+                      "prompt": "A sandwich shop offers 6 optional toppings, each either added or left off. How many different topping combinations are possible? A choice of 3 breads is added — how many sandwiches then?",
+                      "reference": {
+                        "answer": "$2^6 = 64$ topping combinations; with the bread choice, $64 \\times 3 = 192$.",
+                        "exact": "64; 192"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives 2^6 = 64 for the six add-or-leave-off toppings."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Multiplies by 3 for the bread choice."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 192."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-multiplication-principle-04",
@@ -1157,7 +1527,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "b143c921ab5a09bee759f4ec7b90a2ef9692e059c1d00cbd426a0e5734b5fb0f"
+                  "hash": "b143c921ab5a09bee759f4ec7b90a2ef9692e059c1d00cbd426a0e5734b5fb0f",
+                  "variants": [
+                    {
+                      "id": "i-permutations-02~v1",
+                      "prompt": "A film-festival jury awards a first, a second and a third prize among 9 short films (no film can win two prizes). How many outcomes are there?",
+                      "reference": {
+                        "answer": "$9 \\times 8 \\times 7 = 504$ (the prizes are distinct, so order matters).",
+                        "exact": "504"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Recognises that order matters because the prizes differ."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses 9 × 8 × 7."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 504."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-permutations-02~v2",
+                      "prompt": "A hospital must staff the morning, afternoon and night shifts on one day with three different nurses chosen from 15 available nurses. How many outcomes are there?",
+                      "reference": {
+                        "answer": "$15 \\times 14 \\times 13 = 2730$ (the shifts are distinct, so order matters).",
+                        "exact": "2730"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Recognises that order matters because the shifts differ."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses 15 × 14 × 13."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 2730."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-permutations-03",
@@ -1185,7 +1601,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "97ed052c9e3818c9ba72be2971aebdcfd96067a39a48bc13edd2dcf6a161e3ea"
+                  "hash": "97ed052c9e3818c9ba72be2971aebdcfd96067a39a48bc13edd2dcf6a161e3ea",
+                  "variants": [
+                    {
+                      "id": "i-permutations-03~v1",
+                      "prompt": "Seven different books — 3 novels and 4 textbooks — are arranged in a row on a shelf. How many arrangements are there? How many of them have a novel at the left end?",
+                      "reference": {
+                        "answer": "All books are distinct, so $7! = 5040$ arrangements. A novel at the left end: 3 choices for the first position, then $6! = 720$ for the rest: $3 \\times 720 = 2160$.",
+                        "exact": "5040; 2160"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives 7! = 5040 for all arrangements."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts 3 choices of novel for the left-end position and 6! for the remaining books."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 2160."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-permutations-03~v2",
+                      "prompt": "A relay team has 5 different runners, 3 of whom are sprint specialists. In how many orders can the 5 runners run? How many of those orders have a sprint specialist running the first leg?",
+                      "reference": {
+                        "answer": "All runners are distinct, so $5! = 120$ orders. A sprint specialist first: 3 choices for the first leg, then $4! = 24$ for the rest: $3 \\times 24 = 72$.",
+                        "exact": "120; 72"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives 5! = 120 for all orders."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts 3 choices of sprint specialist for the first leg and 4! for the remaining runners."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 72."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-permutations-04",
@@ -1425,7 +1887,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "38c971358a6b4cf6119ac81d3771d92b6c6fbf1e6bd5753547a25678300ed1d0"
+                  "hash": "38c971358a6b4cf6119ac81d3771d92b6c6fbf1e6bd5753547a25678300ed1d0",
+                  "variants": [
+                    {
+                      "id": "i-combinations-02~v1",
+                      "prompt": "A pharmacist must choose 4 of 11 medicines to include in a stock review. How many choices are there? If 3 particular medicines must all be included, how many choices are there then?",
+                      "reference": {
+                        "answer": "$\\binom{11}{4} = 330$. If three specific medicines must be included, only the fourth is free: choose 1 of the remaining 8, so 8 choices.",
+                        "exact": "330; 8"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives C(11,4) = 330."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Recognises that with three medicines fixed only one further medicine is chosen from 8."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 8."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-combinations-02~v2",
+                      "prompt": "A band must choose 3 of 16 new songs to rehearse this week. How many choices are there? If 2 particular songs must both be included, how many choices are there then?",
+                      "reference": {
+                        "answer": "$\\binom{16}{3} = 560$. If two specific songs must be included, only the third is free: choose 1 of the remaining 14, so 14 choices.",
+                        "exact": "560; 14"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives C(16,3) = 560."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Recognises that with two songs fixed only one further song is chosen from 14."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 14."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-combinations-03",
@@ -1453,7 +1961,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "41996bf5d618cb234d717b7bd6ebc31c458b3588b34009126dd989c763168826"
+                  "hash": "41996bf5d618cb234d717b7bd6ebc31c458b3588b34009126dd989c763168826",
+                  "variants": [
+                    {
+                      "id": "i-combinations-03~v1",
+                      "prompt": "A committee of 6 is chosen from 10 engineers and 8 designers. How many committees contain exactly 4 engineers?",
+                      "reference": {
+                        "answer": "Choose 4 of the 10 engineers and 2 of the 8 designers: $\\binom{10}{4} \\times \\binom{8}{2} = 210 \\times 28 = 5880$.",
+                        "exact": "5880"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Chooses 4 engineers from 10 (C(10,4) = 210)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Chooses 2 designers from 8 (C(8,2) = 28)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Multiplies to get 5880."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-combinations-03~v2",
+                      "prompt": "An environmental agency tests a sample of 5 of a district's 30 wells, 7 of which are contaminated. How many samples contain exactly 2 contaminated wells?",
+                      "reference": {
+                        "answer": "Choose 2 of the 7 contaminated wells and 3 of the 23 clean wells: $\\binom{7}{2} \\times \\binom{23}{3} = 21 \\times 1771 = 37{,}191$.",
+                        "exact": "37191"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Chooses 2 contaminated wells from 7 (C(7,2) = 21)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Chooses 3 clean wells from 23 (C(23,3) = 1771)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Multiplies to get 37,191."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-combinations-04",
@@ -1668,7 +2222,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "176aa6af0013415ee9be715ca61f92f978e3ed0ff9610184a7f3b2feda08d4c2"
+                  "hash": "176aa6af0013415ee9be715ca61f92f978e3ed0ff9610184a7f3b2feda08d4c2",
+                  "variants": [
+                    {
+                      "id": "i-counting-probability-01~v1",
+                      "prompt": "A class of 18 students includes 6 who are left-handed. The teacher picks 2 students at random to present. What is the probability that both are left-handed?",
+                      "reference": {
+                        "answer": "$\\binom{6}{2}/\\binom{18}{2} = 15/153 = 5/51 \\approx 0.098$. Equivalently $\\frac{6}{18} \\times \\frac{5}{17} = 5/51$.",
+                        "exact": "5/51"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Counts total selections C(18,2) = 153 (or uses sequential probabilities 6/18 × 5/17)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts favourable selections C(6,2) = 15 (or the matching sequential numerator)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 5/51."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-counting-probability-01~v2",
+                      "prompt": "A packet of 30 seeds contains 8 of a rare variety. A gardener plants 2 seeds picked at random. What is the probability that both are the rare variety?",
+                      "reference": {
+                        "answer": "$\\binom{8}{2}/\\binom{30}{2} = 28/435 \\approx 0.064$. Equivalently $\\frac{8}{30} \\times \\frac{7}{29} = 28/435$.",
+                        "exact": "28/435"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Counts total selections C(30,2) = 435 (or uses sequential probabilities 8/30 × 7/29)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts favourable selections C(8,2) = 28 (or the matching sequential numerator)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 28/435."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-counting-probability-02",
@@ -1696,7 +2296,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "18822d27b87ae4c7a8677f9ad648befaba50e737e8d37a52fc0a8518f32cf2d1"
+                  "hash": "18822d27b87ae4c7a8677f9ad648befaba50e737e8d37a52fc0a8518f32cf2d1",
+                  "variants": [
+                    {
+                      "id": "i-counting-probability-02~v1",
+                      "prompt": "Six different books, including a dictionary and an atlas, are placed on a shelf in random order. What is the probability that the dictionary and the atlas end up next to each other?",
+                      "reference": {
+                        "answer": "Total orders: $6! = 720$. Favourable: treat dictionary–atlas as a block, giving $5! = 120$ orders, times 2 for the order inside the block: 240. $P = 240/720 = 1/3$.",
+                        "exact": "1/3"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 6! = 720 equally likely orders."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts 5! × 2 = 240 orders with the pair adjacent."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 240/720 = 1/3."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-counting-probability-02~v2",
+                      "prompt": "Seven print jobs, including Maya's and Leo's, are placed in a printer queue in random order. What is the probability that Maya's and Leo's jobs are next to each other in the queue?",
+                      "reference": {
+                        "answer": "Total orders: $7! = 5040$. Favourable: treat Maya–Leo as a block, giving $6! = 720$ orders, times 2 for the order inside the block: 1440. $P = 1440/5040 = 2/7$.",
+                        "exact": "2/7"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 7! = 5040 equally likely orders."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts 6! × 2 = 1440 orders with the pair adjacent."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1440/5040 = 2/7."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-counting-probability-03",
@@ -1724,7 +2370,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "addb663e2b8a8a650545c07f926db17416b1a02b4db82c3d2a11a101dd0c73e7"
+                  "hash": "addb663e2b8a8a650545c07f926db17416b1a02b4db82c3d2a11a101dd0c73e7",
+                  "variants": [
+                    {
+                      "id": "i-counting-probability-03~v1",
+                      "prompt": "A committee of 4 is chosen at random from 12 employees, 3 of whom are managers. What is the probability that the committee includes all 3 managers?",
+                      "reference": {
+                        "answer": "All three managers plus any one of the other 9 employees: 9 favourable committees. $P = 9/\\binom{12}{4} = 9/495 = 1/55 \\approx 0.018$.",
+                        "exact": "1/55"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses C(12,4) = 495 as the denominator."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts 9 favourable committees (the three managers plus one of 9 other employees)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1/55 (≈ 0.018)."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-counting-probability-03~v2",
+                      "prompt": "An auditor picks 5 of a company's 25 shipments at random to inspect; 4 of the shipments came from a new supplier. What is the probability that all 4 new-supplier shipments are inspected?",
+                      "reference": {
+                        "answer": "All four new-supplier shipments plus any one of the other 21: 21 favourable samples. $P = 21/\\binom{25}{5} = 21/53{,}130 = 1/2530 \\approx 3.95 \\times 10^{-4}$.",
+                        "exact": "1/2530"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses C(25,5) = 53,130 as the denominator."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Counts 21 favourable samples (the four new-supplier shipments plus one of 21 other shipments)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1/2530 (≈ 3.95 × 10^-4)."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-counting-probability-04",
@@ -1982,7 +2674,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "53a688b2d11c40270d1cbd236751f753ef8e7994c0d1a48f90813184a89555fa"
+                  "hash": "53a688b2d11c40270d1cbd236751f753ef8e7994c0d1a48f90813184a89555fa",
+                  "variants": [
+                    {
+                      "id": "i-probability-axioms-02~v1",
+                      "prompt": "A commuter gets to work by bus, train, bike or on foot. P(bus) = 0.3, P(train) = 0.2, and biking is twice as likely as walking. Find P(bike) and P(walk).",
+                      "reference": {
+                        "answer": "The four options are disjoint and exhaustive, so P(bike) + P(walk) = 1 − 0.3 − 0.2 = 0.5. With P(bike) = 2 P(walk): $3\\,P(\\text{walk}) = 0.5$, so P(walk) = 1/6 ≈ 0.167 and P(bike) = 1/3 ≈ 0.333.",
+                        "exact": "P(bike) = 1/3 ≈ 0.333; P(walk) = 1/6 ≈ 0.167"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses the fact that the four probabilities sum to 1 to get 0.5 for bike and walk together."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Sets up bike = 2 × walk and solves."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(walk) ≈ 0.167 and P(bike) ≈ 0.333."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-probability-axioms-02~v2",
+                      "prompt": "A support ticket is resolved by chatbot, phone, email or an in-person visit. P(chatbot) = 0.5, P(phone) = 0.3, and email is five times as likely as an in-person visit. Find P(email) and P(in person).",
+                      "reference": {
+                        "answer": "The four channels are disjoint and exhaustive, so P(email) + P(in person) = 1 − 0.5 − 0.3 = 0.2. With P(email) = 5 P(in person): $6\\,P(\\text{in person}) = 0.2$, so P(in person) = 1/30 ≈ 0.033 and P(email) = 1/6 ≈ 0.167.",
+                        "exact": "P(email) = 1/6 ≈ 0.167; P(in person) = 1/30 ≈ 0.033"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses the fact that the four probabilities sum to 1 to get 0.2 for email and in person together."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Sets up email = 5 × in person and solves."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(in person) ≈ 0.033 and P(email) ≈ 0.167."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-probability-axioms-03",
@@ -2037,7 +2775,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "970c2e68844f18976c114beda22e571c294cd6f05ced744f48391d775efc6351"
+                  "hash": "970c2e68844f18976c114beda22e571c294cd6f05ced744f48391d775efc6351",
+                  "variants": [
+                    {
+                      "id": "i-probability-axioms-04~v1",
+                      "prompt": "A traffic light observed at a random moment shows red, amber or green. Which of these are valid probability assignments for (red, amber, green), and why? (a) 0.5, 0.1, 0.5  (b) 0.6, −0.05, 0.45  (c) 0.45, 0.05, 0.5",
+                      "reference": {
+                        "answer": "(a) is invalid: all non-negative but the sum is 1.1, not 1. (b) is invalid: −0.05 violates non-negativity (even though the sum is 1). (c) is valid: all non-negative and the sum is 1.",
+                        "exact": "only (c)"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies (c) as valid."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Rejects (b) because of the negative probability."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Rejects (a) because the probabilities do not sum to 1."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-probability-axioms-04~v2",
+                      "prompt": "A patient arriving at an emergency department is assigned one of five triage levels. Which of these are valid probability assignments for levels 1 to 5, and why? (a) 0.1, 0.2, 0.3, 0.2, 0.1  (b) 0.05, 0.15, 0.4, 0.3, 0.1  (c) 0.3, 0.4, 0.2, 0.2, −0.1",
+                      "reference": {
+                        "answer": "(a) is invalid: all non-negative but the sum is 0.9, not 1. (b) is valid: all non-negative and the sum is 1. (c) is invalid: −0.1 violates non-negativity (even though the sum is 1).",
+                        "exact": "only (b)"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies (b) as valid."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Rejects (c) because of the negative probability."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Rejects (a) because the probabilities do not sum to 1."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-probability-axioms-05",
@@ -2219,7 +3003,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "b44b805e1535e9e9d505f6b918e4327a91e2f2a011bd93bc923bf9c60dfc00c1"
+                  "hash": "b44b805e1535e9e9d505f6b918e4327a91e2f2a011bd93bc923bf9c60dfc00c1",
+                  "variants": [
+                    {
+                      "id": "i-addition-rule-02~v1",
+                      "prompt": "A day in April (dates 1 to 30) is chosen at random for a fire drill. What is the probability that the date is a multiple of 3 or a multiple of 5?",
+                      "reference": {
+                        "answer": "$P(\\text{multiple of 3}) = 10/30$, $P(\\text{multiple of 5}) = 6/30$, $P(\\text{multiple of both}) = 2/30$ (dates 15 and 30). $P = 10/30 + 6/30 - 2/30 = 14/30 = 7/15 \\approx 0.47$.",
+                        "exact": "7/15"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 10/30 and 6/30 for the two events."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Subtracts the overlap 2/30 (dates 15 and 30)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 14/30 = 7/15."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-addition-rule-02~v2",
+                      "prompt": "A car is chosen at random from a dealer's lot of 60 cars: 24 are red, 20 are electric, and 8 are red electric cars. What is the probability that the chosen car is red or electric?",
+                      "reference": {
+                        "answer": "$P(\\text{red}) = 24/60$, $P(\\text{electric}) = 20/60$, $P(\\text{red electric}) = 8/60$. $P = 24/60 + 20/60 - 8/60 = 36/60 = 3/5 = 0.6$.",
+                        "exact": "3/5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 24/60 and 20/60 for the two events."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Subtracts the overlap 8/60 (the red electric cars)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 36/60 = 3/5."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-addition-rule-03",
@@ -2247,7 +3077,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "b650fa1e955266b3a0ea34c4fbf979f816c64697722abc0e6c10716cf640b6bc"
+                  "hash": "b650fa1e955266b3a0ea34c4fbf979f816c64697722abc0e6c10716cf640b6bc",
+                  "variants": [
+                    {
+                      "id": "i-addition-rule-03~v1",
+                      "prompt": "At a university, 45% of students take a language course, 35% take a statistics course, and 15% take both. What percentage take a language or a statistics course? What percentage take neither?",
+                      "reference": {
+                        "answer": "45 + 35 − 15 = 65% take a language or a statistics course; 100 − 65 = 35% take neither.",
+                        "exact": "65%; 35%"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Applies P(A ∪ B) = 45 + 35 − 15."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives 65% for language or statistics."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 35% for neither via the complement."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-addition-rule-03~v2",
+                      "prompt": "On a typical weekday, 25% of a city's commuters ride the subway, 40% ride a bus, and 12% ride both. What percentage ride the subway or a bus? What percentage ride neither?",
+                      "reference": {
+                        "answer": "25 + 40 − 12 = 53% ride the subway or a bus; 100 − 53 = 47% ride neither.",
+                        "exact": "53%; 47%"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Applies P(A ∪ B) = 25 + 40 − 12."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives 53% for subway or bus."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 47% for neither via the complement."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-addition-rule-04",
@@ -2480,7 +3356,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "b884e7632883d41cc4879a9a9baf5b85043a2802985eb81855f98a957df23fc9"
+                  "hash": "b884e7632883d41cc4879a9a9baf5b85043a2802985eb81855f98a957df23fc9",
+                  "variants": [
+                    {
+                      "id": "i-conditional-probability-02~v1",
+                      "prompt": "Two people each pick a whole number from 1 to 10 at random, independently (repeats allowed). Given that the two numbers sum to 15, what is the probability that at least one of them picked 9?",
+                      "reference": {
+                        "answer": "Outcomes with sum 15: (5,10), (6,9), (7,8), (8,7), (9,6), (10,5) — six equally likely outcomes. Those with a 9: (6,9) and (9,6). So P = 2/6 = 1/3.",
+                        "exact": "1/3"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Restricts to the 6 outcomes with sum 15."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Identifies the 2 of them containing a 9."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 2/6 = 1/3."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-conditional-probability-02~v2",
+                      "prompt": "Seven cards numbered 1 to 7 are in a hat. A card is drawn, its number noted, and it is put back; then a second card is drawn. Given that the two numbers sum to 10, what is the probability that at least one of the numbers is odd?",
+                      "reference": {
+                        "answer": "Outcomes with sum 10: (3,7), (4,6), (5,5), (6,4), (7,3) — five equally likely outcomes. Those with an odd number: (3,7), (5,5), (7,3). So P = 3/5.",
+                        "exact": "3/5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Restricts to the 5 outcomes with sum 10."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Identifies the 3 of them containing an odd number."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 3/5."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-conditional-probability-03",
@@ -2511,6 +3433,52 @@
                   "hash": "452f3964fc22a09dbe1d9d6c79bf4772f2c032c7ed43d8ffafee6dcca8a4fbe6",
                   "tags": [
                     "conditional-as-joint"
+                  ],
+                  "variants": [
+                    {
+                      "id": "i-conditional-probability-03~v1",
+                      "prompt": "In a city, 40% of residents are under 30 and 60% are 30 or older. 15% of residents under 30 and 6% of those 30 or older cycle to work. What is the probability that a randomly chosen resident is under 30 and cycles to work? What is P(cycles | under 30)? Explain in one sentence how these two numbers differ in meaning.",
+                      "reference": {
+                        "answer": "Joint: $P(U \\cap C) = P(U)\\,P(C \\mid U) = 0.4 \\times 0.15 = 0.06$. Conditional: $P(C \\mid U) = 0.15$ (given directly). The joint probability is the fraction of all residents who are both under 30 and cycle to work; the conditional is the fraction of under-30 residents who cycle to work.",
+                        "exact": "0.06; 0.15"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the joint probability 0.4 × 0.15 = 0.06."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "States P(cycles | under 30) = 0.15."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Distinguishes the joint (fraction of all residents) from the conditional (fraction of under-30 residents) in words."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-conditional-probability-03~v2",
+                      "prompt": "An online store finds that 25% of its orders are international and 75% are domestic. 8% of international orders and 3% of domestic orders are returned. What is the probability that a randomly chosen order is international and returned? What is P(returned | international)? Explain in one sentence how these two numbers differ in meaning.",
+                      "reference": {
+                        "answer": "Joint: $P(I \\cap R) = P(I)\\,P(R \\mid I) = 0.25 \\times 0.08 = 0.02$. Conditional: $P(R \\mid I) = 0.08$ (given directly). The joint probability is the fraction of all orders that are both international and returned; the conditional is the fraction of international orders that are returned.",
+                        "exact": "0.02; 0.08"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the joint probability 0.25 × 0.08 = 0.02."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "States P(returned | international) = 0.08."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Distinguishes the joint (fraction of all orders) from the conditional (fraction of international orders) in words."
+                        }
+                      ]
+                    }
                   ]
                 },
                 {
@@ -2744,7 +3712,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "f1d771f2c26f8eaa6633cd7e97a65ce5995bd3f64216e8bda7bef992c4ccccbe"
+                  "hash": "f1d771f2c26f8eaa6633cd7e97a65ce5995bd3f64216e8bda7bef992c4ccccbe",
+                  "variants": [
+                    {
+                      "id": "i-multiplication-rule-02~v1",
+                      "prompt": "A jar has 7 lemon sweets and 5 cherry sweets. Two sweets are taken at random without replacement. What is the probability that both are cherry?",
+                      "reference": {
+                        "answer": "$\\frac{5}{12} \\times \\frac{4}{11} = \\frac{20}{132} = \\frac{5}{33} \\approx 0.152$.",
+                        "exact": "5/33"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 5/12 for the first sweet."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses the conditional 4/11 for the second sweet."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 5/33."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-multiplication-rule-02~v2",
+                      "prompt": "A team of 9 volunteers includes 3 with first-aid training. Two different volunteers are picked at random for a shift. What is the probability that both have first-aid training?",
+                      "reference": {
+                        "answer": "$\\frac{3}{9} \\times \\frac{2}{8} = \\frac{6}{72} = \\frac{1}{12} \\approx 0.083$.",
+                        "exact": "1/12"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 3/9 for the first volunteer."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses the conditional 2/8 for the second volunteer."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1/12."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-multiplication-rule-03",
@@ -2772,7 +3786,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "1f9820dd535ffabe1202d2e8386b95e7522cdf98153afcfddd0233ebbef69983"
+                  "hash": "1f9820dd535ffabe1202d2e8386b95e7522cdf98153afcfddd0233ebbef69983",
+                  "variants": [
+                    {
+                      "id": "i-multiplication-rule-03~v1",
+                      "prompt": "A box of 15 light bulbs contains 3 that are dead. A technician picks 3 bulbs at random without replacement. What is the probability that none of them is dead?",
+                      "reference": {
+                        "answer": "$\\frac{12}{15} \\times \\frac{11}{14} \\times \\frac{10}{13} = \\frac{1320}{2730} = \\frac{44}{91} \\approx 0.484$. (Equivalently $\\binom{12}{3}/\\binom{15}{3} = 220/455$.)",
+                        "exact": "44/91"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Sets up three factors with denominators 15, 14, 13."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses numerators 12, 11, 10 for the working bulbs."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 44/91 ≈ 0.484."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-multiplication-rule-03~v2",
+                      "prompt": "In a class of 20 students, 5 have not done their homework. The teacher calls on 3 different students at random. What is the probability that all 3 have done their homework?",
+                      "reference": {
+                        "answer": "$\\frac{15}{20} \\times \\frac{14}{19} \\times \\frac{13}{18} = \\frac{2730}{6840} = \\frac{91}{228} \\approx 0.399$. (Equivalently $\\binom{15}{3}/\\binom{20}{3} = 455/1140$.)",
+                        "exact": "91/228"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Sets up three factors with denominators 20, 19, 18."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses numerators 15, 14, 13 for the students who did their homework."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 91/228 ≈ 0.399."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-multiplication-rule-04",
@@ -2996,7 +4056,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "f4a2f99d949f932fe237dae64292e61533b11c88ab9a89137fac68d80bf494d1"
+                  "hash": "f4a2f99d949f932fe237dae64292e61533b11c88ab9a89137fac68d80bf494d1",
+                  "variants": [
+                    {
+                      "id": "i-independence-02~v1",
+                      "prompt": "A student guesses on 4 true/false questions, so each answer is independently right (R) or wrong (W) with probability 1/2. Let A = 'the first answer is right' and B = 'exactly three answers are right'. Are A and B independent? Show the calculation.",
+                      "reference": {
+                        "answer": "$P(A) = 1/2$. B = {RRRW, RRWR, RWRR, WRRR}, so $P(B) = 4/16 = 1/4$. $A \\cap B$ = {RRRW, RRWR, RWRR}, so $P(A \\cap B) = 3/16$. Since $P(A)P(B) = 1/8 = 2/16 \\ne 3/16$, they are not independent (knowing the first answer is right raises the chance of exactly three right from 1/4 to 3/8).",
+                        "exact": "not independent"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Finds P(A) = 1/2 and P(B) = 1/4."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Finds P(A ∩ B) = 3/16."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Concludes not independent because 3/16 ≠ 1/8."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-independence-02~v2",
+                      "prompt": "A spinner with four equal sectors numbered 1 to 4 is spun twice. Let A = 'the first spin is 4' and B = 'the two spins sum to 5'. Are A and B independent? Show the calculation.",
+                      "reference": {
+                        "answer": "$P(A) = 4/16 = 1/4$. B = {(1,4), (2,3), (3,2), (4,1)}, so $P(B) = 4/16 = 1/4$. $A \\cap B$ = {(4,1)}, so $P(A \\cap B) = 1/16$. Since $P(A)P(B) = 1/16 = P(A \\cap B)$, they are independent (knowing the first spin is 4 leaves the chance that the sum is 5 at 1/4).",
+                        "exact": "independent"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Finds P(A) = 1/4 and P(B) = 1/4."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Finds P(A ∩ B) = 1/16."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Concludes independent because 1/16 = 1/4 × 1/4."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-independence-03",
@@ -3024,7 +4130,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "2d6e710d7486fdb2285d5cca605049af7c07aa16c1ecb27b7657e8cfb69ff21c"
+                  "hash": "2d6e710d7486fdb2285d5cca605049af7c07aa16c1ecb27b7657e8cfb69ff21c",
+                  "variants": [
+                    {
+                      "id": "i-independence-03~v1",
+                      "prompt": "A hospital has two independent backup generators, each of which starts during a power cut with probability 0.8. Power is maintained if at least one generator starts. What is P(power is maintained)?",
+                      "reference": {
+                        "answer": "Both fail to start with probability $0.2 \\times 0.2 = 0.04$ (independence), so P(power is maintained) = $1 - 0.04 = 0.96$.",
+                        "exact": "0.96"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses independence to multiply the failure probabilities 0.2 × 0.2."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses the complement of both failing."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.96."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-independence-03~v2",
+                      "prompt": "Two independent smoke detectors in a kitchen each detect a fire with probability 0.95. The alarm sounds if at least one detector detects the fire. What is P(alarm sounds)?",
+                      "reference": {
+                        "answer": "Both miss the fire with probability $0.05 \\times 0.05 = 0.0025$ (independence), so P(alarm sounds) = $1 - 0.0025 = 0.9975$.",
+                        "exact": "0.9975"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses independence to multiply the miss probabilities 0.05 × 0.05."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses the complement of both missing."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.9975."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-independence-04",
@@ -3270,7 +4422,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "a9d96a066264bee4b5dc73c00ec1313a06d5c2eaf640d63ddb7a9790ed76fa99"
+                  "hash": "a9d96a066264bee4b5dc73c00ec1313a06d5c2eaf640d63ddb7a9790ed76fa99",
+                  "variants": [
+                    {
+                      "id": "i-law-of-total-probability-02~v1",
+                      "prompt": "A library's loans are 70% print books and 30% e-books. 5% of print loans and 20% of e-book loans are renewed. What fraction of all loans are renewed?",
+                      "reference": {
+                        "answer": "$0.7 \\times 0.05 + 0.3 \\times 0.20 = 0.035 + 0.06 = 0.095$.",
+                        "exact": "0.095"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Forms the two case products 0.7 × 0.05 and 0.3 × 0.20."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Adds the cases."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.095."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-law-of-total-probability-02~v2",
+                      "prompt": "A delivery firm sends 45% of its parcels by air and 55% by road. 2% of air parcels and 6% of road parcels arrive late. What fraction of all parcels arrive late?",
+                      "reference": {
+                        "answer": "$0.45 \\times 0.02 + 0.55 \\times 0.06 = 0.009 + 0.033 = 0.042$.",
+                        "exact": "0.042"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Forms the two case products 0.45 × 0.02 and 0.55 × 0.06."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Adds the cases."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.042."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-law-of-total-probability-03",
@@ -3298,7 +4496,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "d860c32bb540fa035f2915b2cdda43814d587b08a5159724e38c42e9a385a952"
+                  "hash": "d860c32bb540fa035f2915b2cdda43814d587b08a5159724e38c42e9a385a952",
+                  "variants": [
+                    {
+                      "id": "i-law-of-total-probability-03~v1",
+                      "prompt": "A hospital's discharges come from three wards that account for 40%, 35% and 25% of patients, with 30-day readmission rates of 5%, 8% and 12% respectively. What is the overall readmission rate?",
+                      "reference": {
+                        "answer": "$0.4 \\times 0.05 + 0.35 \\times 0.08 + 0.25 \\times 0.12 = 0.02 + 0.028 + 0.03 = 0.078$, i.e. 7.8%.",
+                        "exact": "0.078"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Weights each readmission rate by its ward share."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Includes all three wards."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.078."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-law-of-total-probability-03~v2",
+                      "prompt": "A seed supplier's mix contains three varieties in proportions 60%, 25% and 15%, whose seeds fail to germinate at rates 3%, 6% and 10% respectively. What is the overall failure rate for the mix?",
+                      "reference": {
+                        "answer": "$0.6 \\times 0.03 + 0.25 \\times 0.06 + 0.15 \\times 0.10 = 0.018 + 0.015 + 0.015 = 0.048$, i.e. 4.8%.",
+                        "exact": "0.048"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Weights each failure rate by its variety's share."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Includes all three varieties."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.048."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-law-of-total-probability-04",
@@ -3514,7 +4758,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "6ccb1c6fea39532d7f33d54a4ea1e73bb66f29276b1876bcd572406ec7ffd019"
+                  "hash": "6ccb1c6fea39532d7f33d54a4ea1e73bb66f29276b1876bcd572406ec7ffd019",
+                  "variants": [
+                    {
+                      "id": "i-bayes-theorem-02~v1",
+                      "prompt": "A workshop's two machines each make half of its parts. 5% of machine I's parts are scratched and 20% of machine II's parts are scratched. A part picked at random is scratched. What is the probability that it came from machine II?",
+                      "reference": {
+                        "answer": "$P(S) = 0.5 \\times 0.05 + 0.5 \\times 0.20 = 0.125$. $P(\\text{II} \\mid S) = \\frac{0.5 \\times 0.20}{0.125} = \\frac{0.1}{0.125} = 0.8$.",
+                        "exact": "4/5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the numerator 0.5 × 0.20 = 0.1."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes P(scratched) = 0.125 by total probability."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.8."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-bayes-theorem-02~v2",
+                      "prompt": "A student is equally likely to take route A or route B to school on a given day. On route A she is late with probability 0.15, and on route B with probability 0.35. Today she was late. What is the probability that she took route A?",
+                      "reference": {
+                        "answer": "$P(L) = 0.5 \\times 0.15 + 0.5 \\times 0.35 = 0.25$. $P(A \\mid L) = \\frac{0.5 \\times 0.15}{0.25} = \\frac{0.075}{0.25} = 0.3$.",
+                        "exact": "3/10"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the numerator 0.5 × 0.15 = 0.075."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes P(late) = 0.25 by total probability."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.3."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-bayes-theorem-03",
@@ -3543,7 +4833,55 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "e894c0266ba6f9bae9e01bb59a2c55f7d977398bdc06897947e6f1eac2abf45c"
+                  "hash": "e894c0266ba6f9bae9e01bb59a2c55f7d977398bdc06897947e6f1eac2abf45c",
+                  "variants": [
+                    {
+                      "id": "i-bayes-theorem-03~v1",
+                      "prompt": "At a vet clinic, 35% of patients are cats and the rest are dogs. Fleas are found on 20% of cats and 8% of dogs. A patient has fleas. What is the probability that it is a cat?",
+                      "reference": {
+                        "answer": "$P(\\text{fleas}) = 0.35 \\times 0.20 + 0.65 \\times 0.08 = 0.07 + 0.052 = 0.122$. $P(\\text{cat} \\mid \\text{fleas}) = 0.07 / 0.122 \\approx 0.574$.",
+                        "exact": "0.574",
+                        "notes": "Exact value 35/61 ≈ 0.5738; accept 0.57."
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the numerator 0.35 × 0.20 = 0.07."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes P(fleas) = 0.122 including the dog branch."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives ≈ 0.57."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-bayes-theorem-03~v2",
+                      "prompt": "On a streaming platform, 15% of the films watched are documentaries. Viewers give a 5-star rating to 40% of documentaries and to 12% of other films. A watched film received 5 stars. What is the probability that it is a documentary?",
+                      "reference": {
+                        "answer": "$P(\\text{5 stars}) = 0.15 \\times 0.40 + 0.85 \\times 0.12 = 0.06 + 0.102 = 0.162$. $P(\\text{documentary} \\mid \\text{5 stars}) = 0.06 / 0.162 \\approx 0.370$.",
+                        "exact": "0.370",
+                        "notes": "Exact value 10/27 ≈ 0.3704; accept 0.37."
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the numerator 0.15 × 0.40 = 0.06."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes P(5 stars) = 0.162 including the other-films branch."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives ≈ 0.37."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-bayes-theorem-04",
@@ -3768,7 +5106,55 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "519bffe0ff80a0427340a23a41d676eea77375c0328b9e3b0ecbf17d5217d420"
+                  "hash": "519bffe0ff80a0427340a23a41d676eea77375c0328b9e3b0ecbf17d5217d420",
+                  "variants": [
+                    {
+                      "id": "i-base-rate-reasoning-01~v1",
+                      "prompt": "3% of a factory's welds are faulty. An ultrasonic check has sensitivity 95% and a false-positive rate of 8%. What is P(faulty | flagged)?",
+                      "reference": {
+                        "answer": "$\\frac{0.03 \\times 0.95}{0.03 \\times 0.95 + 0.97 \\times 0.08} = \\frac{0.0285}{0.0285 + 0.0776} = \\frac{0.0285}{0.1061} \\approx 0.269$.",
+                        "exact": "0.269",
+                        "notes": "Exact 285/1061 ≈ 0.2686; accept 0.27."
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes true-positive probability 0.03 × 0.95 = 0.0285."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes false-positive probability 0.97 × 0.08 = 0.0776."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.0285/0.1061 ≈ 0.269."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-base-rate-reasoning-01~v2",
+                      "prompt": "A rare frog lives in 5% of surveyed ponds. An eDNA water test has sensitivity 80% and a false-positive rate of 6%. What is P(frog present | positive)?",
+                      "reference": {
+                        "answer": "$\\frac{0.05 \\times 0.80}{0.05 \\times 0.80 + 0.95 \\times 0.06} = \\frac{0.04}{0.04 + 0.057} = \\frac{0.04}{0.097} \\approx 0.412$.",
+                        "exact": "0.412",
+                        "notes": "Exact 40/97 ≈ 0.4124; accept 0.41."
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes true-positive probability 0.05 × 0.80 = 0.04."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes false-positive probability 0.95 × 0.06 = 0.057."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.04/0.097 ≈ 0.412."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-base-rate-reasoning-02",
@@ -3796,7 +5182,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "f2ac44be2b9d82b0a11d2e7362584a557bcb8acefdb20e70086dacfec5599468"
+                  "hash": "f2ac44be2b9d82b0a11d2e7362584a557bcb8acefdb20e70086dacfec5599468",
+                  "variants": [
+                    {
+                      "id": "i-base-rate-reasoning-02~v1",
+                      "prompt": "Use natural frequencies with 50,000 laptops. 0.4% have a defective battery; a battery diagnostic has sensitivity 100% and specificity 98%. How many true positives and false positives are there, and what fraction of positive results are true positives?",
+                      "reference": {
+                        "answer": "50,000 × 0.004 = 200 laptops have a defective battery and all 200 test positive (sensitivity 100%). 49,800 do not; 2% of them, 996, test positive. Fraction of positives that are true: 200 / (200 + 996) = 200/1196 ≈ 0.167.",
+                        "exact": "200 true positives; 996 false positives; 200/1196 ≈ 0.167"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Finds 200 true positives."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Finds 996 false positives (2% of 49,800)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 200/1196 ≈ 0.17."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-base-rate-reasoning-02~v2",
+                      "prompt": "Use natural frequencies with 10,000 insurance claims. 1.5% of claims are fraudulent; a screening rule has sensitivity 100% and specificity 96%. How many true positives and false positives are there, and what fraction of positive results are true positives?",
+                      "reference": {
+                        "answer": "10,000 × 0.015 = 150 claims are fraudulent and all 150 are flagged positive (sensitivity 100%). 9,850 are not; 4% of them, 394, are flagged positive. Fraction of positives that are true: 150 / (150 + 394) = 150/544 ≈ 0.276.",
+                        "exact": "150 true positives; 394 false positives; 150/544 ≈ 0.276"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Finds 150 true positives."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Finds 394 false positives (4% of 9,850)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 150/544 ≈ 0.28."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-base-rate-reasoning-03",
@@ -4077,7 +5509,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "f4435b0ca7ab8bb33f3337a346b151ad002dbf7252e6c8878231ca12f58f3d32"
+                  "hash": "f4435b0ca7ab8bb33f3337a346b151ad002dbf7252e6c8878231ca12f58f3d32",
+                  "variants": [
+                    {
+                      "id": "i-random-variable-02~v1",
+                      "prompt": "Two independent random number generators each output a whole number from 1 to 5, all values equally likely, and X is the sum of the two outputs. Find P(X = 4), P(X = 6) and P(X ≥ 9).",
+                      "reference": {
+                        "answer": "25 equally likely pairs. Sum 4: (1,3), (2,2), (3,1): $3/25$. Sum 6: (1,5), (2,4), (3,3), (4,2), (5,1): $5/25 = 1/5$. Sum ≥ 9: (4,5), (5,4), (5,5): $3/25$.",
+                        "exact": "3/25; 1/5; 3/25"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives P(X = 4) = 3/25."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives P(X = 6) = 5/25 = 1/5."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(X ≥ 9) = 3/25."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-random-variable-02~v2",
+                      "prompt": "Two balls are drawn with replacement from an urn holding four balls numbered 1, 2, 3 and 4, and X is the sum of the two numbers drawn. Find P(X = 3), P(X = 5) and P(X ≥ 7).",
+                      "reference": {
+                        "answer": "16 equally likely ordered pairs. Sum 3: (1,2), (2,1): $2/16 = 1/8$. Sum 5: (1,4), (2,3), (3,2), (4,1): $4/16 = 1/4$. Sum ≥ 7: (3,4), (4,3), (4,4): $3/16$.",
+                        "exact": "1/8; 1/4; 3/16"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives P(X = 3) = 2/16 = 1/8."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives P(X = 5) = 4/16 = 1/4."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(X ≥ 7) = 3/16."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-random-variable-03",
@@ -4105,7 +5583,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "6ab96d5e2414a58b1e044ac3c9e656a28b22ab4c042f336220f398501b6ae41d"
+                  "hash": "6ab96d5e2414a58b1e044ac3c9e656a28b22ab4c042f336220f398501b6ae41d",
+                  "variants": [
+                    {
+                      "id": "i-random-variable-03~v1",
+                      "prompt": "The number of books X a library patron borrows on one visit has PMF p(0) = 0.15, p(1) = c, p(2) = 0.3, p(3) = 0.1. Find c and P(X ≥ 1).",
+                      "reference": {
+                        "answer": "The PMF sums to 1: 0.15 + c + 0.3 + 0.1 = 1, so c = 0.45. P(X ≥ 1) = 0.45 + 0.3 + 0.1 = 0.85 (or 1 − 0.15).",
+                        "exact": "c = 0.45; 0.85"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses the sum-to-one property to get c = 0.45."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Sums the probabilities for X = 1, 2, 3 (or uses the complement 1 − 0.15)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.85."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-random-variable-03~v2",
+                      "prompt": "The number of goals X a hockey team scores in one period has PMF p(0) = 0.3, p(1) = 0.35, p(2) = c, p(3) = 0.1. Find c and P(X ≥ 1).",
+                      "reference": {
+                        "answer": "The PMF sums to 1: 0.3 + 0.35 + c + 0.1 = 1, so c = 0.25. P(X ≥ 1) = 0.35 + 0.25 + 0.1 = 0.7 (or 1 − 0.3).",
+                        "exact": "c = 0.25; 0.7"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses the sum-to-one property to get c = 0.25."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Sums the probabilities for X = 1, 2, 3 (or uses the complement 1 − 0.3)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 0.7."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-random-variable-04",
@@ -4321,7 +5845,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "92d982dd315007694bc701a18ddb7b8ac1c4bde726802377db7b2eaac282fd39"
+                  "hash": "92d982dd315007694bc701a18ddb7b8ac1c4bde726802377db7b2eaac282fd39",
+                  "variants": [
+                    {
+                      "id": "i-expectation-02~v1",
+                      "prompt": "The number of cars X waiting at a toll booth when an inspector arrives has PMF p(0) = 0.2, p(1) = 0.4, p(3) = 0.3, p(6) = 0.1. Find E[X].",
+                      "reference": {
+                        "answer": "$E[X] = 0(0.2) + 1(0.4) + 3(0.3) + 6(0.1) = 0 + 0.4 + 0.9 + 0.6 = 1.9$.",
+                        "exact": "1.9"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Multiplies each value (0, 1, 3, 6) by its probability."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Sums the four products 0, 0.4, 0.9 and 0.6."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1.9."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-expectation-02~v2",
+                      "prompt": "A packet of seeds is planted and X, the number of seedlings that survive to transplanting, has PMF p(0) = 0.25, p(2) = 0.35, p(3) = 0.3, p(8) = 0.1. Find E[X].",
+                      "reference": {
+                        "answer": "$E[X] = 0(0.25) + 2(0.35) + 3(0.3) + 8(0.1) = 0 + 0.7 + 0.9 + 0.8 = 2.4$.",
+                        "exact": "2.4"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Multiplies each value (0, 2, 3, 8) by its probability."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Sums the four products 0, 0.7, 0.9 and 0.8."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 2.4."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-expectation-03",
@@ -4349,7 +5919,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "21653260e5f385269fcd8c8dad42f601a156b10e2e79b001c8c1891c7c9a9e4e"
+                  "hash": "21653260e5f385269fcd8c8dad42f601a156b10e2e79b001c8c1891c7c9a9e4e",
+                  "variants": [
+                    {
+                      "id": "i-expectation-03~v1",
+                      "prompt": "An electronics store sells a \\$80 extended warranty that pays \\$1,500 for a replacement with probability 0.04 and nothing otherwise. What is the store's expected profit per warranty sold?",
+                      "reference": {
+                        "answer": "Expected payout $= 1{,}500 \\times 0.04 = \\$60$, so expected profit $= 80 - 60 = \\$20$ per warranty.",
+                        "exact": "20"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the expected payout 0.04 × 1,500 = 60."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Subtracts it from the \\$80 price."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives \\$20."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-expectation-03~v2",
+                      "prompt": "A fairground stall charges \\$5 per play of a ring-toss game. A player wins a \\$40 prize with probability 0.1 and nothing otherwise. What is the stall's expected profit per play?",
+                      "reference": {
+                        "answer": "Expected prize paid $= 40 \\times 0.1 = \\$4$, so expected profit $= 5 - 4 = \\$1$ per play.",
+                        "exact": "1"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the expected prize paid 0.1 × 40 = 4."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Subtracts it from the \\$5 charge."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives \\$1."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-expectation-04",
@@ -4566,7 +6182,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "c1c4f112d9562b2a6155f047d542ec3b3f70af95f9bfac16589c5cda0018a3f1"
+                  "hash": "c1c4f112d9562b2a6155f047d542ec3b3f70af95f9bfac16589c5cda0018a3f1",
+                  "variants": [
+                    {
+                      "id": "i-linearity-of-expectation-02~v1",
+                      "prompt": "A hospital ward has 25 patients, and each one needs a blood test on a given morning with probability 0.2. What is the expected number of patients who need a test? Would the answer change if the patients' needs were dependent (but each patient still needs a test with probability 0.2)?",
+                      "reference": {
+                        "answer": "Let $I_k = 1$ if patient $k$ needs a test. $E[\\sum I_k] = 25 \\times 0.2 = 5$. Dependence would not change it: linearity does not require independence.",
+                        "exact": "5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives the expected count 25 × 0.2 = 5."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "States that dependence does not change the expectation."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Justifies via linearity / indicator variables."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-linearity-of-expectation-02~v2",
+                      "prompt": "A data centre has 60 servers, and on a given day each server needs a reboot with probability 0.15. What is the expected number of servers that need a reboot? Would the answer change if reboots were dependent, for example because servers share a power supply (but each server still needs a reboot with probability 0.15)?",
+                      "reference": {
+                        "answer": "Let $I_k = 1$ if server $k$ needs a reboot. $E[\\sum I_k] = 60 \\times 0.15 = 9$. Dependence would not change it: linearity does not require independence.",
+                        "exact": "9"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives the expected count 60 × 0.15 = 9."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "States that dependence (e.g. a shared power supply) does not change the expectation."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Justifies via linearity / indicator variables."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-linearity-of-expectation-03",
@@ -4594,7 +6256,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "3b9be3c56e9419069b264bbf3bbbd284cdc9c00481fd0b74b01daaa482dd9c66"
+                  "hash": "3b9be3c56e9419069b264bbf3bbbd284cdc9c00481fd0b74b01daaa482dd9c66",
+                  "variants": [
+                    {
+                      "id": "i-linearity-of-expectation-03~v1",
+                      "prompt": "A committee of 4 is chosen at random from 30 employees, 5 of whom work in finance. What is the expected number of finance staff on the committee? (Use an indicator for each of the four committee seats.)",
+                      "reference": {
+                        "answer": "Let $I_k = 1$ if the $k$-th person chosen works in finance; by symmetry $P(I_k = 1) = 5/30$. $E[\\text{finance staff}] = 4 \\times 5/30 = 20/30 = 2/3 \\approx 0.667$.",
+                        "exact": "2/3"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Defines an indicator per committee seat with P = 5/30."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Adds four expectations by linearity."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 2/3 ≈ 0.667."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-linearity-of-expectation-03~v2",
+                      "prompt": "Three bulbs are taken at random, without replacement, from a box of 24 bulbs of which 4 are defective. What is the expected number of defective bulbs taken? (Use an indicator for each of the three draws.)",
+                      "reference": {
+                        "answer": "Let $I_k = 1$ if the $k$-th bulb drawn is defective; by symmetry $P(I_k = 1) = 4/24$. $E[\\text{defectives}] = 3 \\times 4/24 = 12/24 = 1/2 = 0.5$.",
+                        "exact": "1/2"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Defines an indicator per draw with P = 4/24."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Adds three expectations by linearity."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 1/2 = 0.5."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-linearity-of-expectation-04",
@@ -4831,7 +6539,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "056397a28474131112670787506871c70dd026c096246c2014e3b8bea89e9be3"
+                  "hash": "056397a28474131112670787506871c70dd026c096246c2014e3b8bea89e9be3",
+                  "variants": [
+                    {
+                      "id": "i-variance-02~v1",
+                      "prompt": "The number of complaints X a call centre receives in a given hour takes the values 0, 2, 5 with probabilities 0.5, 0.25, 0.25. Find Var(X).",
+                      "reference": {
+                        "answer": "$\\mu = 0(0.5) + 2(0.25) + 5(0.25) = 1.75$. $E[X^2] = 0 + 4(0.25) + 25(0.25) = 7.25$. $\\mathrm{Var}(X) = 7.25 - 1.75^2 = 7.25 - 3.0625 = 4.1875$.",
+                        "exact": "4.1875"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes μ = 1.75."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes E[X²] = 7.25 (or the squared deviations directly)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Var(X) = 4.1875 (= 67/16)."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-variance-02~v2",
+                      "prompt": "The number of fish X an angler catches on a trip takes the values 1, 2, 6 with probabilities 0.25, 0.5, 0.25. Find Var(X).",
+                      "reference": {
+                        "answer": "$\\mu = 1(0.25) + 2(0.5) + 6(0.25) = 2.75$. $E[X^2] = 1(0.25) + 4(0.5) + 36(0.25) = 11.25$. $\\mathrm{Var}(X) = 11.25 - 2.75^2 = 11.25 - 7.5625 = 3.6875$.",
+                        "exact": "3.6875"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes μ = 2.75."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes E[X²] = 11.25 (or the squared deviations directly)."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Var(X) = 3.6875 (= 59/16)."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-variance-03",
@@ -4859,7 +6613,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "abdfd9d9ec819ccb0a0080fa1a6dcc5a8ced1ccef62fe5ebd585fbabcc843af8"
+                  "hash": "abdfd9d9ec819ccb0a0080fa1a6dcc5a8ced1ccef62fe5ebd585fbabcc843af8",
+                  "variants": [
+                    {
+                      "id": "i-variance-03~v1",
+                      "prompt": "A city's daily high temperature X in °C has mean 20 and standard deviation 2.5. Converted to Fahrenheit it is Y = 1.8X + 32. Find E[Y], Var(Y) and SD(Y).",
+                      "reference": {
+                        "answer": "$E[Y] = 1.8(20) + 32 = 68$. $\\mathrm{Var}(Y) = 1.8^2 \\times 2.5^2 = 3.24 \\times 6.25 = 20.25$. $\\mathrm{SD}(Y) = 4.5$.",
+                        "exact": "E[Y] = 68; Var(Y) = 20.25; SD(Y) = 4.5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives E[Y] = 68 by linearity."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses Var(aX + b) = a² Var(X) to get 20.25."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives SD(Y) = 4.5."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-variance-03~v2",
+                      "prompt": "A share's closing price X next week has mean \\$40 and standard deviation \\$0.7. A trader's profit in dollars is Y = 3X − 100. Find E[Y], Var(Y) and SD(Y).",
+                      "reference": {
+                        "answer": "$E[Y] = 3(40) - 100 = 20$. $\\mathrm{Var}(Y) = 3^2 \\times 0.7^2 = 9 \\times 0.49 = 4.41$. $\\mathrm{SD}(Y) = 2.1$.",
+                        "exact": "E[Y] = 20; Var(Y) = 4.41; SD(Y) = 2.1"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives E[Y] = 20 by linearity."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses Var(aX + b) = a² Var(X) to get 4.41."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives SD(Y) = 2.1."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-variance-04",
@@ -5094,7 +6894,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "375e450185f3797584726fa83b1412786a9842baaa1a1bc26efe8b5259cc269a"
+                  "hash": "375e450185f3797584726fa83b1412786a9842baaa1a1bc26efe8b5259cc269a",
+                  "variants": [
+                    {
+                      "id": "i-bernoulli-02~v1",
+                      "prompt": "A flight is delayed with probability 0.15. Let X = 1 if the flight is delayed. Find E[X] and Var(X).",
+                      "reference": {
+                        "answer": "$E[X] = 0.15$; $\\mathrm{Var}(X) = 0.15 \\times 0.85 = 0.1275$.",
+                        "exact": "0.15; 0.1275"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives E[X] = 0.15."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses p(1 − p) = 0.15 × 0.85."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Var(X) = 0.1275."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-bernoulli-02~v2",
+                      "prompt": "A randomly chosen voter supports a ballot proposal with probability 0.45. Let X = 1 if the voter supports it. Find E[X] and Var(X).",
+                      "reference": {
+                        "answer": "$E[X] = 0.45$; $\\mathrm{Var}(X) = 0.45 \\times 0.55 = 0.2475$.",
+                        "exact": "0.45; 0.2475"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives E[X] = 0.45."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses p(1 − p) = 0.45 × 0.55."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Var(X) = 0.2475."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-bernoulli-03",
@@ -5170,7 +7016,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "292bbfc7463058098f10b4bfb91c7e138e0eafa5384557bc720988a3f69f9c47"
+                  "hash": "292bbfc7463058098f10b4bfb91c7e138e0eafa5384557bc720988a3f69f9c47",
+                  "variants": [
+                    {
+                      "id": "i-bernoulli-05~v1",
+                      "prompt": "For each situation, say whether it can be modelled as a single Bernoulli trial and, if so, identify p: (a) a flight either arrives on time (probability 0.85) or does not; (b) the number of customers who enter a shop in an hour; (c) a card is drawn from a well-shuffled standard deck and we record whether it is a heart.",
+                      "reference": {
+                        "answer": "(a) Yes: X = 1 if the flight is on time, p = 0.85. (b) No: the number of customers has many possible values, not two. (c) Yes: X = 1 if the card is a heart, p = 13/52 = 1/4.",
+                        "exact": "(a) yes, p = 0.85; (b) no; (c) yes, p = 1/4"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies (a) as Bernoulli with p = 0.85."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Rejects (b) because it has more than two outcomes."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Identifies (c) as Bernoulli with p = 1/4."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-bernoulli-05~v2",
+                      "prompt": "For each situation, say whether it can be modelled as a single Bernoulli trial and, if so, identify p: (a) a planted seed either germinates (probability 0.6) or does not; (b) the number of emails a person receives in a day; (c) a roulette wheel with 37 pockets numbered 0 to 36 is spun and we record whether the ball lands on 0.",
+                      "reference": {
+                        "answer": "(a) Yes: X = 1 if the seed germinates, p = 0.6. (b) No: the number of emails has many possible values, not two. (c) Yes: X = 1 if the ball lands on 0, p = 1/37.",
+                        "exact": "(a) yes, p = 0.6; (b) no; (c) yes, p = 1/37"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies (a) as Bernoulli with p = 0.6."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Rejects (b) because it has more than two outcomes."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Identifies (c) as Bernoulli with p = 1/37."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-bernoulli-06",
@@ -5344,7 +7236,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "113a6e694162de45dd66ce11303c10138dde0d6a8d474fdafe72842abd2bd44e"
+                  "hash": "113a6e694162de45dd66ce11303c10138dde0d6a8d474fdafe72842abd2bd44e",
+                  "variants": [
+                    {
+                      "id": "i-binomial-02~v1",
+                      "prompt": "A basketball player makes 70% of her free throws, independently of one another. In 5 attempts, what is the probability that she makes exactly 3?",
+                      "reference": {
+                        "answer": "$X \\sim \\mathrm{Bin}(5, 0.7)$. $P(X = 3) = \\binom{5}{3}(0.7)^3(0.3)^2 = 10 \\times 0.343 \\times 0.09 = 0.3087$.",
+                        "exact": "0.3087"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies n = 5, p = 0.7."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses C(5,3) = 10 with (0.7)³(0.3)²."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives ≈ 0.309."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-binomial-02~v2",
+                      "prompt": "A vaccine causes a mild side effect in 15% of patients, independently from patient to patient. Among 8 vaccinated patients, what is the probability that exactly 2 have the side effect?",
+                      "reference": {
+                        "answer": "$X \\sim \\mathrm{Bin}(8, 0.15)$. $P(X = 2) = \\binom{8}{2}(0.15)^2(0.85)^6 = 28 \\times 0.0225 \\times 0.377149515625 \\approx 0.2376$.",
+                        "exact": "0.2376"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Identifies n = 8, p = 0.15."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses C(8,2) = 28 with (0.15)²(0.85)⁶."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives ≈ 0.238."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-binomial-03",
@@ -5372,7 +7310,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "064cf645fb4345a7de1a5ab619e61685bb6d805a05db6b6a2dc4f566579c3946"
+                  "hash": "064cf645fb4345a7de1a5ab619e61685bb6d805a05db6b6a2dc4f566579c3946",
+                  "variants": [
+                    {
+                      "id": "i-binomial-03~v1",
+                      "prompt": "A call-centre agent makes 25 calls, and each call independently ends in a sale with probability 0.08. What are the expected number of sales and the variance? What is the probability of no sales?",
+                      "reference": {
+                        "answer": "$E[X] = 25 \\times 0.08 = 2$; $\\mathrm{Var}(X) = 25 \\times 0.08 \\times 0.92 = 1.84$; $P(X = 0) = 0.92^{25} \\approx 0.124$.",
+                        "exact": "E = 2; Var = 1.84; P(0) ≈ 0.124"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives E[X] = 2."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives Var(X) = 1.84."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(X = 0) = 0.92^25 ≈ 0.12."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-binomial-03~v2",
+                      "prompt": "A nursery plants 30 seedlings, and each one independently dies within a month with probability 0.1. What are the expected number of seedlings that die and the variance? What is the probability that none die?",
+                      "reference": {
+                        "answer": "$E[X] = 30 \\times 0.1 = 3$; $\\mathrm{Var}(X) = 30 \\times 0.1 \\times 0.9 = 2.7$; $P(X = 0) = 0.9^{30} \\approx 0.0424$.",
+                        "exact": "E = 3; Var = 2.7; P(0) ≈ 0.0424"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives E[X] = 3."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives Var(X) = 2.7."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(X = 0) = 0.9^30 ≈ 0.042."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-binomial-04",
@@ -5608,7 +7592,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "0bb30cedfd0eb44e627b477d6253ee124f78dfb9dff2eb45f375c16666c8af8d"
+                  "hash": "0bb30cedfd0eb44e627b477d6253ee124f78dfb9dff2eb45f375c16666c8af8d",
+                  "variants": [
+                    {
+                      "id": "i-geometric-02~v1",
+                      "prompt": "In a video game, each loot box contains a rare item with probability 0.1, independently. What is the probability that the first rare item comes from the 4th box opened? What is the expected number of boxes opened up to and including the first rare item?",
+                      "reference": {
+                        "answer": "$P(X = 4) = 0.9^3 \\times 0.1 = 0.729 \\times 0.1 = 0.0729$; $E[X] = 1/0.1 = 10$.",
+                        "exact": "0.0729; 10"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 0.9³ × 0.1 (three boxes without the item, then one with it)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives ≈ 0.073."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives E[X] = 10."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-geometric-02~v2",
+                      "prompt": "Each call a telemarketer makes ends in a sale with probability 0.04, independently. What is the probability that the first sale is on the 6th call? What is the expected number of calls up to and including the first sale?",
+                      "reference": {
+                        "answer": "$P(X = 6) = 0.96^5 \\times 0.04 \\approx 0.8154 \\times 0.04 \\approx 0.0326$; $E[X] = 1/0.04 = 25$.",
+                        "exact": "0.0326; 25"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses 0.96⁵ × 0.04 (five calls without a sale, then a sale)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives ≈ 0.033."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives E[X] = 25."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-geometric-03",
@@ -5636,7 +7666,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "311e1508f2439d75a9133eeff49ca8d3a263cc54d2ac0f6acbdfc46aa174b8e2"
+                  "hash": "311e1508f2439d75a9133eeff49ca8d3a263cc54d2ac0f6acbdfc46aa174b8e2",
+                  "variants": [
+                    {
+                      "id": "i-geometric-03~v1",
+                      "prompt": "Each scratch card is a winner with probability 1/5, independently. You buy cards one at a time until you get a winner. What is the probability that more than 3 cards are needed?",
+                      "reference": {
+                        "answer": "More than 3 cards means the first 3 are all losers: $P(X > 3) = (4/5)^3 = 64/125$.",
+                        "exact": "64/125"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Interprets X > 3 as the first three cards all losing."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses (1 − p)^3 with 1 − p = 4/5."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 64/125."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-geometric-03~v2",
+                      "prompt": "Each call to a helpline is answered by a person with probability 1/3, independently; you keep calling until a person answers. What is the probability that more than 4 calls are needed?",
+                      "reference": {
+                        "answer": "More than 4 calls means the first 4 all go unanswered: $P(X > 4) = (2/3)^4 = 16/81$.",
+                        "exact": "16/81"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Interprets X > 4 as the first four calls all going unanswered."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Uses (1 − p)^4 with 1 − p = 2/3."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives 16/81."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-geometric-04",
@@ -5868,7 +7944,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "fcfe1d62fecd5802f79c4f2e808e2fa1972917a2594d8625645efdbf7760bbaf"
+                  "hash": "fcfe1d62fecd5802f79c4f2e808e2fa1972917a2594d8625645efdbf7760bbaf",
+                  "variants": [
+                    {
+                      "id": "i-memorylessness-02~v1",
+                      "prompt": "A slot machine pays out on any pull with probability 0.2, independently. A player has just made 15 pulls without a payout. What is the probability that the next 4 pulls also pay nothing? What is the probability that the first payout comes on pull 17 (the 2nd pull from now)?",
+                      "reference": {
+                        "answer": "$P(\\text{next 4 pay nothing}) = 0.8^4 = 0.4096$ (memorylessness: the 15 losing pulls are irrelevant). $P(\\text{first payout is the 2nd pull from now}) = 0.8 \\times 0.2 = 0.16$.",
+                        "exact": "0.4096; 0.16"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives 0.8⁴ = 0.4096 without adjusting for the 15 previous pulls."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives 0.8 × 0.2 = 0.16."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Does not treat the losing streak as changing the per-pull probability."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-memorylessness-02~v2",
+                      "prompt": "In the dry season, rain falls on any given day with probability 0.04, independently of other days. It has now been dry for 40 days. What is the probability that the next 3 days are also dry? What is the probability that the first rain falls on day 42 (the 2nd day from now)?",
+                      "reference": {
+                        "answer": "$P(\\text{next 3 dry}) = 0.96^3 = 0.884736$ (memorylessness: the 40 dry days are irrelevant). $P(\\text{first rain is the 2nd day from now}) = 0.96 \\times 0.04 = 0.0384$.",
+                        "exact": "0.884736; 0.0384"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives 0.96³ = 0.884736 (≈ 0.885) without adjusting for the 40 previous dry days."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives 0.96 × 0.04 = 0.0384."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Does not treat the dry spell as changing the daily probability of rain."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-memorylessness-03",
@@ -6131,7 +8253,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "2a3e1026a0e14c8dee39d21e24fb660979537e54a064ff9019d97e73b9081ed8"
+                  "hash": "2a3e1026a0e14c8dee39d21e24fb660979537e54a064ff9019d97e73b9081ed8",
+                  "variants": [
+                    {
+                      "id": "i-joint-marginal-distributions-02~v1",
+                      "prompt": "At a café, X is the number of coffees (1 or 2) and Y is the number of pastries (1 or 2) in an order. Joint PMF (X first, Y second): p(1,1) = 0.35, p(1,2) = 0.15, p(2,1) = 0.2, p(2,2) = 0.3. Find P(X = 2), P(Y = 1) and P(X = Y).",
+                      "reference": {
+                        "answer": "$P(X = 2) = 0.2 + 0.3 = 0.5$; $P(Y = 1) = 0.35 + 0.2 = 0.55$; $P(X = Y) = p(1,1) + p(2,2) = 0.35 + 0.3 = 0.65$.",
+                        "exact": "0.5; 0.55; 0.65"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives P(X = 2) = 0.5."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives P(Y = 1) = 0.55."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(X = Y) = 0.65 by adding the diagonal cells."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-joint-marginal-distributions-02~v2",
+                      "prompt": "In one round of a penalty shoot-out, X = 1 if the home side's kicker scores (0 if not) and Y = 1 if the away side's kicker scores (0 if not). Joint PMF (X first, Y second): p(0,0) = 0.25, p(0,1) = 0.15, p(1,0) = 0.4, p(1,1) = 0.2. Find P(X = 1), P(Y = 0) and P(X = Y).",
+                      "reference": {
+                        "answer": "$P(X = 1) = 0.4 + 0.2 = 0.6$; $P(Y = 0) = 0.25 + 0.4 = 0.65$; $P(X = Y) = p(0,0) + p(1,1) = 0.25 + 0.2 = 0.45$.",
+                        "exact": "0.6; 0.65; 0.45"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives P(X = 1) = 0.6."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives P(Y = 0) = 0.65."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(X = Y) = 0.45 by adding the diagonal cells."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-joint-marginal-distributions-03",
@@ -6159,7 +8327,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "144a3de142ab9cb2c6f6ef8077536a20463c3cfe83e1714f3521d828ecb8140e"
+                  "hash": "144a3de142ab9cb2c6f6ef8077536a20463c3cfe83e1714f3521d828ecb8140e",
+                  "variants": [
+                    {
+                      "id": "i-joint-marginal-distributions-03~v1",
+                      "prompt": "A clinic records X = 1 if a patient smokes (0 if not) and Y = 1 if the patient has a persistent cough (0 if not). The joint PMF (X first, Y second) is p(0,0) = 0.4, p(0,1) = 0.2, p(1,0) = 0.1, p(1,1) = 0.3. Find the conditional PMF of X given Y = 1.",
+                      "reference": {
+                        "answer": "$P(Y = 1) = 0.2 + 0.3 = 0.5$. $P(X = 0 \\mid Y = 1) = 0.2/0.5 = 2/5$; $P(X = 1 \\mid Y = 1) = 0.3/0.5 = 3/5$. (They sum to 1.)",
+                        "exact": "2/5; 3/5"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses the column total P(Y = 1) = 0.5 as the denominator."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives P(X = 0 | Y = 1) = 2/5."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(X = 1 | Y = 1) = 3/5."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-joint-marginal-distributions-03~v2",
+                      "prompt": "A shop records X = number of items bought (1 or 2) and Y = payment method (1 = cash, 2 = card) for each sale. The joint PMF (X first, Y second) is p(1,1) = 0.15, p(1,2) = 0.35, p(2,1) = 0.25, p(2,2) = 0.25. Find the conditional PMF of X given Y = 2.",
+                      "reference": {
+                        "answer": "$P(Y = 2) = 0.35 + 0.25 = 0.6$. $P(X = 1 \\mid Y = 2) = 0.35/0.6 = 7/12$; $P(X = 2 \\mid Y = 2) = 0.25/0.6 = 5/12$. (They sum to 1.)",
+                        "exact": "7/12; 5/12"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses the column total P(Y = 2) = 0.6 as the denominator."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives P(X = 1 | Y = 2) = 7/12."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives P(X = 2 | Y = 2) = 5/12."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-joint-marginal-distributions-04",
@@ -6375,7 +8589,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "c0584412f59f9a21c3c1b82a023655e405d474fb04403a4f6c9f4fc1a386f70f"
+                  "hash": "c0584412f59f9a21c3c1b82a023655e405d474fb04403a4f6c9f4fc1a386f70f",
+                  "variants": [
+                    {
+                      "id": "i-independent-random-variables-02~v1",
+                      "prompt": "For a student, X = 1 if they attended the review session (0 if not) and Y = 1 if they passed the exam (0 if not). Joint PMF: p(0,0) = 0.35, p(0,1) = 0.15, p(1,0) = 0.25, p(1,1) = 0.25. Are X and Y independent? Show your check.",
+                      "reference": {
+                        "answer": "$P(X = 0) = 0.5$, $P(Y = 0) = 0.6$, so $P(X = 0)P(Y = 0) = 0.3 \\ne p(0,0) = 0.35$. Not independent (one failing cell is enough to rule it out).",
+                        "exact": "not independent"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the relevant marginals (e.g. P(X = 0) = 0.5, P(Y = 0) = 0.6)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Compares a product of marginals with the corresponding cell."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Concludes correctly that X and Y are not independent."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-independent-random-variables-02~v2",
+                      "prompt": "A hotel records X = number of rooms in a booking (1 or 2) and Y = number of nights (1 or 2). Joint PMF: p(1,1) = 0.2, p(1,2) = 0.4, p(2,1) = 0.1, p(2,2) = 0.3. Are X and Y independent? Show your check.",
+                      "reference": {
+                        "answer": "$P(X = 1) = 0.6$, $P(Y = 1) = 0.3$, so $P(X = 1)P(Y = 1) = 0.18 \\ne p(1,1) = 0.2$. Not independent (one failing cell is enough to rule it out).",
+                        "exact": "not independent"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes the relevant marginals (e.g. P(X = 1) = 0.6, P(Y = 1) = 0.3)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Compares a product of marginals with the corresponding cell."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Concludes correctly that X and Y are not independent."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-independent-random-variables-03",
@@ -6403,7 +8663,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "3a37bcd5b959238fb82c6a2ea2210442c3588f5cc70ff14b8bed7b571be6efa1"
+                  "hash": "3a37bcd5b959238fb82c6a2ea2210442c3588f5cc70ff14b8bed7b571be6efa1",
+                  "variants": [
+                    {
+                      "id": "i-independent-random-variables-03~v1",
+                      "prompt": "Two machines work independently. Machine A's daily output X (in tonnes) has E[X] = 6 and Var(X) = 2; machine B's daily output Y has E[Y] = 3 and Var(Y) = 5. Find E[X + Y], Var(X + Y), E[XY] and Var(3X − Y).",
+                      "reference": {
+                        "answer": "$E[X + Y] = 9$; $\\mathrm{Var}(X + Y) = 2 + 5 = 7$; $E[XY] = 6 \\times 3 = 18$; $\\mathrm{Var}(3X - Y) = 9 \\times 2 + 1 \\times 5 = 23$.",
+                        "exact": "9; 7; 18; 23"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives E[X + Y] = 9 and E[XY] = 18."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives Var(X + Y) = 7 using independence."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Var(3X − Y) = 9·2 + 5 = 23 (the minus sign does not subtract variance)."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-independent-random-variables-03~v2",
+                      "prompt": "A student's scores X and Y on two quizzes are independent, with E[X] = 7, Var(X) = 4, E[Y] = 5 and Var(Y) = 1. Find E[X + Y], Var(X + Y), E[XY] and Var(X − 2Y).",
+                      "reference": {
+                        "answer": "$E[X + Y] = 12$; $\\mathrm{Var}(X + Y) = 4 + 1 = 5$; $E[XY] = 7 \\times 5 = 35$; $\\mathrm{Var}(X - 2Y) = 1 \\times 4 + 4 \\times 1 = 8$.",
+                        "exact": "12; 5; 35; 8"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives E[X + Y] = 12 and E[XY] = 35."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives Var(X + Y) = 5 using independence."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Var(X − 2Y) = 4 + 4·1 = 8 (the minus sign does not subtract variance)."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-independent-random-variables-04",
@@ -6620,7 +8926,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "9dea4df70685ad288f893be6ad39923d6cf1184b906e8691cd0f656b364ebf1c"
+                  "hash": "9dea4df70685ad288f893be6ad39923d6cf1184b906e8691cd0f656b364ebf1c",
+                  "variants": [
+                    {
+                      "id": "i-covariance-02~v1",
+                      "prompt": "A holiday company records X = number of adults (1 or 2) and Y = number of children (1 or 2) on a family booking. Joint PMF: p(1,1) = 0.3, p(1,2) = 0.25, p(2,1) = 0.15, p(2,2) = 0.3. Find Cov(X, Y).",
+                      "reference": {
+                        "answer": "$E[X] = 1(0.55) + 2(0.45) = 1.45$; $E[Y] = 1(0.45) + 2(0.55) = 1.55$; $E[XY] = 1(0.3) + 2(0.25) + 2(0.15) + 4(0.3) = 2.3$. $\\mathrm{Cov} = 2.3 - 1.45 \\times 1.55 = 2.3 - 2.2475 = 0.0525$.",
+                        "exact": "0.0525"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes E[X] = 1.45 and E[Y] = 1.55."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes E[XY] = 2.3."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Cov = 0.0525."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-covariance-02~v2",
+                      "prompt": "A courier records X = number of parcels in a delivery (1 or 2) and Y = number of delivery attempts needed (1 or 2). Joint PMF: p(1,1) = 0.05, p(1,2) = 0.3, p(2,1) = 0.4, p(2,2) = 0.25. Find Cov(X, Y).",
+                      "reference": {
+                        "answer": "$E[X] = 1(0.35) + 2(0.65) = 1.65$; $E[Y] = 1(0.45) + 2(0.55) = 1.55$; $E[XY] = 1(0.05) + 2(0.3) + 2(0.4) + 4(0.25) = 2.45$. $\\mathrm{Cov} = 2.45 - 1.65 \\times 1.55 = 2.45 - 2.5575 = -0.1075$.",
+                        "exact": "-0.1075"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Computes E[X] = 1.65 and E[Y] = 1.55."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Computes E[XY] = 2.45."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Cov = −0.1075."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-covariance-03",
@@ -6648,7 +9000,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "9defc318c787863d0ffa816dc0df5e00a195a9e6ef8550f25e78552d7c1ca60d"
+                  "hash": "9defc318c787863d0ffa816dc0df5e00a195a9e6ef8550f25e78552d7c1ca60d",
+                  "variants": [
+                    {
+                      "id": "i-covariance-03~v1",
+                      "prompt": "Two stocks' daily returns (in %) have Var(X) = 4 and Var(Y) = 25, and the correlation between X and Y is 0.3. Find Cov(X, Y) and Var(X + Y).",
+                      "reference": {
+                        "answer": "$\\mathrm{Cov} = \\rho\\,\\sigma_X\\sigma_Y = 0.3 \\times 2 \\times 5 = 3$. $\\mathrm{Var}(X + Y) = 4 + 25 + 2(3) = 35$.",
+                        "exact": "3; 35"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses σ_X = 2 and σ_Y = 5."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives Cov = 3."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Var(X + Y) = 35."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-covariance-03~v2",
+                      "prompt": "A shop's daily sales of umbrellas X and of sunglasses Y have Var(X) = 36 and Var(Y) = 4, and the correlation between X and Y is −0.25. Find Cov(X, Y) and Var(X + Y).",
+                      "reference": {
+                        "answer": "$\\mathrm{Cov} = \\rho\\,\\sigma_X\\sigma_Y = -0.25 \\times 6 \\times 2 = -3$. $\\mathrm{Var}(X + Y) = 36 + 4 + 2(-3) = 34$.",
+                        "exact": "-3; 34"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses σ_X = 6 and σ_Y = 2."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives Cov = −3."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives Var(X + Y) = 34."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-covariance-04",
@@ -6888,7 +9286,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "21f82d46e026433c1644f881d6f94b284c7dfefda182c22ec3b0b390cd58fecd"
+                  "hash": "21f82d46e026433c1644f881d6f94b284c7dfefda182c22ec3b0b390cd58fecd",
+                  "variants": [
+                    {
+                      "id": "i-sample-mean-02~v1",
+                      "prompt": "The time a patient waits at a clinic has mean 20 minutes and standard deviation 8 minutes. Treating patients as independent, find the mean and standard deviation of the average waiting time of 16 patients.",
+                      "reference": {
+                        "answer": "Mean $= 20$ minutes. SD $= 8/\\sqrt{16} = 2$ minutes.",
+                        "exact": "20; 2"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives the mean 20 minutes (unchanged)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Divides the SD by √16 = 4."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives SD 2 minutes."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-sample-mean-02~v2",
+                      "prompt": "The weight of a bag of crisps from a filling machine has mean 150 g and standard deviation 15 g. Treating bags as independent, find the mean and standard deviation of the average weight of 25 bags.",
+                      "reference": {
+                        "answer": "Mean $= 150$ g. SD $= 15/\\sqrt{25} = 3$ g.",
+                        "exact": "150; 3"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives the mean 150 g (unchanged)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Divides the SD by √25 = 5."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives SD 3 g."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-sample-mean-03",
@@ -6916,7 +9360,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "64967eb89486ba3ecebeed33e65b5b8738de046f304a33b0f1a0fbeef664f563"
+                  "hash": "64967eb89486ba3ecebeed33e65b5b8738de046f304a33b0f1a0fbeef664f563",
+                  "variants": [
+                    {
+                      "id": "i-sample-mean-03~v1",
+                      "prompt": "A bathroom scale's reading of a fixed weight has SD 1.2 kg. How many independent readings must be averaged to bring the SD of the average down to 0.3 kg?",
+                      "reference": {
+                        "answer": "$1.2/\\sqrt{n} = 0.3 \\Rightarrow \\sqrt{n} = 4 \\Rightarrow n = 16$.",
+                        "exact": "16"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Sets up 1.2/√n = 0.3."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Solves √n = 4."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives n = 16."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-sample-mean-03~v2",
+                      "prompt": "A survey respondent's satisfaction score has SD 15 points. How many independent responses must be averaged to bring the SD of the average down to 1.5 points?",
+                      "reference": {
+                        "answer": "$15/\\sqrt{n} = 1.5 \\Rightarrow \\sqrt{n} = 10 \\Rightarrow n = 100$.",
+                        "exact": "100"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Sets up 15/√n = 1.5."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Solves √n = 10."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives n = 100."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-sample-mean-04",
@@ -7168,7 +9658,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "2bd0ddab7b0569e2118ba5a90590a39f99886e9648fddef1f1a20ced7751b593"
+                  "hash": "2bd0ddab7b0569e2118ba5a90590a39f99886e9648fddef1f1a20ced7751b593",
+                  "variants": [
+                    {
+                      "id": "i-law-of-large-numbers-03~v1",
+                      "prompt": "Each seed in a large batch germinates with probability 0.8, independently. Over $n$ seeds, the SD of the proportion that germinate is $0.4/\\sqrt{n}$. For $n = 25$ and $n = 400$, what are these SDs? Roughly what range (mean ± 2 SD) would you expect the proportion to fall in for each?",
+                      "reference": {
+                        "answer": "$n = 25$: SD $= 0.08$, range about 0.64–0.96. $n = 400$: SD $= 0.02$, range about 0.76–0.84.",
+                        "exact": "0.08; 0.02"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives SD 0.08 for n = 25."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives SD 0.02 for n = 400."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives the ranges 0.64–0.96 and 0.76–0.84 (or equivalent)."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-law-of-large-numbers-03~v2",
+                      "prompt": "A machine makes defective parts with probability 0.1, independently. Over $n$ parts, the SD of the proportion defective is $0.3/\\sqrt{n}$. For $n = 900$ and $n = 90{,}000$, what are these SDs? Roughly what range (mean ± 2 SD) would you expect the proportion to fall in for each?",
+                      "reference": {
+                        "answer": "$n = 900$: SD $= 0.01$, range about 0.08–0.12. $n = 90{,}000$: SD $= 0.001$, range about 0.098–0.102.",
+                        "exact": "0.01; 0.001"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Gives SD 0.01 for n = 900."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives SD 0.001 for n = 90,000."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives the ranges 0.08–0.12 and 0.098–0.102 (or equivalent)."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-law-of-large-numbers-04",
@@ -7381,7 +9917,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "74b8065b52d6d11f399d61864cceb7f467d1d65cb33f58fba839c84b7e51ef07"
+                  "hash": "74b8065b52d6d11f399d61864cceb7f467d1d65cb33f58fba839c84b7e51ef07",
+                  "variants": [
+                    {
+                      "id": "i-monte-carlo-simulation-02~v1",
+                      "prompt": "A simulation of 10,000 games estimates the probability that the first player wins as 0.4. What is the approximate standard error of this estimate? Would a theoretical value of 0.42 be consistent with it?",
+                      "reference": {
+                        "answer": "SE $\\approx \\sqrt{0.4 \\times 0.6 / 10{,}000} = \\sqrt{0.000024} \\approx 0.0049$. The value 0.42 is $0.02/0.0049 \\approx 4.1$ SEs away, so it is not consistent with the simulation: either the theory or the simulation set-up is wrong.",
+                        "exact": "0.0049"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses √(p(1 − p)/n) with p = 0.4 and n = 10,000."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives SE ≈ 0.0049."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Judges 0.42 (about 4.1 SE away) as inconsistent with the estimate."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-monte-carlo-simulation-02~v2",
+                      "prompt": "A simulation of 50,000 policy-years estimates the probability that an insurance policy has a claim in a year as 0.1. What is the approximate standard error of this estimate? Would a theoretical value of 0.106 be consistent with it?",
+                      "reference": {
+                        "answer": "SE $\\approx \\sqrt{0.1 \\times 0.9 / 50{,}000} = \\sqrt{0.0000018} \\approx 0.0013$. The value 0.106 is $0.006/0.00134 \\approx 4.5$ SEs away, so it is not consistent with the simulation: either the theory or the simulation set-up is wrong.",
+                        "exact": "0.0013"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Uses √(p(1 − p)/n) with p = 0.1 and n = 50,000."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Gives SE ≈ 0.0013."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Judges 0.106 (about 4.5 SE away) as inconsistent with the estimate."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-monte-carlo-simulation-03",
@@ -7409,7 +9991,53 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "9b18e1c036877f199cc07e1ccbb5cd40781872aa2438fccfafb2239e58ff613e"
+                  "hash": "9b18e1c036877f199cc07e1ccbb5cd40781872aa2438fccfafb2239e58ff613e",
+                  "variants": [
+                    {
+                      "id": "i-monte-carlo-simulation-03~v1",
+                      "prompt": "You are simulating a two-candidate election model to estimate the probability that candidate A wins, which is near 0.5. You want the Monte Carlo standard error to be 0.01. How many trials are needed?",
+                      "reference": {
+                        "answer": "$\\sqrt{0.25/n} = 0.01 \\Rightarrow 0.25/n = 0.0001 \\Rightarrow n = 2{,}500$.",
+                        "exact": "2500"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Sets up √(0.5 × 0.5 / n) = 0.01."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Solves for n."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives n = 2,500."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-monte-carlo-simulation-03~v2",
+                      "prompt": "You are simulating a coin-flip tournament to estimate the probability that the first player finishes ahead, which is near 0.5. You want the Monte Carlo standard error to be 0.002. How many trials are needed?",
+                      "reference": {
+                        "answer": "$\\sqrt{0.25/n} = 0.002 \\Rightarrow 0.25/n = 0.000004 \\Rightarrow n = 62{,}500$.",
+                        "exact": "62500"
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Sets up √(0.5 × 0.5 / n) = 0.002."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "Solves for n."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Gives n = 62,500."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-monte-carlo-simulation-04",
@@ -7470,7 +10098,59 @@
                   ],
                   "spans": [],
                   "generatorVersion": "hand-authored@1.0",
-                  "hash": "1be5aad671f6895ad15cb11c028e25ae4c077ebc2e9b9bb49462a011fa2bd299"
+                  "hash": "1be5aad671f6895ad15cb11c028e25ae4c077ebc2e9b9bb49462a011fa2bd299",
+                  "variants": [
+                    {
+                      "id": "i-monte-carlo-simulation-05~v1",
+                      "prompt": "Describe a simulation — trial, success condition, number of trials and expected precision — to estimate the probability that a random sample of 6 bulbs taken from a crate of 50, of which 5 are defective, contains exactly two defective bulbs (theoretical value ≈ 0.0938).",
+                      "reference": {
+                        "answer": "Trial: label the 50 bulbs (5 defective, 45 good), shuffle them (or sample 6 distinct bulbs uniformly without replacement) and take the first 6. Success: the sample contains exactly 2 defective bulbs. Estimate = successes / n. SE $\\approx \\sqrt{0.094 \\times 0.906 / n}$; with $n = 100{,}000$ the SE is about $0.0009$, so the estimate should land within about $\\pm 0.0018$ of 0.0938 — precise enough to detect a bug such as sampling with replacement."
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Specifies a trial that samples 6 distinct bulbs from the 50 without replacement (shuffle or equivalent)."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "States the success condition as exactly two defective bulbs."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Forms the estimate as a proportion and gives its SE ≈ √(0.094 × 0.906 / n)."
+                        },
+                        {
+                          "id": "c4",
+                          "text": "Chooses an n and states the resulting precision (e.g. n = 100,000 → SE ≈ 0.0009)."
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i-monte-carlo-simulation-05~v2",
+                      "prompt": "Describe a simulation — trial, success condition, number of trials and expected precision — to estimate the probability that a lottery ticket with 6 numbers chosen from 1 to 49 matches exactly 3 of the 6 numbers drawn (theoretical value ≈ 0.0177).",
+                      "reference": {
+                        "answer": "Trial: fix the ticket's 6 numbers, then draw 6 distinct numbers uniformly from 1–49 without replacement (shuffle 1–49 and take the first 6). Success: exactly 3 of the drawn numbers are on the ticket. Estimate = successes / n. SE $\\approx \\sqrt{0.0177 \\times 0.9823 / n}$; with $n = 100{,}000$ the SE is about $0.0004$, so the estimate should land within about $\\pm 0.0008$ of 0.0177 — precise enough to detect a bug such as drawing numbers with replacement."
+                      },
+                      "rubric": [
+                        {
+                          "id": "c1",
+                          "text": "Specifies a trial that draws 6 distinct numbers from 1–49 without replacement (shuffle or equivalent) against a fixed ticket."
+                        },
+                        {
+                          "id": "c2",
+                          "text": "States the success condition as exactly three drawn numbers matching the ticket."
+                        },
+                        {
+                          "id": "c3",
+                          "text": "Forms the estimate as a proportion and gives its SE ≈ √(0.0177 × 0.9823 / n)."
+                        },
+                        {
+                          "id": "c4",
+                          "text": "Chooses an n and states the resulting precision (e.g. n = 100,000 → SE ≈ 0.0004)."
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "i-monte-carlo-simulation-06",

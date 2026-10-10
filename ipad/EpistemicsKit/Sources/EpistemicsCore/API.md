@@ -45,6 +45,7 @@ Types the core builds on (content, `Card`, `Rating`, `Confidence`, `ReviewLogEnt
 | `QueueItemInfo(conceptId:type:)` | Item metadata per card id. |
 | `estimateMinutes(_ queue, secondsPerItem: = 25)`, `estimateMinutes(count:secondsPerItem:)` | Web's flat estimate. |
 | `conceptRetention`, `conceptMastery(_ retention, _ sessions)`, `prerequisitesOf`, `isAvailable(_ id, _ edges, _ mastery, threshold:)`, `isMastered`, `unassistedPassRate`, `assistedPassRate` | Concept layer (§5.5). |
+| `isMasteredOnMixedEvidence(_ state)`, `mixedPassRate(_ state)`, `MIXED_EVIDENCE_MIN` | iPad: "mastered" only on out-of-context answers (`ConceptState.mixedPass/mixedN`, `ConceptReceipt.mixed`); ipad docs/AUDIT.md #4. |
 | `updateConceptStateAfterReceipt(_ state, _ receipt: ConceptReceipt) -> ConceptState` | Fold a receipt (does not recompute mastery). |
 | `topologicalOrder(_ ids, _ edges) throws -> [String]` | Throws `PrerequisiteCycleError`. |
 | `nextAvailableLesson(_ curriculum, _ mastery, _ completed, threshold:) -> Lesson?` | First unlocked, uncompleted lesson. |
@@ -67,6 +68,9 @@ Types the core builds on (content, `Card`, `Rating`, `Confidence`, `ReviewLogEnt
 | `createCheckpointState(sessionId:courseId:unitId:items:)`, `reduceCheckpoint(_ state, _ event: CheckpointEvent) -> CheckpointStep`, `scoreCheckpoint(_:) -> CheckpointResult` | Events `.start/.answerSubmitted/.grade/.finish`; effects `.presentItem/.gradeItem/.recordReceipt/.checkpointComplete`. Pass ≥ 0.8. |
 | `composeRemediation(_ concept, sessionId:courseId:scaffolding:learnerMisconceptions:) -> RemediationPlan` | DEVELOP → CONSOLIDATE → CHECK mini-lesson (`lesson`, `state`). |
 | `createDiagnostic(_ curriculum)`, `nextProbe(_:) -> DiagnosticProbe?`, `recordResult(_:_ conceptId:_ passed:)`, `diagnosticResult(_:)`, `conceptDepths(_:)` | Adaptive placement (§6.4). |
+| `createPlacement(_ curriculum, maxProbes:)`, `nextPlacementProbe(_:)`, `recordPlacementResult(_:_ conceptId:_ passed:)`, `placementResult(_:)`, `lessonsPlacedOut(_ curriculum, knownConceptIds:)` | iPad: knowledge-space placement on the prerequisite graph (ipad DESIGN §6.1). |
+| `progressCheckDue(lessonsSinceLast:daysSinceLast:eligibleConcepts:hasProvisional:)`, `selectProgressCheck(_ curriculum, _ candidates: [ProgressCheckCandidate], size:) -> [ProgressCheckQuestion]` | iPad: mixed progress checks, prioritised and interleaved (ipad docs/AUDIT.md #4). |
+| `nextVariant(_ item, history: [VariantUse]) -> String?`, `Item.serving(_ variantId) -> Item`, `ItemVariant` | iPad: item variants, each version once then the oldest (ipad docs/AUDIT.md #3). |
 | `createTeachbackState(sessionId:courseId:concept:)`, `reduceTeachback(_:_ event:) -> TeachbackStep`, `buildStudentControl(_:_ move:)`, `learnerExplanation(_:)` | Teach-back (events `.start/.learnerTurn(content:done:)/.studentTurn/.end/.grade`). |
 | `summarizeLearnerModel(_ input: SummarizeLearnerModelInput) -> LearnerModelSummary`, `renderLearnerModel(_ summary, _ focusConceptIds) -> String` | Prompt-ready learner model. |
 | `buildWarmupPrompt(_ lesson) -> String`, `mapWarmupResult(_ recalledIds, _ lesson) -> WarmupOutcome` | Warm-up brain dump. |

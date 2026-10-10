@@ -4,6 +4,8 @@ Status: October 9, 2026. Reviews the iPad app as built against Khan Academy (Cla
 ALEKS, Math Academy, Duolingo, Carnegie Learning's MATHia and Eedi, and against the evidence for each
 feature. Recommendations are ranked by **strength of evidence × fit with handwriting × cost**.
 
+**Update, October 10, 2026: #1–#4 are built.** Each has a "Built" note below. #5–#8 are still open.
+
 The short version: the app already has most of the machinery that the evidence supports, and Khan's own
 newest result is a warning about the rest. The two-year randomised trial of Khanmigo (Oreopoulos & Low,
 NBER w35620, Aug 2026) found the AI tutor added **nothing measurable** over Khan practice without it, because
@@ -67,6 +69,13 @@ not what I wrote"* (the existing dispute) clear the mark.
 **Cost:** medium. Grader schema and prompt, `MarkPlacement`, receipt layout, and fixtures in
 `SessionFlowTests`.
 
+**Built.** `GradeResult.firstError` (`StepError`: quote, why, misconception tag) is asked for by an iPad-only
+addendum, `Prompts/grader-ink.md`, so the web's `grader.md` stays byte-identical. The grader keeps a first
+error only if its quote really is in the answer and, under consensus, only if most samples found one.
+`MarkPlacement` draws it as a wavy blue underline (`InkMark.Kind.wrongStep`) on receipts in reviews, lessons
+and checkpoints, and the observer's per-turn lesson mark now goes to the first wrong line
+(`observer-ink.md` 1.1).
+
 ### 2. "Fix it" at the mistake: the tutor comes to the error
 
 **Evidence: moderate, and directly on point.**
@@ -88,6 +97,16 @@ learner fix their own working.
 - The card stays in its learning step, and the real test is a fresh variant the next day (#3).
 
 **Cost:** medium. Reuses `Tutor` (EpistemicsLLM), the observer's marks and the lesson turn UI.
+
+**Built.** `Screens/Review/FixIt.swift`. The review receipt hides the answer, criteria and earlier attempt,
+says *"Your working goes wrong here: …"*, and offers **Fix it from here** or **Show me the answer**.
+- The rewrite goes on fresh paper. The grader sees the working up to the wrong line plus the rewrite.
+- **I'm stuck** gives up to three tutor questions, grounded in the worked solution, leak-checked, and falling
+  back to the pack's hint ladder.
+- The fix is an assisted receipt, never touches the card, and never shows as "your previous attempt".
+- Once the answer is shown, the rewrite is closed.
+- Settings → Developer has a debug-only switch that makes the demo grader mark a wrong answer's first line,
+  so the flow can be seen without an API key.
 
 ### 3. A fresh problem every review (item variants)
 
@@ -114,6 +133,20 @@ questions from a pool, so passing means the skill rather than remembering *that 
 **Cost:** medium, mostly on the web side (generator and validator). The iPad side is a field and a picker.
 It also supplies the extra questions that #2, #4 and #5 need.
 
+**Built.**
+- **Data model:** `Item.variants` (`ItemVariant`: id `<itemId>~v<n>`, prompt, reference, rubric), on both
+  the web and the iPad.
+- **Web generator:** a new architect stage writes two isomorphs per `apply` item. Each is kept only if it
+  passes the structural checks and an independent solve, by a second model call that never sees the
+  reference, matches its exact answer.
+- **Bundled pack:** 116 variants, two for each of its 58 `apply` items, each exact answer recomputed by a
+  separate Python checker.
+- **Serving:** reviews, checkpoints and progress checks serve the item, then each variant, then whichever
+  was seen longest ago (`nextVariant`). The receipt records which (`Receipt.variantId`) and says *"You did
+  one like this"* when the previous attempt was a different version.
+- **Updates:** a bundled pack whose `contentHash` changed is re-installed, so existing courses get the
+  variants.
+
 ### 4. Earn "mastered" on mixed questions, and re-check periodically
 
 **Evidence: good.**
@@ -138,6 +171,21 @@ It also supplies the extra questions that #2, #4 and #5 need.
     `Placement.swift` almost as is.
 
 **Cost:** small to medium.
+
+**Built.**
+- **Mixed evidence:** `ConceptState.mixedPass/mixedN` count unaided answers from reviews, checkpoints,
+  placement and progress checks. "Mastered" (`isMasteredOnMixedEvidence`) needs at least two of them and an
+  80% pass rate on them.
+- **Progress checks:** `Session/ProgressCheck.swift`, `Services/ProgressCheckService.swift` and
+  `Screens/Sessions/ProgressCheckView.swift`.
+  - **When:** after 4 lessons or 14 days, or 7 days while placed-out concepts are unconfirmed.
+  - **What:** 6 questions, prioritising provisional concepts, then the least out-of-context evidence, then
+    the lowest mastery, at most 2 per lesson, interleaved so no two in a row come from one lesson.
+  - **Passing** counts as a review and as mixed evidence.
+  - **A wrong answer demotes:** spaced successes fall to 1, so dependents lock. A placed-out concept is
+    un-placed, so its lesson is taught; a taught one gets a remediation lesson.
+  - **A right guess** is not a pass, but it does not demote either.
+  - Today offers it after reviews, with "Not today".
 
 ### 5. When a lesson's check fails, find the broken prerequisite
 
@@ -221,12 +269,15 @@ exist.
 
 ## 4. Suggested order
 
-1. **#1 + #2 together:** the first-wrong-line mark and "Fix it from here". This is the strongest evidence,
-   and the thing handwriting makes possible that typing apps can't do well.
-2. **#3 variants**, because #4 and #5 need them.
-3. **#4 mixed mastery and progress checks.** This reuses the placement engine.
-4. **#5 prerequisite diagnosis when a check fails.**
+1. ~~**#1 + #2 together:** the first-wrong-line mark and "Fix it from here".~~ Built.
+2. ~~**#3 variants**, because #4 and #5 need them.~~ Built.
+3. ~~**#4 mixed mastery and progress checks.**~~ Built.
+4. **#5 prerequisite diagnosis when a check fails.** Next: variants now give each concept enough questions.
 5. **#6, #7 and #8** as small follow-ups.
+
+Not yet tried against a real model: whether Claude finds the *first* wrong line reliably on handwritten
+working, and how often a misread line gets marked. Both should be measured on real ink before #1 is trusted;
+the dispute button is the escape hatch meanwhile.
 
 ---
 

@@ -169,7 +169,8 @@ enum Grader { static let ratingBoundaries: [Double]; static let consensusConfide
     static func combine(_ samples: [GradeResult], rubric: [RubricCriterion]) -> GradeResult
     static func rating(score: Double, confidence: Double) -> Rating
     static func samplesDisagree(_ samples: [GradeResult]) -> Bool
-    static func sanitise(_ g: GradeResult, rubric: [RubricCriterion], misconceptionTags: [String]) -> GradeResult
+    static func sanitise(_ g: GradeResult, rubric: [RubricCriterion], misconceptionTags: [String], answer: String? = nil) -> GradeResult  // drops a firstError not quoted from `answer`
+    static func quoteAppears(_ quote: String, in answer: String) -> Bool
     static func grade(_ provider: any LLMProvider, _ input: GradeInput) async throws -> GradeOutcome }
 
 // Student (Roles/Student.swift)
@@ -213,7 +214,7 @@ enum PromptName: String, CaseIterable { case tutorCharter, observer, grader, stu
 enum Prompts { static func text(_ name: PromptName) -> String; static func body(_ name: PromptName) -> String  // without version line
     static func version(_ name: PromptName) -> String; static func version(of text: String) -> String; static var versions: [PromptName: String]
     static var tutorCharter, observer, grader, student, leakcheck, warmup, reader, observerInk, tutorInk: String
-    static var tutorCharterInk: String; static var observerWithInk: String }
+    static var tutorCharterInk: String; static var observerWithInk: String; static var graderWithInk: String  // + grader-ink.md: the first wrong line }
 
 enum TextUtil { static func normalise(_:) -> String; static func words(_:) -> [String]; static func stem(_:) -> String
     static func contentWords(_:) -> [String]; static func isStopword(_:) -> Bool; static func stripCode(_:) -> String

@@ -5,12 +5,15 @@ import { GRAPH_PROMPT, GRAPH_PROMPT_VERSION } from './graph.js';
 import { SCRIPTS_PROMPT, SCRIPTS_PROMPT_VERSION } from './scripts.js';
 import { ITEMS_PROMPT, ITEMS_PROMPT_VERSION } from './items.js';
 import { ITEMCHECK_PROMPT, ITEMCHECK_PROMPT_VERSION } from './itemcheck.js';
+import { VARIANTS_PROMPT, VARIANTS_PROMPT_VERSION } from './variants.js';
+import { VARIANTSOLVE_PROMPT, VARIANTSOLVE_PROMPT_VERSION } from './variantsolve.js';
+import { VARIANTJUDGE_PROMPT, VARIANTJUDGE_PROMPT_VERSION } from './variantjudge.js';
 
-export { OUTLINE_PROMPT, OUTLINE_PROMPT_VERSION, CONCEPTS_PROMPT, CONCEPTS_PROMPT_VERSION, GRAPH_PROMPT, GRAPH_PROMPT_VERSION, SCRIPTS_PROMPT, SCRIPTS_PROMPT_VERSION, ITEMS_PROMPT, ITEMS_PROMPT_VERSION, ITEMCHECK_PROMPT, ITEMCHECK_PROMPT_VERSION };
+export { OUTLINE_PROMPT, OUTLINE_PROMPT_VERSION, CONCEPTS_PROMPT, CONCEPTS_PROMPT_VERSION, GRAPH_PROMPT, GRAPH_PROMPT_VERSION, SCRIPTS_PROMPT, SCRIPTS_PROMPT_VERSION, ITEMS_PROMPT, ITEMS_PROMPT_VERSION, ITEMCHECK_PROMPT, ITEMCHECK_PROMPT_VERSION, VARIANTS_PROMPT, VARIANTS_PROMPT_VERSION, VARIANTSOLVE_PROMPT, VARIANTSOLVE_PROMPT_VERSION, VARIANTJUDGE_PROMPT, VARIANTJUDGE_PROMPT_VERSION };
 
-export type ArchitectStage = 'outline' | 'concepts' | 'graph' | 'scripts' | 'items' | 'itemcheck';
+export type ArchitectStage = 'outline' | 'concepts' | 'graph' | 'scripts' | 'items' | 'itemcheck' | 'variants' | 'variantsolve' | 'variantjudge';
 
-export const ARCHITECT_STAGES: readonly ArchitectStage[] = ['outline', 'concepts', 'graph', 'scripts', 'items', 'itemcheck'];
+export const ARCHITECT_STAGES: readonly ArchitectStage[] = ['outline', 'concepts', 'graph', 'scripts', 'items', 'itemcheck', 'variants', 'variantsolve', 'variantjudge'];
 
 /** All architect prompts share one version string (asserted by scripts/sync-prompts.mjs). */
 export const ARCHITECT_PROMPT_VERSION = OUTLINE_PROMPT_VERSION;
@@ -22,4 +25,7 @@ export const ARCHITECT_PROMPTS: Record<ArchitectStage, string> = {
   scripts: SCRIPTS_PROMPT,
   items: ITEMS_PROMPT,
   itemcheck: ITEMCHECK_PROMPT,
+  variants: VARIANTS_PROMPT,
+  variantsolve: VARIANTSOLVE_PROMPT,
+  variantjudge: VARIANTJUDGE_PROMPT,
 };

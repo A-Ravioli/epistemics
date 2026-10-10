@@ -167,9 +167,23 @@ struct ReceiptPage: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                         Text(readLine).font(.secondary).foregroundStyle(Theme.muted).fixedSize(horizontal: false, vertical: true)
                     }
-                    if let prev = result.previous {
+                    if let error = result.firstError {
+                        firstErrorLine(error)
+                        if result.canFix {
+                            if let fix = model.fix {
+                                FixItSection(fix: fix, closed: result.answerShown) { model.showAnswer() }
+                                    .padding(.top, 6)
+                            } else if !result.answerShown {
+                                HStack(spacing: 12) {
+                                    Button("Fix it from here") { model.startFix() }.buttonStyle(.primaryLarge)
+                                    Button("Show me the answer") { model.showAnswer() }.buttonStyle(.ghost)
+                                }
+                            }
+                        }
+                    }
+                    if let prev = result.previous, answerVisible {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text(prev.daysAgo == 0 ? "You answered this earlier today" : "You answered this \(prev.daysAgo) day\(prev.daysAgo == 1 ? "" : "s") ago")
+                            Text(previousLine(prev))
                                 .font(.secondary.weight(.semibold)).foregroundStyle(Theme.muted)
                             InkSnapshot(drawing: prev.drawing, paper: prev.paper, marks: prev.marks, maxHeight: 120)
                                 .frame(maxWidth: 440)
@@ -187,9 +201,16 @@ struct ReceiptPage: View {
                         Text(result.rating.label).font(.title2x).foregroundStyle(Theme.graphite)
                         Text(verdict).font(.body15).foregroundStyle(Theme.muted).fixedSize(horizontal: false, vertical: true)
                     }
-                    if let graded = result.graded {
+                    if !answerVisible {
+                        Text("The answer stays hidden while you fix your working: finding it yourself is the point.")
+                            .font(.body15).foregroundStyle(Theme.muted).fixedSize(horizontal: false, vertical: true)
+                    } else if let graded = result.graded {
                         CriteriaList(rubric: GradingService.target(for: item, in: model.ctx.curriculum).rubric, grade: graded.grade, marks: result.marks)
                         MaterialText(graded.grade.feedback, font: .readingSmall)
+                        if result.firstError != nil && !item.type.isSelfGraded {
+                            Text("The answer").font(.secondary).foregroundStyle(Theme.muted)
+                            MaterialText(item.reference.answer, font: .readingSmall)
+                        }
                     } else if item.type.isSelfGraded {
                         MaterialText(item.reference.answer, font: .readingSmall)
                     } else {
@@ -202,7 +223,7 @@ struct ReceiptPage: View {
                     }
                     HStack(spacing: 12) {
                         Button("Next") { Task { await model.next() } }.buttonStyle(.primaryLarge)
-                        if result.graded != nil {
+                        if result.graded != nil && answerVisible {
                             Button("Dispute the grade") { Task { await model.dispute(result) } }.buttonStyle(.ghost)
                         }
                     }
@@ -213,6 +234,25 @@ struct ReceiptPage: View {
             .padding(.top, 8)
             .padding(.bottom, 40)
         }
+    }
+
+    /// The answer, criteria and feedback appear once the learner has fixed the working or asked for them.
+    private var answerVisible: Bool { result.answerShown || model.fix?.phase == .fixed }
+
+    private func firstErrorLine(_ error: StepError) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "scribble").foregroundStyle(Theme.tutor).accessibilityHidden(true)
+            Text("Your working goes wrong here: ").font(.body15.weight(.semibold)).foregroundStyle(Theme.tutor)
+                + Text(error.why).font(.body15).foregroundStyle(Theme.graphite)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Your working goes wrong at \(error.quote): \(error.why)")
+    }
+
+    private func previousLine(_ prev: ReviewSessionModel.Previous) -> String {
+        let when = prev.daysAgo == 0 ? "earlier today" : "\(prev.daysAgo) day\(prev.daysAgo == 1 ? "" : "s") ago"
+        return prev.sameProblem ? "You answered this \(when)" : "You did one like this \(when)"
     }
 
     private var readLine: String {

@@ -3,7 +3,8 @@ import { Banner, Card, Pill, Progress, SectionTitle, Spinner } from '@epistemics
 import type { BuildProgress } from '../../lib/services/build.js';
 
 const STAGE_LABEL: Record<ProgressEvent['stage'], string> = {
-  outline: 'Outline', concepts: 'Concepts', graph: 'Prerequisite graph', validate: 'Graph check', scripts: 'Lesson script', items: 'Review items', itemcheck: 'Item self-check', freeze: 'Freeze',
+  outline: 'Outline', concepts: 'Concepts', graph: 'Prerequisite graph', validate: 'Graph check', scripts: 'Lesson script', items: 'Review items', itemcheck: 'Item self-check',
+  variants: 'Problem variants', variantsolve: 'Variant solve check', variantjudge: 'Variant answer check', variantcheck: 'Variant check', freeze: 'Freeze',
 };
 
 export function describeEvent(e: ProgressEvent, outline?: OutlineOutput): string {
@@ -55,11 +56,14 @@ export function BuildProgressView({ progress, outline, unitsToBuild, label }: { 
   );
 }
 
-/** Rough stage count for the progress bar: outline + per lesson concepts + graph + per concept (script, items, check) + freeze. */
+/**
+ * Rough stage count for the progress bar: outline + per lesson concepts + graph + per concept (script, items, check,
+ * and for its apply item: variants, two independent solves, the variant check) + freeze.
+ */
 export function expectedStages(outline: OutlineOutput | undefined, unitsToBuild: number): number {
   if (!outline) return 1;
   const units = outline.units.slice(0, unitsToBuild);
   const lessons = units.reduce((a, u) => a + u.lessons.length, 0);
   const concepts = lessons * 3;
-  return 1 + lessons + 1 + concepts * 3 + 1;
+  return 1 + lessons + 1 + concepts * 7 + 1;
 }

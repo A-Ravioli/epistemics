@@ -27,6 +27,7 @@ enum Presented: Identifiable, Hashable {
     case map(unitId: String)
     case teachback(conceptId: String)
     case placement
+    case progressCheck
 
     var id: String {
         switch self {
@@ -37,6 +38,7 @@ enum Presented: Identifiable, Hashable {
         case .map(let id): "map:\(id)"
         case .teachback(let id): "teachback:\(id)"
         case .placement: "placement"
+        case .progressCheck: "progressCheck"
         }
     }
 }
@@ -96,10 +98,13 @@ final class AppModel {
         loaded = true
     }
 
-    /// Bundled packs (copied from web/content/packs at build time) go into the store on first launch.
+    /// Bundled packs (copied from web/content/packs at build time) go into the store on first launch, and
+    /// again when the app ships the same version with new content (for example added item variants). Ids
+    /// don't change within a version, so courses enrolled in it keep their cards and simply see the new content.
     private func installBundledPacks() async throws {
         for pack in Self.bundledPacks() {
-            if try await store.curriculum(id: pack.manifest.id, version: pack.manifest.version) == nil {
+            let stored = try await store.curriculum(id: pack.manifest.id, version: pack.manifest.version)
+            if stored == nil || stored?.manifest.contentHash != pack.manifest.contentHash {
                 try await store.saveCurriculum(pack)
             }
         }

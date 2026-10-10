@@ -71,7 +71,26 @@ export interface Item {
   spans: SourceSpan[];
   tags?: string[];
   generatorVersion: string;             // "hand-authored" | "architect@1.0"
-  hash: string;                         // content hash of prompt+reference+rubric
+  hash: string;                         // content hash of prompt+reference+rubric (never of variants)
+  /**
+   * Optional isomorphs of this item (generated for `apply` items) so a spaced review can serve a fresh
+   * problem that tests the same skill. Variants are not cards: they share the item's card, concept and
+   * skill, and the item's `hash` does not cover them.
+   */
+  variants?: ItemVariant[];
+}
+
+/**
+ * A problem variant (isomorph) of an Item: same skill, method, step count and difficulty, different
+ * numbers and surface context. Ids are `<itemId>~v<n>`. A variant shares the item's card and skill but
+ * carries its own rubric, because rubric criteria name the item's numbers; criterion ids and count match
+ * the item's rubric. `reference.exact` is present iff the item's reference has one.
+ */
+export interface ItemVariant {
+  id: string;
+  prompt: string;                       // markdown
+  reference: { answer: string; exact?: string; notes?: string };
+  rubric: RubricCriterion[];
 }
 
 export interface GuidingQuestion {

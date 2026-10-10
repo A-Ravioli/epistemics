@@ -130,6 +130,38 @@ export const ItemCheckOutputSchema = z.object({
 });
 export type ItemCheckOutput = z.infer<typeof ItemCheckOutputSchema>;
 
+// ---------------------------------------------------------------------------
+// Variants (isomorphs of apply items) and their verification
+// ---------------------------------------------------------------------------
+
+export const VariantOutputSchema = z.object({
+  prompt: z.string().min(1),
+  reference: z.object({ answer: z.string().min(1), exact: z.string().optional(), notes: z.string().optional() }),
+  /** Same criterion ids, count and order as the original item's rubric (checked in code). */
+  rubric: z.array(z.object({ id: z.string().min(1), text: z.string().min(1), evidenceHint: z.string().optional() })),
+});
+
+export const VariantsOutputSchema = z.object({
+  variants: z.array(VariantOutputSchema),
+});
+export type VariantsOutput = z.infer<typeof VariantsOutputSchema>;
+export type VariantOutput = z.infer<typeof VariantOutputSchema>;
+
+/** Independent solve of a variant prompt (the reference is not shown). */
+export const VariantSolveOutputSchema = z.object({
+  work: z.string().default(''),
+  finalAnswer: z.string(),
+  solvable: z.boolean().default(true),
+});
+export type VariantSolveOutput = z.infer<typeof VariantSolveOutputSchema>;
+
+/** Judge: does the independent solution agree with the reference in substance (variants without `exact`). */
+export const VariantJudgeOutputSchema = z.object({
+  agrees: z.boolean(),
+  reason: z.string().default(''),
+});
+export type VariantJudgeOutput = z.infer<typeof VariantJudgeOutputSchema>;
+
 export const STAGE_SCHEMAS = {
   outline: OutlineOutputSchema,
   concepts: ConceptsOutputSchema,
@@ -137,4 +169,7 @@ export const STAGE_SCHEMAS = {
   scripts: ScriptOutputSchema,
   items: ItemsOutputSchema,
   itemcheck: ItemCheckOutputSchema,
+  variants: VariantsOutputSchema,
+  variantsolve: VariantSolveOutputSchema,
+  variantjudge: VariantJudgeOutputSchema,
 } as const;

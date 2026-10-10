@@ -22,6 +22,8 @@ struct TodayState {
     var waitingLesson: Lesson?
     /// The placement test, until it is taken or a lesson is finished.
     var offersPlacement: Bool
+    /// A mixed progress check is due (docs/AUDIT.md #4).
+    var progressCheckDue: Bool
     var dueCount: Int { queue.queue.dueToday }
 }
 
@@ -88,13 +90,14 @@ extension CourseService {
 
         let waiting = next == nil ? ctx.curriculum.allLessons.first { !completed.contains($0.id) } : nil
         let placementDecided = await placementDecided()
+        let progressCheckDue = (try? await progressCheckPlan().due) ?? false
 
         return TodayState(day: day, queue: queue, warmup: try await warmupLesson(day: day), nextLesson: next,
                           lessonLocked: locked, lockReason: reason, overrideUsedToday: overrideUsedToday,
                           recoveryMode: queue.queue.recoveryMode, completedLessonIds: completed,
                           checkpoint: checkpoint.map { (unit: $0.0, ready: $0.1, reason: $0.2) }, mapDue: mapDue,
                           remediation: remediation, teachback: Array(teachback), streak: streak, openLesson: openLesson, waitingLesson: waiting,
-                          offersPlacement: completed.isEmpty && !placementDecided)
+                          offersPlacement: completed.isEmpty && !placementDecided, progressCheckDue: progressCheckDue)
     }
 
     /// The warm-up for today: the last finished lesson, unless the warm-up was already done today.

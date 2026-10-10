@@ -140,6 +140,22 @@ describe('bundled packs', () => {
         }
       });
 
+      it('item variants (when present) are ids <itemId>~v<n> with the item\'s rubric ids and exact-answer shape', () => {
+        for (const i of items) {
+          const variants = i.variants ?? [];
+          if (variants.length) expect(i.type, `${i.id} variants on a non-apply item`).toBe('apply');
+          const ids = new Set<string>();
+          for (const v of variants) {
+            expect(v.id, `${i.id} variant id`).toMatch(new RegExp(`^${i.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}~v\\d+$`));
+            expect(ids.has(v.id), `${v.id} duplicated`).toBe(false);
+            ids.add(v.id);
+            expect(v.rubric.map((r) => r.id), `${v.id} rubric ids`).toEqual(i.rubric.map((r) => r.id));
+            expect(v.reference.exact === undefined, `${v.id} exact present iff the item has one`).toBe(i.reference.exact === undefined);
+            expect(v.prompt, `${v.id} prompt`).not.toBe(i.prompt);
+          }
+        }
+      });
+
       it('guiding questions only probe misconceptions the concept declares', () => {
         for (const c of concepts) {
           const tags = new Set(c.misconceptions.map((m) => m.tag));

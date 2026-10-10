@@ -57,13 +57,13 @@ struct CourseMapView: View {
 
     private func status(_ c: Concept, ctx: CourseContext) -> String {
         guard let s = states[c.id], s.unassistedN + s.assistedN > 0 || s.successfulSessions > 0 else { return "new" }
-        if isMastered(s.mastery, unassistedPassRate(s)) { return "mastered" }
+        if isMasteredOnMixedEvidence(s) { return "mastered" }
         return "\(Int((s.mastery * 100).rounded()))% · \(s.successfulSessions) of 3 spaced successes"
     }
 
     private func statusColor(_ c: Concept) -> Color {
         guard let s = states[c.id] else { return Theme.muted }
-        return isMastered(s.mastery, unassistedPassRate(s)) ? Theme.good : Theme.muted
+        return isMasteredOnMixedEvidence(s) ? Theme.good : Theme.muted
     }
 }
 

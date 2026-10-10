@@ -1,5 +1,5 @@
 /**
- * The Architect pipeline: outline → concepts → graph → scripts → items → item check → freeze.
+ * The Architect pipeline: outline → concepts → graph → scripts → items → item check → variants → freeze.
  *
  * Pure orchestration over an `LlmProvider` and a `GenCache`. Every stage call is
  * cached under sha256(stage + promptVersion + model + canonicalJson(inputs)), so
@@ -8,16 +8,17 @@
  */
 import { canonicalJson, sha256, stableId } from '@epistemics/core';
 import type {
-  Chunk, Concept, ConceptEdge, ConceptScript, Curriculum, Item, ItemType, Lesson, Objective, SourceDoc, SourceSpan, Unit,
+  Chunk, Concept, ConceptEdge, ConceptScript, Curriculum, Item, ItemType, ItemVariant, Lesson, Objective, SourceDoc, SourceSpan, Unit,
 } from '@epistemics/core';
-import type { LlmProvider, LlmRequest } from '@epistemics/llm';
+import { exactMatches, normalise, type LlmProvider, type LlmRequest } from '@epistemics/llm';
 import type { z } from 'zod';
 import { cacheKey, type GenCache } from './cache.js';
 import { findConfusablePairs, validateGraph, type ConfusablePair } from './graph.js';
 import { ARCHITECT_PROMPTS, ARCHITECT_PROMPT_VERSION, type ArchitectStage } from './prompts/index.js';
 import {
   ConceptsOutputSchema, GraphOutputSchema, ItemCheckOutputSchema, ItemsOutputSchema, OutlineOutputSchema, ScriptOutputSchema,
-  type ItemOutput, type OutlineOutput,
+  VariantJudgeOutputSchema, VariantSolveOutputSchema, VariantsOutputSchema,
+  type ItemOutput, type OutlineOutput, type VariantOutput,
 } from './schemas.js';
 import { describeOutline, SUBJECT_ONLY_INSTRUCTIONS, WITH_SOURCES_INSTRUCTIONS, type OutlineRequestInputs } from './subjectOnly.js';
 
@@ -33,7 +34,8 @@ export interface SourceInput {
 }
 
 export interface ProgressEvent {
-  stage: ArchitectStage | 'validate' | 'freeze';
+  /** Model-backed stages, plus the code-level steps: graph `validate`, `variantcheck` (per concept) and `freeze`. */
+  stage: ArchitectStage | 'validate' | 'variantcheck' | 'freeze';
   status: 'start' | 'done' | 'cached';
   unit?: number;
   lesson?: number;
@@ -62,6 +64,11 @@ export interface BuildInput {
   title?: string;
   /** Clock override for manifest.createdAt (tests). */
   now?: () => number;
+  /**
+   * Write and verify problem variants (isomorphs) for `apply` items so spaced reviews can serve a fresh
+   * problem. Default true; pass false to skip the stage (no variant calls are made).
+   */
+  variants?: boolean;
 }
 
 export type UnitBuildInput = Omit<BuildInput, 'subject' | 'level' | 'unitsToBuild' | 'title'> & {
@@ -81,6 +88,7 @@ interface Ctx {
   chunkIndex: Map<string, Chunk>;
   sources: SourceInput[];
   hasSources: boolean;
+  variants: boolean;
   retrieve?: (query: string, k: number) => Promise<Chunk[]>;
   onProgress?: (e: ProgressEvent) => void;
   signal?: AbortSignal;
@@ -94,6 +102,7 @@ interface ConceptDraft extends Omit<Concept, 'script' | 'items'> {
 
 const STAGE_ROLE: Record<ArchitectStage, 'architect' | 'itemwriter'> = {
   outline: 'architect', concepts: 'architect', graph: 'architect', scripts: 'architect', items: 'itemwriter', itemcheck: 'itemwriter',
+  variants: 'itemwriter', variantsolve: 'itemwriter', variantjudge: 'itemwriter',
 };
 
 const SELF_GRADED: ReadonlySet<ItemType> = new Set<ItemType>(['recall', 'cloze', 'predict']);
@@ -111,6 +120,7 @@ function makeCtx(input: Omit<BuildInput, 'subject' | 'level' | 'unitsToBuild' | 
     chunkIndex,
     sources,
     hasSources: chunkIndex.size > 0,
+    variants: input.variants ?? true,
   };
   if (input.retrieve) ctx.retrieve = input.retrieve;
   if (input.onProgress) ctx.onProgress = input.onProgress;
@@ -521,6 +531,147 @@ async function runItems(ctx: Ctx, c: ConceptDraft, ictx: ItemContext): Promise<I
 }
 
 // ---------------------------------------------------------------------------
+// Variants (isomorphs of apply items)
+// ---------------------------------------------------------------------------
+
+/** How many isomorphs to request per `apply` item. */
+export const VARIANTS_PER_ITEM = 2;
+
+/** Variant ids are `<itemId>~v<n>`, n = 1-based position in the generated list (stable under the cache). */
+export const variantId = (itemId: string, n: number): string => `${itemId}~v${n}`;
+
+const PLAIN_NUMBER = /^[-+]?(\d[\d,]*(\.\d+)?|\.\d+)(e[-+]?\d+)?%?$/i;
+const exactOf = (r: { exact?: string | undefined }): string | undefined => (r.exact?.trim() ? r.exact.trim() : undefined);
+const brief = (s: string, n = 80): string => {
+  const t = s.replace(/\s+/g, ' ').trim();
+  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+};
+
+/**
+ * Code-level checks on a generated variant: rubric ids and count match the original, `exact` present iff
+ * the original has one (and a plain number stays a plain number), and the prompt differs from the original
+ * and from the earlier variants.
+ */
+export function variantStructuralIssues(item: Pick<Item, 'prompt' | 'reference' | 'rubric'>, v: VariantOutput, earlierPrompts: string[] = []): string[] {
+  const issues: string[] = [];
+  const want = item.rubric.map((r) => r.id);
+  const got = v.rubric.map((r) => r.id);
+  if (got.length !== want.length || new Set(got).size !== got.length || !want.every((id) => got.includes(id))) {
+    issues.push(`rubric ids [${got.join(', ')}] do not match the original's [${want.join(', ')}]`);
+  }
+  const ex = exactOf(item.reference);
+  const vx = exactOf(v.reference);
+  if (ex && !vx) issues.push('missing an exact answer (the original has one)');
+  else if (!ex && vx) issues.push('has an exact answer (the original has none)');
+  else if (ex && vx && PLAIN_NUMBER.test(ex) && !PLAIN_NUMBER.test(vx)) issues.push(`exact answer "${vx}" is not a number like the original's`);
+  const p = normalise(v.prompt);
+  if (p === normalise(item.prompt)) issues.push('prompt is the same as the original');
+  else if (earlierPrompts.some((q) => normalise(q) === p)) issues.push('prompt duplicates another variant');
+  return issues;
+}
+
+function toVariant(item: Item, v: VariantOutput, n: number): ItemVariant {
+  const reference: ItemVariant['reference'] = { answer: v.reference.answer };
+  const exact = exactOf(v.reference);
+  if (exact) reference.exact = exact;
+  if (v.reference.notes) reference.notes = v.reference.notes;
+  const byId = new Map(v.rubric.map((r) => [r.id, r]));
+  // Same ids as the original (checked), reordered to the original's order.
+  const rubric = item.rubric.map((o) => {
+    const r = byId.get(o.id)!;
+    return r.evidenceHint ? { id: o.id, text: r.text, evidenceHint: r.evidenceHint } : { id: o.id, text: r.text };
+  });
+  return { id: variantId(item.id, n), prompt: v.prompt, reference, rubric };
+}
+
+/**
+ * Independent verification: a second call solves the variant without seeing its reference. With `exact`,
+ * the solver's final answer must pass the grader's normalised exact match; without, a judge call must say
+ * the solution agrees with the reference in substance. Returns the reason to drop, or null to keep.
+ */
+async function verifyVariant(ctx: Ctx, c: ConceptDraft, v: VariantOutput, where: Pick<ProgressEvent, 'unit' | 'lesson' | 'concept'>): Promise<string | null> {
+  const solved = await runStage(ctx, 'variantsolve', VariantSolveOutputSchema, {
+    concept: { name: c.name, definition: c.definition },
+    prompt: v.prompt,
+  }, where);
+  if (!solved.solvable) return `independent solver could not solve it as stated (${brief(solved.work) || 'no detail'})`;
+  const exact = exactOf(v.reference);
+  if (exact) {
+    return exactMatches(solved.finalAnswer, exact) ? null : `independent solve gave "${brief(solved.finalAnswer, 40)}", reference exact is "${exact}"`;
+  }
+  const judged = await runStage(ctx, 'variantjudge', VariantJudgeOutputSchema, {
+    prompt: v.prompt,
+    reference: v.reference,
+    independentSolution: { work: solved.work, finalAnswer: solved.finalAnswer },
+  }, where);
+  return judged.agrees ? null : `judge found the independent solution disagrees (${brief(judged.reason) || 'no reason given'})`;
+}
+
+async function variantsForItem(ctx: Ctx, c: ConceptDraft, item: Item, log: string[]): Promise<ItemVariant[]> {
+  const where = { unit: c.unitOrdinal, lesson: c.lessonOrdinal, concept: c.name };
+  const out = await runStage(ctx, 'variants', VariantsOutputSchema, {
+    item: {
+      type: item.type,
+      bloom: item.bloom,
+      prompt: item.prompt,
+      reference: item.reference,
+      rubric: item.rubric,
+      tags: item.tags ?? [],
+    },
+    concept: { name: c.name, definition: c.definition, misconceptions: c.misconceptions },
+    count: VARIANTS_PER_ITEM,
+  }, where);
+  const kept: ItemVariant[] = [];
+  const generated = out.variants.slice(0, VARIANTS_PER_ITEM);
+  for (let i = 0; i < generated.length; i++) {
+    const v = generated[i]!;
+    const id = variantId(item.id, i + 1);
+    const issues = variantStructuralIssues(item, v, generated.slice(0, i).map((x) => x.prompt));
+    if (issues.length) {
+      log.push(`dropped ${id}: ${issues.join('; ')}`);
+      continue;
+    }
+    const reason = await verifyVariant(ctx, c, v, where);
+    if (reason) {
+      log.push(`dropped ${id}: ${reason}`);
+      continue;
+    }
+    kept.push(toVariant(item, v, i + 1));
+  }
+  return kept;
+}
+
+/**
+ * Attach verified variants to a concept's `apply` items. Variants never fail the build: a failed call or a
+ * failed check drops that item's variants (or the one variant) and is reported on the `variantcheck`
+ * progress event. Only an abort propagates. The item hash is untouched (it covers prompt+reference+rubric).
+ */
+async function runVariants(ctx: Ctx, c: ConceptDraft, items: Item[]): Promise<Item[]> {
+  if (!ctx.variants) return items;
+  const targets = items.filter((it) => it.type === 'apply');
+  if (!targets.length) return items;
+  const where = { unit: c.unitOrdinal, lesson: c.lessonOrdinal, concept: c.name };
+  emit(ctx, { stage: 'variantcheck', status: 'start', ...where });
+  const log: string[] = [];
+  const byItem = new Map<string, ItemVariant[]>();
+  let kept = 0;
+  for (const it of targets) {
+    throwIfAborted(ctx);
+    try {
+      const vs = await variantsForItem(ctx, c, it, log);
+      kept += vs.length;
+      if (vs.length) byItem.set(it.id, vs);
+    } catch (err) {
+      if (ctx.signal?.aborted) throw err;
+      log.push(`no variants for ${it.id}: ${brief(err instanceof Error ? err.message : String(err), 160)}`);
+    }
+  }
+  const message = `kept ${kept} variant(s) for ${targets.length} apply item(s)${log.length ? `; ${log.join('; ')}` : ''}`;
+  emit(ctx, { stage: 'variantcheck', status: 'done', ...where, message });
+  return items.map((it) => (byItem.has(it.id) ? { ...it, variants: byItem.get(it.id)! } : it));
+}
+
+// ---------------------------------------------------------------------------
 // Assembly
 // ---------------------------------------------------------------------------
 
@@ -564,8 +715,8 @@ async function contentHash(units: Unit[], edges: ConceptEdge[]): Promise<string>
 
 /**
  * Build one or more units in place: concepts for every lesson, then graph edges
- * (incremental against the concepts already in the curriculum), scripts, items
- * and the item self-check. Returns a new Curriculum object.
+ * (incremental against the concepts already in the curriculum), scripts, items,
+ * the item self-check and verified variants of `apply` items. Returns a new Curriculum object.
  */
 async function buildUnits(
   ctx: Ctx,
@@ -616,7 +767,7 @@ async function buildUnits(
       .filter((x): x is ConceptDraft => !!x)
       .map((x) => ({ name: x.name, definition: x.definition }));
     const chunks = c.spans.map((s) => ctx.chunkIndex.get(s.chunkId)).filter((x): x is Chunk => !!x);
-    const items = await runItems(ctx, c, { confusableWith, dependents, chunks });
+    const items = await runVariants(ctx, c, await runItems(ctx, c, { confusableWith, dependents, chunks }));
     const { unitOrdinal, lessonOrdinal, lessonId: lid, ...rest } = c;
     const concept: Concept = { ...rest, script, items };
     const lesson = units[unitOrdinal]!.lessons[lessonOrdinal]!;

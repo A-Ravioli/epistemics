@@ -1,7 +1,7 @@
 import Foundation
 
 /// The prompt files bundled in `Prompts/` (port of prompts.ts). The web prompts are byte-identical copies of
-/// `web/content/prompts/*.md` (asserted by a test); the iPad-only ones are `reader`, `observer-ink` and `tutor-ink`.
+/// `web/content/prompts/*.md` (asserted by a test); the iPad-only ones are `reader`, `observer-ink`, `tutor-ink` and `grader-ink`.
 public enum PromptName: String, Sendable, Hashable, CaseIterable {
     case tutorCharter = "tutor-charter"
     case observer
@@ -15,16 +15,20 @@ public enum PromptName: String, Sendable, Hashable, CaseIterable {
     case architectScripts = "architect-scripts"
     case architectItems = "architect-items"
     case architectItemcheck = "architect-itemcheck"
+    case architectVariants = "architect-variants"
+    case architectVariantsolve = "architect-variantsolve"
+    case architectVariantjudge = "architect-variantjudge"
     // iPad only
     case reader
     case observerInk = "observer-ink"
     case tutorInk = "tutor-ink"
+    case graderInk = "grader-ink"
 
     /// File name in `Prompts/` (and, for web prompts, in `web/content/prompts/`).
     public var fileName: String { rawValue + ".md" }
 
     /// Prompts that exist only in the iPad app.
-    public var isIPadOnly: Bool { self == .reader || self == .observerInk || self == .tutorInk }
+    public var isIPadOnly: Bool { self == .reader || self == .observerInk || self == .tutorInk || self == .graderInk }
 }
 
 public enum Prompts {
@@ -76,6 +80,9 @@ public enum Prompts {
     /// The observer's system prompt on the iPad: the web prompt, a blank line, then the ink addendum (marks, ink
     /// summary) without its version header.
     public static var observerWithInk: String { observer + "\n" + body(.observerInk) }
+    /// The grader's system prompt on the iPad: the web prompt, a blank line, then the addendum asking for the
+    /// first wrong line of the working (docs/AUDIT.md #1).
+    public static var graderWithInk: String { grader + "\n" + body(.graderInk) }
 
     /// The prompt without its leading `<!-- version: … -->` line.
     public static func body(_ name: PromptName) -> String {
