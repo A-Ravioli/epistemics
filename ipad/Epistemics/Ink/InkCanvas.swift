@@ -101,6 +101,9 @@ struct InkCanvas: UIViewRepresentable {
     @Bindable var area: InkAreaModel
     var tools: InkToolState
     var allowsFingerDrawing: Bool
+    /// On-screen scale of the paper; the drawing stays in paper coordinates (InkArea).
+    var zoom: CGFloat = 1
+    var logicalSize: CGSize = .zero
 
     func makeCoordinator() -> Coordinator { Coordinator(area: area) }
 
@@ -110,6 +113,10 @@ struct InkCanvas: UIViewRepresentable {
         canvas.isOpaque = false
         canvas.isScrollEnabled = false
         canvas.contentInset = .zero
+        canvas.bouncesZoom = false
+        canvas.showsVerticalScrollIndicator = false
+        canvas.showsHorizontalScrollIndicator = false
+        Self.applyZoom(canvas, zoom, logicalSize)
         canvas.drawing = area.drawing
         canvas.delegate = context.coordinator
         canvas.tool = tools.tool.pkTool
@@ -125,6 +132,7 @@ struct InkCanvas: UIViewRepresentable {
     func updateUIView(_ canvas: PKCanvasView, context: Context) {
         let c = context.coordinator
         c.area = area
+        Self.applyZoom(canvas, zoom, logicalSize)
         canvas.drawingPolicy = Self.policy(allowsFingerDrawing)
         canvas.isUserInteractionEnabled = area.isEditable
         if area.isEditable {
@@ -141,6 +149,22 @@ struct InkCanvas: UIViewRepresentable {
             c.seenRedo = tools.redoRequests
             if area.isEditable { canvas.undoManager?.redo() }
         }
+    }
+
+    /// A fixed zoom: the canvas shows paper coordinates at `zoom`, and a learner can't pinch it.
+    static func applyZoom(_ canvas: PKCanvasView, _ zoom: CGFloat, _ logical: CGSize) {
+        if canvas.minimumZoomScale != zoom || canvas.maximumZoomScale != zoom {
+            canvas.minimumZoomScale = min(canvas.minimumZoomScale, zoom)
+            canvas.maximumZoomScale = max(canvas.maximumZoomScale, zoom)
+            canvas.zoomScale = zoom
+            canvas.minimumZoomScale = zoom
+            canvas.maximumZoomScale = zoom
+        }
+        if logical != .zero {
+            let content = CGSize(width: logical.width * zoom, height: logical.height * zoom)
+            if canvas.contentSize != content { canvas.contentSize = content }
+        }
+        if canvas.contentOffset != .zero { canvas.contentOffset = .zero }
     }
 
     /// The simulator has no Pencil, so a pointer has to be able to draw there.

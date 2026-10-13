@@ -210,10 +210,11 @@ actor Store {
     }
 
     /// The most recent earlier receipt for an item, for "You answered this 12 days ago" (DESIGN §6.4).
+    /// The last unaided attempt at an item before `before` (a fix-it rewrite is assisted, so it never counts).
     func previousReceipt(course: String, item: String, before: EpochMs) throws -> Receipt? {
         try decodeAll(Receipt.self, """
-            SELECT json FROM receipts WHERE course_id = ? AND item_id = ? AND created_at < ? ORDER BY created_at DESC LIMIT 1
-            """, [.text(course), .text(item), .int(before)]).first
+            SELECT json FROM receipts WHERE course_id = ? AND item_id = ? AND created_at < ? ORDER BY created_at DESC LIMIT 20
+            """, [.text(course), .text(item), .int(before)]).first { !$0.assisted }
     }
 
     func saveJOL(_ j: JudgmentOfLearning) throws {

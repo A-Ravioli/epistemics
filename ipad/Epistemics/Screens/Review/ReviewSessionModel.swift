@@ -22,7 +22,9 @@ final class ReviewSessionModel {
 
     struct Current {
         var card: Card
+        /// As served: the item, or one of its variants in its place (docs/AUDIT.md #3).
         var item: Item
+        var variantId: String?
         var area: InkAreaModel
         var typed = ""
         var startedAt = Date()
@@ -34,6 +36,8 @@ final class ReviewSessionModel {
         var marks: [InkMark]
         var daysAgo: Int
         var rating: Rating
+        /// The same problem, rather than another version of it.
+        var sameProblem: Bool
     }
 
     struct ReviewResult: Equatable {
@@ -46,6 +50,12 @@ final class ReviewSessionModel {
         var hypercorrection: Bool
         var leech: Bool
         var receiptId: String?
+        /// Where the working first went wrong. With it, a wrong answer is offered "Fix it from here" before
+        /// the answer is shown (docs/AUDIT.md #1, #2).
+        var firstError: StepError?
+        var answerShown: Bool
+
+        var canFix: Bool { firstError != nil && !isCorrect(rating) }
     }
 
     let app: AppModel
@@ -59,6 +69,8 @@ final class ReviewSessionModel {
     var answered = 0
     var minutesLeft = 0
     var confidence: Confidence?
+    /// "Fix it from here", once started on the current receipt.
+    var fix: FixIt?
     private var inkId: String?
     private var sessionId = ""
     private var shownConcepts = Set<String>()
@@ -114,10 +126,14 @@ final class ReviewSessionModel {
             return
         }
         let card = order[index]
-        guard let item = ctx.curriculum.item(card.itemId) else { index += 1; await showCurrent(); return }
+        guard let base = ctx.curriculum.item(card.itemId) else { index += 1; await showCurrent(); return }
+        let served = await service.serving(base)
+        let item = served.item
         let ink = inkPaper(for: item)
-        current = Current(card: card, item: item, area: InkAreaModel(paper: ink.paper, minHeight: InkAreaModel.defaultHeight(for: ink.paper, lines: ink.lines)))
+        current = Current(card: card, item: item, variantId: served.variantId,
+                          area: InkAreaModel(paper: ink.paper, minHeight: InkAreaModel.defaultHeight(for: ink.paper, lines: ink.lines)))
         confidence = nil
+        fix = nil
         inkId = nil
         phase = .answering
     }
@@ -215,7 +231,7 @@ final class ReviewSessionModel {
         let applied = try await service.applyReview(
             card: cur.card, rating: rating, source: .review, assisted: false, confidence: confidence, durationMs: duration,
             receipt: .init(sessionId: sessionId, answer: r.gradedText, grade: graded?.grade, inkId: inkId,
-                           modality: typedMode ? .typed : (inkId == nil ? nil : .ink)))
+                           modality: typedMode ? .typed : (inkId == nil ? nil : .ink), variantId: cur.variantId))
         var marks: [InkMark] = []
         if let graded, let inkId, !typedMode {
             marks = await MarkPlacement.receiptMarks(grade: graded.grade, rubric: GradingService.target(for: cur.item, in: ctx.curriculum).rubric,
@@ -223,7 +239,7 @@ final class ReviewSessionModel {
             cur.area.marks = marks
             try? await app.store.saveMarks(inkId: inkId, marks)
         }
-        let previous = await previousAttempt(item: cur.item, before: applied.receipt?.createdAt ?? ctx.now())
+        let previous = await previousAttempt(item: cur.item, variantId: cur.variantId, before: applied.receipt?.createdAt ?? ctx.now())
         if hypercorrection && !reasked.contains(cur.card.id) {
             // A confident miss is asked again today (DESIGN §3.4).
             reasked.insert(cur.card.id)
@@ -231,19 +247,40 @@ final class ReviewSessionModel {
         }
         answered += 1
         shownConcepts.insert(cur.item.conceptId)
-        phase = .receipt(ReviewResult(reading: r, graded: graded, rating: rating, marks: marks,
-                                      nextDueText: Self.dueText(applied.card.due - ctx.now()), previous: previous,
-                                      hypercorrection: hypercorrection, leech: applied.leech, receiptId: applied.receipt?.id))
+        // Only ink can be rewritten from a marked line.
+        let firstError = typedMode || inkId == nil ? nil : graded?.grade.firstError
+        let result = ReviewResult(reading: r, graded: graded, rating: rating, marks: marks,
+                                  nextDueText: Self.dueText(applied.card.due - ctx.now()), previous: previous,
+                                  hypercorrection: hypercorrection, leech: applied.leech, receiptId: applied.receipt?.id,
+                                  firstError: firstError, answerShown: true)
+        var shown = result
+        shown.answerShown = !result.canFix
+        phase = .receipt(shown)
         app.didChangeLearnerState()
     }
 
-    private func previousAttempt(item: Item, before: EpochMs) async -> Previous? {
+    // MARK: Fix it from here (docs/AUDIT.md #2)
+
+    func startFix() {
+        guard case .receipt(let result) = phase, let cur = current, let error = result.firstError, fix == nil else { return }
+        fix = FixIt(item: cur.item, variantId: cur.variantId, original: result.reading, error: error, paper: cur.area.paper,
+                    ctx: ctx, app: app, reading: reading, sessionId: sessionId)
+    }
+
+    func showAnswer() {
+        guard case .receipt(var result) = phase else { return }
+        result.answerShown = true
+        phase = .receipt(result)
+    }
+
+    private func previousAttempt(item: Item, variantId: String?, before: EpochMs) async -> Previous? {
         guard let receipt = try? await app.store.previousReceipt(course: ctx.course.id, item: item.id, before: before),
               let inkId = receipt.inkId, let ink = try? await app.store.ink(inkId),
               let drawing = try? PKDrawing(data: ink.drawing) else { return nil }
         let marks = (try? await app.store.marks(inkId: inkId)) ?? []
         let days = max(0, (ctx.now() - receipt.createdAt) / 86_400_000)
-        return Previous(drawing: drawing, paper: ink.paper, marks: marks, daysAgo: days, rating: receipt.rating)
+        return Previous(drawing: drawing, paper: ink.paper, marks: marks, daysAgo: days, rating: receipt.rating,
+                        sameProblem: receipt.variantId == variantId)
     }
 
     /// Re-grade with three samples and log the dispute (DESIGN §6.2).

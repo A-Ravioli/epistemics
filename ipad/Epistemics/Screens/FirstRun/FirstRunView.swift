@@ -10,31 +10,45 @@ struct FirstRunView: View {
     @State private var importing = false
 
     var body: some View {
-        ScrollView {
-            PageColumn {
-                Text("Step \(model.stepNumber) of \(model.stepCount)\(model.pack.map { " · \($0.manifest.title)" } ?? "")")
-                    .font(.secondary).foregroundStyle(Theme.muted)
-                switch model.step {
-                case .subject: subjectStep
-                case .placement:
-                    if let placement = model.placement {
-                        PlacementView(model: placement) { model.step = .commitment }
-                    }
-                case .tutor: tutorStep
-                case .commitment: commitmentStep
+        Group {
+            if model.step == .placement, let placement = model.placement {
+                // The placement lays itself out (a writing page for its questions), so it is not scrolled here.
+                VStack(spacing: 0) {
+                    stepLine
+                        .frame(maxWidth: Theme.readingWidth, alignment: .leading)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 32).padding(.top, 24)
+                    PlacementView(model: placement) { model.step = .commitment }
                 }
-                if let error = model.error { Banner(text: error) }
+            } else {
+                ScrollView {
+                    PageColumn {
+                        stepLine
+                        switch model.step {
+                        case .subject: subjectStep
+                        case .tutor: tutorStep
+                        case .commitment: commitmentStep
+                        case .placement: EmptyView()
+                        }
+                        if let error = model.error { Banner(text: error) }
+                    }
+                    .padding(.top, 40)
+                    .padding(.bottom, 60)
+                    .padding(.horizontal, 32)
+                }
+                .scrollDismissesKeyboard(.interactively)
             }
-            .padding(.top, 40)
-            .padding(.bottom, 60)
-            .padding(.horizontal, 32)
         }
-        .scrollDismissesKeyboard(.interactively)
         .background(Theme.paper.ignoresSafeArea())
         .task { await model.load(app: app) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             if case .success(let url) = result { model.importPack(url, app: app) }
         }
+    }
+
+    private var stepLine: some View {
+        Text("Step \(model.stepNumber) of \(model.stepCount)\(model.pack.map { " · \($0.manifest.title)" } ?? "")")
+            .font(.secondary).foregroundStyle(Theme.muted)
     }
 
     // MARK: What to learn

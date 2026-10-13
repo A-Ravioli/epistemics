@@ -17,6 +17,8 @@ struct InkMark: Identifiable, Hashable, Codable, Sendable {
         case ghostLink(from: CGPoint, to: CGPoint)
         /// A line under a region.
         case underline(CGRect)
+        /// A wavy line under the first wrong line of the working (step-level feedback, docs/AUDIT.md #1).
+        case wrongStep(CGRect)
     }
     var id: String = UUID().uuidString
     var kind: Kind
@@ -75,7 +77,7 @@ struct MarkLayer: View {
 
     private func noteAnchor(_ mark: InkMark) -> CGPoint? {
         switch mark.kind {
-        case .circle(let r), .tick(let r), .underline(let r), .numbered(_, let r), .query(let r):
+        case .circle(let r), .tick(let r), .underline(let r), .numbered(_, let r), .query(let r), .wrongStep(let r):
             return CGPoint(x: r.maxX + 18, y: r.maxY - 4)
         case .ghost, .ghostLink:
             return nil
@@ -102,6 +104,24 @@ struct MarkLayer: View {
             p.move(to: CGPoint(x: r.minX - 2, y: r.maxY + 4))
             p.addQuadCurve(to: CGPoint(x: r.maxX + 2, y: r.maxY + 2 + rng.next(2)),
                            control: CGPoint(x: r.midX, y: r.maxY + 6 + rng.next(3)))
+            ctx.stroke(p, with: blue, style: solid)
+        case .wrongStep(let r):
+            // A hand-drawn wave under the line, then a short bar at its start so it reads as "from here".
+            var p = Path()
+            let y = r.maxY + 6
+            let start = r.minX - 4, end = r.maxX + 4
+            p.move(to: CGPoint(x: start, y: y))
+            var x = start
+            var up = true
+            while x < end {
+                let next = min(end, x + 12)
+                p.addQuadCurve(to: CGPoint(x: next, y: y + rng.next(1.5)),
+                               control: CGPoint(x: (x + next) / 2, y: y + (up ? -5 : 5)))
+                x = next
+                up.toggle()
+            }
+            p.move(to: CGPoint(x: start - 6, y: r.minY - 2))
+            p.addLine(to: CGPoint(x: start - 6, y: r.maxY + 6))
             ctx.stroke(p, with: blue, style: solid)
         case .query:
             break

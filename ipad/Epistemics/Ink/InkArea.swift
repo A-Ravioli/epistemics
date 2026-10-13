@@ -55,28 +55,63 @@ struct PaperBackground: View {
 }
 
 /// One ink area: paper, the canvas, and the tutor's marks on top. Grows with the ink.
+///
+/// The paper has a fixed logical width (`logicalWidth`, the reading width by default) and is drawn scaled
+/// to fit the space it is given, never reflowed: strokes, marks and readings are all in paper coordinates,
+/// so rotating the iPad or opening Split View must not move them (UX-AUDIT §2). Squared and dotted paper,
+/// the paper for working, start as tall as the page offers (`paperFillHeight`).
 struct InkArea: View {
     @Bindable var area: InkAreaModel
     var tools: InkToolState
     var allowsFingerDrawing = false
     var accessibilityReading: String? = nil
+    var logicalWidth: CGFloat = Theme.readingWidth
+
+    @Environment(\.paperFillHeight) private var fill
+    @Environment(\.inkAsImage) private var inkAsImage
+    @State private var available: CGFloat = Theme.readingWidth
+
+    private var scale: CGFloat { max(0.5, min(1, available / logicalWidth)) }
+    private var logicalHeight: CGFloat {
+        let fills = area.paper == .squared || area.paper == .dotted
+        return max(area.height, fills && fill > 0 ? fill / scale : 0)
+    }
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            PaperBackground(paper: area.paper)
-            InkCanvas(area: area, tools: tools, allowsFingerDrawing: allowsFingerDrawing)
-            MarkLayer(marks: area.marks)
-                .allowsHitTesting(false)
-        }
-        .frame(height: area.height)
-        .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.sheet))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.rule.opacity(0.6), lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .animation(.easeOut(duration: 0.18), value: area.height)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(area.paper.accessibilityName)
-        .accessibilityValue(accessibilityReading.map { "Your answer, read as: \($0)" } ?? (area.isEmpty ? "Empty" : "Written"))
+        let size = CGSize(width: logicalWidth, height: logicalHeight)
+        // A clear strip takes exactly the width offered (it never asks for more), measures it, and carries
+        // the paper, drawn at the fixed logical width and scaled to fit, as an overlay.
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: size.height * scale)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { available = $0 }
+            .overlay(alignment: .topLeading) {
+                ZStack(alignment: .topLeading) {
+                    PaperBackground(paper: area.paper)
+                        .frame(width: size.width, height: size.height)
+                        .scaleEffect(scale, anchor: .topLeading)
+                    if inkAsImage {
+                        DrawingImage(drawing: area.drawing, size: size)
+                            .scaleEffect(scale, anchor: .topLeading)
+                            .frame(width: size.width * scale, height: size.height * scale, alignment: .topLeading)
+                    } else {
+                        InkCanvas(area: area, tools: tools, allowsFingerDrawing: allowsFingerDrawing, zoom: scale, logicalSize: size)
+                            .frame(width: size.width * scale, height: size.height * scale)
+                    }
+                    MarkLayer(marks: area.marks)
+                        .frame(width: size.width, height: size.height, alignment: .topLeading)
+                        .scaleEffect(scale, anchor: .topLeading)
+                        .allowsHitTesting(false)
+                }
+                .frame(width: size.width * scale, height: size.height * scale, alignment: .topLeading)
+                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.sheet))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.rule.opacity(0.6), lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            .animation(.easeOut(duration: 0.18), value: area.height)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(area.paper.accessibilityName)
+            .accessibilityValue(accessibilityReading.map { "Your answer, read as: \($0)" } ?? (area.isEmpty ? "Empty" : "Written"))
     }
 }
 
@@ -123,4 +158,10 @@ struct DrawingImage: View {
             .resizable()
             .frame(width: size.width, height: size.height)
     }
+}
+
+extension EnvironmentValues {
+    /// Draw live ink areas' ink as an image instead of a PencilKit canvas. Only for rendering screenshots: the
+    /// canvas draws on the GPU, which a view snapshot doesn't reliably capture.
+    @Entry var inkAsImage = false
 }

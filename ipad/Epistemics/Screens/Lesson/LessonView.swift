@@ -16,84 +16,77 @@ struct LessonView: View {
             SessionHeader(title: model.concept?.name ?? model.lesson?.title ?? "Lesson",
                           subtitle: [model.lesson?.title, model.phaseLine].compactMap { $0 }.joined(separator: " · "),
                           closeLabel: "Leave the lesson", onClose: { app.dismissSession() }) {
-                Button("Concept") { model.showsConcept = true }
-                    .buttonStyle(.secondary)
-                    .disabled(model.phase.isUnaided || model.concept == nil)
-                    .accessibilityHint(model.phase.isUnaided ? "Hidden while you answer without help" : "")
+                EmptyView()
             }
-            ScrollViewReader { proxy in
-                ScrollView {
-                    FreeHandLayout(handedness: app.settings.handedness) {
-                        if model.canWrite && model.inputMode != .jol {
-                            VStack(spacing: 16) {
-                                ToolTray(tools: app.tools)
-                                if model.inputMode == .answer || model.inputMode == .summary {
-                                    Button { Task { await model.handIn() } } label: {
-                                        Text("Hand\nin").font(.system(size: 14, weight: .semibold)).multilineTextAlignment(.center)
-                                            .foregroundStyle(Theme.onGraphite)
-                                            .frame(width: 72, height: 72)
-                                            .background(Circle().fill(Theme.graphite))
-                                    }
-                                    .buttonStyle(.plain)
-                                    .disabled(model.activeArea.isEmpty)
-                                    .opacity(model.activeArea.isEmpty ? 0.4 : 1)
-                                    .accessibilityLabel("Hand in")
-                                }
-                            }
-                        }
-                    } page: {
-                        page.padding(.top, 8).padding(.bottom, 60)
+            // The rail is outside every scroll view, so Pencil tools and Hand in stay on screen however long
+            // the dialogue gets (UX-AUDIT B1). In landscape the dialogue and the paper are two pages.
+            WritingPage(handedness: app.settings.handedness, pinsMaterial: false, scrollToken: scrollToken,
+                        reference: conceptCard, referenceOpen: model.workedPlan.map { $0.studyFirst || $0.learnerSteps > 0 } ?? false,
+                        referenceKey: model.concept?.id ?? "", referenceScrollToken: model.workedRevealed.count) {
+                dialogue
+            } paper: {
+                input
+            } rail: {
+                if model.canWrite && model.inputMode != .jol && model.inputMode != .done {
+                    ToolTray(tools: app.tools)
+                    switch model.inputMode {
+                    case .answer, .summary:
+                        HandInButton(enabled: !model.activeArea.isEmpty) { Task { await model.handIn() } }
+                    case .answerConfidence:
+                        ConfidenceHandIn(enabled: !model.activeArea.isEmpty,
+                                         onHandIn: { c in Task { await model.handIn(confidence: c) } },
+                                         onDontKnow: { Task { await model.giveUp() } })
+                    default:
+                        EmptyView()
                     }
-                    .padding(.horizontal, 20)
-                    Color.clear.frame(height: 1).id("bottom")
                 }
-                .onChange(of: model.entries.count) { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
-                .onChange(of: model.streaming) { proxy.scrollTo("bottom", anchor: .bottom) }
-            }
-            if model.inputMode == .answerConfidence && model.canWrite {
-                ConfidenceHandIn(enabled: !model.activeArea.isEmpty,
-                                 onHandIn: { c in Task { await model.handIn(confidence: c) } },
-                                 onDontKnow: { Task { await model.giveUp() } })
-                    .environment(\.layoutDirection, app.settings.handedness == .left ? .rightToLeft : .leftToRight)
-                    .padding(.horizontal, 20).padding(.vertical, 16)
-                    .background(Theme.paper)
             }
         }
         .background(Theme.paper.ignoresSafeArea())
         .task { await model.start() }
-        .sheet(isPresented: $model.showsConcept) { ConceptSheet(concept: model.concept) }
     }
 
+    /// The concept card and the worked example while help is allowed; nothing while the learner answers alone.
+    private var conceptCard: AnyView? {
+        guard model.showsConceptCard, let concept = model.concept, let plan = model.workedPlan else { return nil }
+        return AnyView(ConceptCard(concept: concept, plan: plan, attempted: model.hasAttempted,
+                                   area: model.workedArea(for: concept.id),
+                                   revealed: model.workedRevealed.contains(concept.id),
+                                   onReveal: { Task { await model.revealWorkedSteps(conceptId: concept.id) } }))
+    }
+
+    /// New turns, and the tutor's streaming text every so often, scroll the page to its end.
+    private var scrollToken: Int { model.entries.count &* 1000 &+ (model.streaming?.count ?? 0) / 60 }
+
+    /// The dialogue: the tutor's turns and the learner's earlier answers, folded during unaided phases.
     @ViewBuilder
-    private var page: some View {
-        PageColumn {
-            let visible = visibleEntries
-            if visible.count < model.entries.count {
-                PageNote(text: "Earlier on this page is hidden until you hand this in.")
-            }
-            ForEach(visible) { entry in
-                switch entry.kind {
-                case .tutor:
-                    MaterialText(entry.text, color: entry.id == visible.last(where: { $0.kind == .tutor })?.id ? Theme.graphite : Theme.graphite.opacity(0.6))
-                case .learner:
-                    if let area = entry.area {
-                        VStack(alignment: .leading, spacing: 4) {
-                            InkSnapshot(drawing: area.drawing, paper: area.paper, marks: area.marks, maxHeight: 520, showsPaper: false)
-                                .accessibilityLabel("Your answer, read as: \(entry.text)")
-                            Button("Read as “\(entry.text.prefix(80))”. Not what you wrote?") { model.misread(entry) }
-                                .font(.caption12).foregroundStyle(Theme.muted).buttonStyle(.plain)
-                        }
-                    }
-                case .note:
-                    PageNote(text: entry.text)
-                }
-            }
-            if let s = model.streaming {
-                MaterialText(s.isEmpty ? "…" : s)
-            }
-            status
-            input
+    private var dialogue: some View {
+        let visible = visibleEntries
+        if visible.count < model.entries.count {
+            PageNote(text: "Earlier on this page is hidden until you hand this in.")
         }
+        ForEach(visible) { entry in
+            switch entry.kind {
+            case .tutor:
+                MaterialText(entry.text, color: entry.id == visible.last(where: { $0.kind == .tutor })?.id ? Theme.graphite : Theme.graphite.opacity(0.6))
+            case .learner:
+                if let area = entry.area {
+                    VStack(alignment: .leading, spacing: 4) {
+                        InkSnapshot(drawing: area.drawing, paper: area.paper, marks: area.marks, maxHeight: 520, showsPaper: false)
+                            .accessibilityLabel("Your answer, read as: \(entry.text)")
+                        Button("Read as “\(entry.text.prefix(80))”. Not what you wrote?") { model.misread(entry) }
+                            .font(.system(size: 15)).foregroundStyle(Theme.muted).buttonStyle(.plain)
+                            .frame(minHeight: 32)
+                    }
+                }
+            case .note:
+                PageNote(text: entry.text)
+            }
+        }
+        if let s = model.streaming {
+            MaterialText(s.isEmpty ? "…" : s)
+        }
+        status
     }
 
     /// In PRIME, PROBE and CHECK only the current question shows (DESIGN §3).
@@ -173,40 +166,6 @@ struct LessonView: View {
             Button("Finish the lesson") { Task { await model.submitJol(jol) } }
                 .buttonStyle(.primaryLarge)
                 .disabled(jol.count < (model.lesson?.concepts.count ?? 0))
-        }
-    }
-}
-
-/// The concept's context, available only while help is allowed.
-struct ConceptSheet: View {
-    let concept: Concept?
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                if let c = concept {
-                    VStack(alignment: .leading, spacing: 16) {
-                        MaterialText(c.definition)
-                        Text("You should be able to").font(.heading)
-                        ForEach(c.objectives, id: \.id) { o in MaterialText("· " + o.text, font: .readingSmall) }
-                        if !c.examples.isEmpty {
-                            Text("Examples").font(.heading)
-                            ForEach(c.examples, id: \.title) { e in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(e.title).font(.body15.weight(.semibold))
-                                    MaterialText(e.body, font: .readingSmall)
-                                }
-                            }
-                        }
-                    }
-                    .padding(28)
-                }
-            }
-            .background(Theme.paper)
-            .navigationTitle(concept?.name ?? "")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
     }
 }

@@ -110,36 +110,31 @@ struct WarmupView: View {
     var body: some View {
         VStack(spacing: 0) {
             SessionHeader(title: "Warm-up", subtitle: model.lesson?.title, closeLabel: "Leave the warm-up", onClose: { app.dismissSession() })
-            ScrollView {
-                FreeHandLayout(handedness: app.settings.handedness) {
-                    if model.phase == .writing { ToolTray(tools: app.tools) }
-                } page: {
-                    PageColumn {
-                        MaterialText(model.prompt, font: .readingLarge)
-                        Text("Two or three minutes. Order and neatness don't matter; a sketch counts.")
-                            .font(.secondary).foregroundStyle(Theme.muted)
-                        InkArea(area: model.area, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing)
-                            .onChange(of: model.area.revision) { model.inkChanged() }
-                        switch model.phase {
-                        case .writing:
-                            HStack(spacing: 12) {
-                                Button("Done writing") { Task { await model.done() } }
-                                    .buttonStyle(.primaryLarge).disabled(model.area.isEmpty)
-                                Button("Skip today") { Task { await model.skip() } }.buttonStyle(.ghost)
-                            }
-                        case .reading: WorkingLine(text: "Reading your page…")
-                        case .grading: WorkingLine(text: "Checking which ideas you recalled…")
-                        case .confirming(let r):
-                            ConfirmReadingView(reading: r) { text in Task { await model.confirm(r, text: text) } }
-                        case .failed(let m):
-                            Banner(text: m, actionTitle: "Try again") { Task { await model.done() } }
-                        case .result:
-                            result
-                        }
-                    }
-                    .padding(.top, 16).padding(.bottom, 40)
+            // Done writing sits in the rail, never below the fold (UX-AUDIT B2).
+            WritingPage(handedness: app.settings.handedness) {
+                MaterialText(model.prompt, font: .readingLarge)
+                Text("Two or three minutes. Order and neatness don't matter; a sketch counts.")
+                    .font(.body15).foregroundStyle(Theme.muted)
+            } paper: {
+                InkArea(area: model.area, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing)
+                    .onChange(of: model.area.revision) { model.inkChanged() }
+                switch model.phase {
+                case .writing: EmptyView()
+                case .reading: WorkingLine(text: "Reading your page…")
+                case .grading: WorkingLine(text: "Checking which ideas you recalled…")
+                case .confirming(let r):
+                    ConfirmReadingView(reading: r) { text in Task { await model.confirm(r, text: text) } }
+                case .failed(let m):
+                    Banner(text: m, actionTitle: "Try again") { Task { await model.done() } }
+                case .result:
+                    result
                 }
-                .padding(.horizontal, 20)
+            } rail: {
+                if model.phase == .writing {
+                    ToolTray(tools: app.tools)
+                    HandInButton(title: "Done writing", enabled: !model.area.isEmpty) { Task { await model.done() } }
+                    Button("Skip today") { Task { await model.skip() } }.buttonStyle(RailButtonStyle())
+                }
             }
         }
         .background(Theme.paper.ignoresSafeArea())

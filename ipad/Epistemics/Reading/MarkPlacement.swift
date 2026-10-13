@@ -4,10 +4,12 @@ import EpistemicsCore
 
 /// Turns a grade's criterion evidence into blue marks on the learner's strokes (DESIGN §5.1 step 6, §5.5).
 enum MarkPlacement {
-    /// One numbered mark per rubric criterion that was met and has evidence the recogniser can find.
+    /// One numbered mark per rubric criterion that was met and has evidence the recogniser can find, plus the
+    /// first wrong line of the working when the grader found one.
     @MainActor
     static func receiptMarks(grade: GradeResult, rubric: [RubricCriterion], drawing: PKDrawing, reading: ReadingService) async -> [InkMark] {
         var marks: [InkMark] = []
+        if let mark = await firstErrorMark(grade, drawing: drawing, reading: reading) { marks.append(mark) }
         var used: [CGRect] = []
         for (index, criterion) in rubric.enumerated() {
             guard let result = grade.criteria.first(where: { $0.id == criterion.id }), result.met,
@@ -19,6 +21,13 @@ enum MarkPlacement {
             used.append(rect)
         }
         return marks
+    }
+
+    /// The wavy underline on the first wrong line (docs/AUDIT.md #1), if the recogniser can find its words.
+    @MainActor
+    static func firstErrorMark(_ grade: GradeResult, drawing: PKDrawing, reading: ReadingService) async -> InkMark? {
+        guard let e = grade.firstError, let rect = await reading.locate(e.quote, in: drawing) else { return nil }
+        return InkMark(kind: .wrongStep(rect))
     }
 
     /// The single mark the observer chose for a dialogue turn, if the recogniser can find its words.

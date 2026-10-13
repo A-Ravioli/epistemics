@@ -332,7 +332,8 @@ struct GraderTests {
         #expect(try await Grader.grade(mock, bad).grade.score == 0.3)
         #expect(mock.calls.count == 2)
         #expect(mock.calls[0].role == .grader && mock.calls[0].messages.count == 1)
-        #expect(mock.calls[0].system[0].text == Prompts.grader)
+        #expect(mock.calls[0].system[0].text == Prompts.graderWithInk)
+        #expect(mock.calls[0].system[0].text.hasPrefix(Prompts.grader), "the web prompt, unchanged, then the iPad addendum")
         let content = mock.calls[0].messages[0].content
         #expect(content.contains("\"reference\": ") && !content.contains("exactAnswer") && !content.contains("evidenceHint"))
     }
@@ -386,6 +387,42 @@ struct GraderTests {
         let g = try await Grader.grade(mock, input).grade
         #expect(g.criteria == [CriterionResult(id: "c1", met: false, evidence: ""), CriterionResult(id: "c2", met: true, evidence: "x")])
         #expect(g.misconceptionTags.isEmpty && g.score == 1 && g.confidence == 0)
+    }
+
+    // MARK: The first wrong step (docs/AUDIT.md #1)
+
+    func withError(_ g: GradeResult, quote: String, tag: String? = nil) -> GradeResult {
+        var g = g
+        g.firstError = StepError(quote: quote, why: "This treats the events as disjoint.", misconceptionTag: tag)
+        return g
+    }
+
+    @Test func aFirstErrorQuotedFromTheAnswerIsKept() async throws {
+        let tag = concept.misconceptions[0].tag
+        let mock = MockProvider(.init(queue: [.grader: [.value(withError(sample(0.6, 0.95), quote: "  P(A|B) = P(A) ", tag: tag))]]))
+        let e = try await Grader.grade(mock, input).grade.firstError
+        #expect(e?.quote == "P(A|B) = P(A)" && e?.misconceptionTag == tag)
+    }
+
+    @Test func aFirstErrorThatIsNotInTheAnswerOrHasAnUnknownTagIsCleaned() async throws {
+        let invented = MockProvider(.init(queue: [.grader: [.value(withError(sample(0.6, 0.95), quote: "P(A and B) = 0"))]]))
+        #expect(try await Grader.grade(invented, input).grade.firstError == nil, "a quote not on the page can't be marked")
+        let badTag = MockProvider(.init(queue: [.grader: [.value(withError(sample(0.6, 0.95), quote: "so P(A|B)", tag: "made-up"))]]))
+        let e = try await Grader.grade(badTag, input).grade.firstError
+        #expect(e != nil && e?.misconceptionTag == nil)
+    }
+
+    @Test func consensusKeepsTheFirstErrorOnlyWhenMostSamplesSawOne() {
+        let rubric = concept.items[0].rubric
+        let two = Grader.combine([withError(sample(0.5), quote: "a"), withError(sample(0.4), quote: "b"), sample(0.9)], rubric: rubric)
+        #expect(two.firstError?.quote == "a", "from the sample nearest the median")
+        let one = Grader.combine([withError(sample(0.5), quote: "a"), sample(0.6), sample(0.9)], rubric: rubric)
+        #expect(one.firstError == nil)
+    }
+
+    @Test func theGraderAsksForTheFirstErrorInItsSchema() {
+        #expect(Prompts.body(.graderInk).contains("firstError"))
+        #expect(String(describing: Grader.schema).contains("firstError"))
     }
 
     @Test func combineMajorityWithTwoSamples() {

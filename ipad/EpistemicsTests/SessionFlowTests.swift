@@ -343,4 +343,202 @@ import EpistemicsLLM
         #expect(try await app.store.cards(course: ctx.course.id).allSatisfy { $0.state == .new })
         #expect(try await app.service!.loadToday().offersPlacement)
     }
+
+    // MARK: Variants, the first wrong line and fix-it, progress checks (docs/AUDIT.md #1-#4)
+
+    @Test(.timeLimit(.minutes(1))) func reviewsServeEachVersionOfAProblemInTurn() async throws {
+        let app = try await Self.enrolledApp()
+        let ctx = try #require(app.context)
+        let service = try #require(app.service)
+        let item = try #require(ctx.curriculum.allItems.first { ($0.variants ?? []).count == 2 }, "the bundled pack carries variants")
+        var seen: [String?] = []
+        for _ in 0..<4 {
+            let served = await service.serving(item)
+            seen.append(served.variantId)
+            #expect(served.item.id == item.id && served.item.prompt != "" )
+            if let v = served.variantId { #expect(served.item.prompt == item.variants!.first { $0.id == v }!.prompt) }
+            try await service.recordReceipt(sessionId: "s", itemId: item.id, conceptId: item.conceptId, answer: "x", confidence: nil,
+                                            grade: nil, rating: .good, assisted: false, variantId: served.variantId)
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        #expect(seen == [nil, item.variants![0].id, item.variants![1].id, nil], "each version once, then the oldest")
+    }
+
+    /// Reads every ink as `readings[stage]` (the test moves `stage` on); grades an answer as right when it
+    /// contains `right`, otherwise wrong with the first wrong line at `wrongLine`.
+    final class StepProvider: @unchecked Sendable {
+        private let lock = NSLock()
+        private var _stage = 0
+        let readings: [String]
+        init(readings: [String]) { self.readings = readings }
+        var stage: Int {
+            get { lock.lock(); defer { lock.unlock() }; return _stage }
+            set { lock.lock(); _stage = newValue; lock.unlock() }
+        }
+        func nextReading() -> String { readings[min(stage, readings.count - 1)] }
+        func provider(right: String, wrongLine: String) -> MockProvider {
+            MockProvider(.init(respond: { req in
+                switch req.role {
+                case .reader:
+                    return .value(ReaderOutput(text: self.nextReading()))
+                case .grader:
+                    let text = req.messages.map(\.content).joined()
+                    if text.contains(right) { return .value(GradeResult(criteria: [], score: 1, feedback: "Right.", confidence: 1)) }
+                    return .value(GradeResult(criteria: [], score: 0.2, feedback: "Not quite.", confidence: 0.95,
+                                              firstError: StepError(quote: wrongLine, why: "This counts the defective chips, not the good ones.")))
+                default:
+                    return nil
+                }
+            }))
+        }
+    }
+
+    @Test(.timeLimit(.minutes(3))) func aWrongStepIsMarkedAndFixedBeforeTheAnswerIsShown() async throws {
+        let app = try await Self.enrolledApp()
+        var ctx = try #require(app.context)
+        let itemId = "i-equally-likely-outcomes-03"
+        let item = try #require(ctx.curriculum.item(itemId))
+        // Only this item's card is in play: a learning card, due again a few minutes after a lesson.
+        let n = AppModel.now()
+        var card = try #require(try await app.store.card(course: ctx.course.id, item: itemId))
+        card.due = n
+        card = ctx.scheduler.applyRating(card, .again, n, ReviewContext(source: .lesson, assisted: false)).card
+        try await app.store.saveCards([card])
+        let later = n + 3_600_000
+        ctx.now = { later }
+        // "right" must be something only the learner's rewrite says: the grader's request also holds the reference.
+        let steps = StepProvider(readings: ["40 chips, 6 are defective\nP = 6/40\n= 0.15", "P(good) = 34 out of 40 = 17/20"])
+        ctx.provider = steps.provider(right: "34 out of 40", wrongLine: "P = 6/40")
+        let review = ReviewSessionModel(app: app, ctx: ctx)
+        await review.start()
+        #expect(review.current?.item.id == item.id)
+        review.current?.area.drawing = Self.scribble(1)
+        await review.handIn(.fairlySure)
+        if case .confirming(let r) = review.phase { await review.confirm(r, text: r.text) }
+        guard case .receipt(let result) = review.phase else { Issue.record("no receipt: \(review.phase)"); return }
+        #expect(result.firstError?.quote == "P = 6/40")
+        #expect(result.canFix && !result.answerShown, "the answer waits while the learner fixes the working")
+        let cardAfterReview = try #require(try await app.store.card(course: ctx.course.id, item: itemId))
+
+        review.startFix()
+        let fix = try #require(review.fix)
+        #expect(fix.combinedAnswer(rewrite: "R") == "40 chips, 6 are defective\nR", "the grader sees the working up to the wrong line, then the rewrite")
+        steps.stage = 1
+        fix.area.drawing = Self.scribble(2)
+        await fix.check()
+        #expect(fix.phase == .fixed)
+        let receipts = try await app.store.receipts(course: ctx.course.id).filter { $0.itemId == itemId }
+        #expect(receipts.count == 2 && receipts.filter(\.assisted).count == 1, "the fix is logged as practice with help")
+        #expect(try await app.store.card(course: ctx.course.id, item: itemId) == cardAfterReview, "and does not touch the schedule")
+        let state = try #require(try await app.store.conceptStates(course: ctx.course.id)[item.conceptId])
+        #expect(state.mixedN == 1 && state.mixedPass == 0, "only the unaided review is mixed evidence")
+    }
+
+    @Test(.timeLimit(.minutes(3))) func aProgressCheckConfirmsWhatHoldsAndSendsBackWhatSlips() async throws {
+        let app = try await Self.enrolledApp()
+        var ctx = try #require(app.context)
+        let all = ctx.curriculum.allConcepts.map(\.id)
+        try await CourseService(ctx: ctx, store: app.store).applyPlacement(knownConceptIds: all)
+        let n = AppModel.now()
+        #expect(try await CourseService(ctx: ctx, store: app.store).progressCheckPlan().due == false, "not on the day of placement")
+
+        // A week later, placed-out concepts that nothing has confirmed are checked.
+        let later = n + 8 * 86_400_000
+        ctx.now = { later }
+        ctx.provider = Self.allKnowingProvider(ctx.curriculum)
+        let service = CourseService(ctx: ctx, store: app.store)
+        let plan = try await service.progressCheckPlan()
+        #expect(plan.due && plan.questions.count == PROGRESS_CHECK_SIZE)
+
+        let check = ProgressCheckModel(app: app, ctx: ctx)
+        await check.begin()
+        let slipped = try #require(check.item?.conceptId)
+        await check.dontKnow()
+        var i = 0
+        while check.phase != .result && i < 40 {
+            switch check.phase {
+            case .answering:
+                check.area.drawing = Self.scribble(i)
+                await check.handIn(.certain)
+            case .confirming(let r):
+                await check.confirm(r, text: r.text)
+            case .failed(let m):
+                Issue.record("check failed: \(m)"); return
+            default: break
+            }
+            i += 1
+        }
+        #expect(check.phase == .result)
+        #expect(check.outcomes.count == PROGRESS_CHECK_SIZE)
+        #expect(check.outcomes.filter(\.held).count == PROGRESS_CHECK_SIZE - 1)
+        let back = try #require(check.outcomes.first { !$0.held })
+        #expect(back.conceptId == slipped && back.demoted && back.wasPlaced)
+
+        #expect(!(await service.placedConcepts()).contains(slipped), "it is no longer placed out of")
+        let lesson = try #require(ctx.curriculum.allLessons.first { $0.concepts.contains { $0.id == slipped } })
+        #expect(!(try await service.completedLessons()).contains(lesson.id), "so its lesson is taught")
+        let states = try await app.store.conceptStates(course: ctx.course.id)
+        #expect((states[slipped]?.successfulSessions ?? 9) <= 1)
+        let held = check.outcomes.filter(\.held).map(\.conceptId)
+        #expect(held.allSatisfy { (states[$0]?.mixedPass ?? 0) >= 1 }, "what held up is mixed evidence")
+        let cards = try await app.store.cards(course: ctx.course.id)
+        let askedItems = Set(plan.questions.map(\.itemId))
+        #expect(cards.filter { askedItems.contains($0.itemId) }.allSatisfy { !$0.provisional }, "asked cards are confirmed or demoted")
+        #expect(try await service.progressCheckPlan().due == false, "and the next one is weeks away")
+    }
+
+    // MARK: The concept card and the worked example (UX-AUDIT §3.2, AUDIT #6)
+
+    /// Answers a lesson until it reaches `phase` (or gives up after 40 steps).
+    static func runLesson(_ model: LessonSessionModel, until phase: LessonPhase) async {
+        await model.start()
+        for step in 0..<40 where model.phase != phase {
+            if let p = model.pendingConfirmation { await model.confirmPending(text: p.reading.text); continue }
+            model.activeArea.drawing = scribble(step)
+            switch model.inputMode {
+            case .answer, .summary: await model.handIn()
+            case .answerConfidence: await model.handIn(confidence: .fairlySure)
+            default: return
+            }
+        }
+    }
+
+    @Test(.timeLimit(.minutes(3))) func theConceptCardIsOnThePageOnlyWhileHelpIsAllowed() async throws {
+        let app = try await Self.enrolledApp()
+        let ctx = try #require(app.context)
+        let model = LessonSessionModel(app: app, ctx: ctx, lessonId: ctx.curriculum.allLessons[0].id)
+        await model.start()
+        #expect(model.phase == .prime && !model.showsConceptCard, "nothing to lean on before you're taught")
+        await Self.runLesson(model, until: .develop)
+        try #require(model.phase == .develop)
+        #expect(model.showsConceptCard)
+        let plan = try #require(model.workedPlan)
+        let concept = try #require(model.concept)
+        #expect(plan.typesetSteps + plan.learnerSteps == concept.script.workedExample.steps.count)
+        #expect(plan == workedExamplePlan(scaffolding: model.state!.scaffolding, conceptIndex: 0,
+                                          stepCount: concept.script.workedExample.steps.count))
+
+        // Completing the faded steps by hand, then comparing: the page keeps what was written.
+        let area = model.workedArea(for: concept.id)
+        area.drawing = Self.scribble(7)
+        await model.revealWorkedSteps(conceptId: concept.id)
+        #expect(model.workedRevealed.contains(concept.id) && !area.isEditable)
+        let inks = try await app.store.ink(course: ctx.course.id)
+        #expect(inks.contains { $0.ownerKind == .workedExample }, "it goes in the notebook")
+    }
+
+    @Test(.timeLimit(.minutes(1))) func aLessonsSupportComesFromWhatItBuildsOn() async throws {
+        let app = try await Self.enrolledApp()
+        let ctx = try #require(app.context)
+        // Everything placed out of: secure prerequisites, so a later lesson starts with little support.
+        try await CourseService(ctx: ctx, store: app.store).applyPlacement(knownConceptIds: ctx.curriculum.allConcepts.map(\.id))
+        let later = try #require(ctx.curriculum.allLessons.last)
+        let model = LessonSessionModel(app: app, ctx: ctx, lessonId: later.id)
+        await model.start()
+        let states = try await app.store.conceptStates(course: ctx.course.id)
+        #expect(model.state?.scaffolding == lessonScaffolding(later, ctx.curriculum, states.mapValues(\.mastery),
+                                                              courseDefault: ctx.course.scaffolding))
+        #expect(model.state?.scaffolding != .novice)
+    }
 }
+

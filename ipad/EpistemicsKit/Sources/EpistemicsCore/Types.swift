@@ -92,6 +92,20 @@ public struct InkHint: Codable, Sendable, Hashable {
     public init(paper: Paper? = nil, lines: Int? = nil) { self.paper = paper; self.lines = lines }
 }
 
+/// An isomorph of an item: the same skill and method with new numbers and a new context, so a review can
+/// serve a fresh problem instead of the one the learner may simply remember (ipad docs/AUDIT.md #3). It
+/// shares the item's card. It carries its own rubric because rubric criteria name the item's numbers.
+public struct ItemVariant: Codable, Sendable, Hashable, Identifiable {
+    /// `<itemId>~v<n>`.
+    public var id: String
+    public var prompt: String
+    public var reference: ItemReference
+    public var rubric: [RubricCriterion]
+    public init(id: String, prompt: String, reference: ItemReference, rubric: [RubricCriterion] = []) {
+        self.id = id; self.prompt = prompt; self.reference = reference; self.rubric = rubric
+    }
+}
+
 public struct Item: Codable, Sendable, Hashable, Identifiable {
     public var id: String
     public var conceptId: String
@@ -105,13 +119,27 @@ public struct Item: Codable, Sendable, Hashable, Identifiable {
     public var generatorVersion: String
     public var hash: String
     public var ink: InkHint?
+    /// Optional isomorphs (pack extension; the web app keeps them but does not serve them yet).
+    public var variants: [ItemVariant]?
 
     public init(id: String, conceptId: String, type: ItemType, bloom: Bloom, prompt: String, reference: ItemReference,
                 rubric: [RubricCriterion] = [], spans: [SourceSpan] = [], tags: [String]? = nil,
-                generatorVersion: String = "hand-authored", hash: String = "", ink: InkHint? = nil) {
+                generatorVersion: String = "hand-authored", hash: String = "", ink: InkHint? = nil, variants: [ItemVariant]? = nil) {
         self.id = id; self.conceptId = conceptId; self.type = type; self.bloom = bloom; self.prompt = prompt
         self.reference = reference; self.rubric = rubric; self.spans = spans; self.tags = tags
-        self.generatorVersion = generatorVersion; self.hash = hash; self.ink = ink
+        self.generatorVersion = generatorVersion; self.hash = hash; self.ink = ink; self.variants = variants
+    }
+
+    /// The item as served with one of its variants: same id, card, type and concept; the variant's prompt,
+    /// reference and rubric. `nil`, or an unknown id, serves the item itself.
+    public func serving(_ variantId: String?) -> Item {
+        guard let variantId, let v = variants?.first(where: { $0.id == variantId }) else { return self }
+        var out = self
+        out.prompt = v.prompt
+        out.reference = v.reference
+        if !v.rubric.isEmpty || rubric.isEmpty { out.rubric = v.rubric }
+        out.variants = nil
+        return out
     }
 }
 
@@ -397,12 +425,18 @@ public struct ConceptState: Codable, Sendable, Hashable {
     public var unassistedPass: Int
     public var unassistedN: Int
     public var updatedAt: EpochMs
+    /// iPad: unaided answers given out of context, where nothing on the page says which idea is being tested
+    /// (reviews, checkpoints, placement, progress checks; not lesson checks). Mastery is earned only here
+    /// (ipad docs/AUDIT.md #4). Optional so rows written before it decode.
+    public var mixedPass: Int?
+    public var mixedN: Int?
     public init(courseId: String, conceptId: String, mastery: Double = 0, successfulSessions: Int = 0, lastSuccessDay: String? = nil,
                 misconceptions: [String] = [], assistedPass: Int = 0, assistedN: Int = 0, unassistedPass: Int = 0,
-                unassistedN: Int = 0, updatedAt: EpochMs = 0) {
+                unassistedN: Int = 0, updatedAt: EpochMs = 0, mixedPass: Int? = nil, mixedN: Int? = nil) {
         self.courseId = courseId; self.conceptId = conceptId; self.mastery = mastery; self.successfulSessions = successfulSessions
         self.lastSuccessDay = lastSuccessDay; self.misconceptions = misconceptions; self.assistedPass = assistedPass
         self.assistedN = assistedN; self.unassistedPass = unassistedPass; self.unassistedN = unassistedN; self.updatedAt = updatedAt
+        self.mixedPass = mixedPass; self.mixedN = mixedN
     }
 }
 
@@ -434,6 +468,20 @@ public struct CriterionResult: Codable, Sendable, Hashable {
     public init(id: String, met: Bool, evidence: String) { self.id = id; self.met = met; self.evidence = evidence }
 }
 
+/// Where a learner's working first goes wrong (step-level feedback, ipad docs/AUDIT.md #1).
+public struct StepError: Codable, Sendable, Hashable {
+    /// The shortest span of the first wrong line, verbatim from the answer. On the iPad it is mapped back to
+    /// strokes to place the mark.
+    public var quote: String
+    /// One sentence on what is wrong with that line. Never the corrected line or the final answer.
+    public var why: String
+    /// A tag from the concept's misconception list, when the error shows one.
+    public var misconceptionTag: String?
+    public init(quote: String, why: String, misconceptionTag: String? = nil) {
+        self.quote = quote; self.why = why; self.misconceptionTag = misconceptionTag
+    }
+}
+
 public struct GradeResult: Codable, Sendable, Hashable {
     public var criteria: [CriterionResult]
     /// 0...1
@@ -445,10 +493,13 @@ public struct GradeResult: Codable, Sendable, Hashable {
     public var confidence: Double
     /// How many grader samples were used (consensus deferral).
     public var samples: Int?
+    /// The first wrong line of the working, if the working has one. Nil for a correct answer, or for an
+    /// answer with no working to check.
+    public var firstError: StepError?
     public init(criteria: [CriterionResult], score: Double, misconceptionTags: [String] = [], feedback: String,
-                confidence: Double, samples: Int? = nil) {
+                confidence: Double, samples: Int? = nil, firstError: StepError? = nil) {
         self.criteria = criteria; self.score = score; self.misconceptionTags = misconceptionTags; self.feedback = feedback
-        self.confidence = confidence; self.samples = samples
+        self.confidence = confidence; self.samples = samples; self.firstError = firstError
     }
 }
 
@@ -474,12 +525,14 @@ public struct Receipt: Codable, Sendable, Hashable, Identifiable {
     /// iPad: the ink this receipt grades.
     public var inkId: String?
     public var modality: AnswerModality?
+    /// iPad: which variant of the item was served (nil: the item itself).
+    public var variantId: String?
     public init(id: String, sessionId: String, courseId: String, itemId: String, conceptId: String, answer: String,
                 confidence: Confidence? = nil, grade: GradeResult? = nil, rating: Rating, assisted: Bool, disputed: Bool = false,
-                createdAt: EpochMs, inkId: String? = nil, modality: AnswerModality? = nil) {
+                createdAt: EpochMs, inkId: String? = nil, modality: AnswerModality? = nil, variantId: String? = nil) {
         self.id = id; self.sessionId = sessionId; self.courseId = courseId; self.itemId = itemId; self.conceptId = conceptId
         self.answer = answer; self.confidence = confidence; self.grade = grade; self.rating = rating; self.assisted = assisted
-        self.disputed = disputed; self.createdAt = createdAt; self.inkId = inkId; self.modality = modality
+        self.disputed = disputed; self.createdAt = createdAt; self.inkId = inkId; self.modality = modality; self.variantId = variantId
     }
 }
 

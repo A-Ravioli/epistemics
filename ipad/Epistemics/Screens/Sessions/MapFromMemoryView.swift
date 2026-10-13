@@ -215,15 +215,23 @@ struct MapFromMemoryView: View {
                 }
                 .padding(.horizontal, 42)
             }
-            ScrollView([.vertical, .horizontal]) {
+            // The whole screen is paper, at every size (UX-AUDIT B5): the sheet is at least as big as the space
+            // it is given, and the tools sit in a margin that never scrolls.
+            GeometryReader { geo in
+                let railWidth: CGFloat = model.phase == .drawing ? 84 : 0
+                let sheetWidth = max(1100, geo.size.width - railWidth - 40)
                 HStack(alignment: .top, spacing: 0) {
-                    if model.phase == .drawing, app.settings.handedness == .right { ToolTray(tools: app.tools).frame(width: 84).padding(.top, 16) }
-                    InkArea(area: model.area, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing)
-                        .frame(width: 1100)
-                        .onChange(of: model.area.revision) { model.inkChanged() }
-                    if model.phase == .drawing, app.settings.handedness == .left { ToolTray(tools: app.tools).frame(width: 84).padding(.top, 16) }
+                    if model.phase == .drawing, app.settings.handedness == .right { ToolTray(tools: app.tools).frame(width: railWidth).padding(.top, 16) }
+                    ScrollView([.vertical, .horizontal]) {
+                        InkArea(area: model.area, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing,
+                                logicalWidth: sheetWidth)
+                            .frame(width: sheetWidth)
+                            .environment(\.paperFillHeight, geo.size.height - 40)
+                            .onChange(of: model.area.revision) { model.inkChanged() }
+                            .padding(20)
+                    }
+                    if model.phase == .drawing, app.settings.handedness == .left { ToolTray(tools: app.tools).frame(width: railWidth).padding(.top, 16) }
                 }
-                .padding(20)
             }
             footer.padding(.horizontal, 42).padding(.vertical, 16)
         }

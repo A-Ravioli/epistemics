@@ -49,6 +49,20 @@ public func assistedPassRate(_ state: ConceptState) -> Double {
     state.assistedN == 0 ? 0 : Double(state.assistedPass) / Double(state.assistedN)
 }
 
+/// iPad (docs/AUDIT.md #4): "mastered" is earned only on mixed, out-of-context evidence, as Khan Academy's
+/// Mastered is reachable only through mixed assessments. Lesson checks come straight after teaching and
+/// are labelled by the lesson, so they gate the lesson but do not count here.
+public let MIXED_EVIDENCE_MIN = 2
+
+public func mixedPassRate(_ state: ConceptState) -> Double {
+    let n = state.mixedN ?? 0
+    return n == 0 ? 0 : Double(state.mixedPass ?? 0) / Double(n)
+}
+
+public func isMasteredOnMixedEvidence(_ state: ConceptState) -> Bool {
+    (state.mixedN ?? 0) >= MIXED_EVIDENCE_MIN && isMastered(state.mastery, mixedPassRate(state))
+}
+
 public struct ConceptReceipt: Sendable, Hashable {
     public var rating: Rating
     public var assisted: Bool
@@ -57,8 +71,12 @@ public struct ConceptReceipt: Sendable, Hashable {
     public var day: String
     /// Epoch ms of the receipt; sets `updatedAt` when given.
     public var at: EpochMs?
-    public init(rating: Rating, assisted: Bool, misconceptionTags: [String] = [], day: String, at: EpochMs? = nil) {
+    /// iPad: answered out of context (a review, checkpoint, placement or progress check). Counts towards
+    /// `mixedPass`/`mixedN` when unassisted.
+    public var mixed: Bool
+    public init(rating: Rating, assisted: Bool, misconceptionTags: [String] = [], day: String, at: EpochMs? = nil, mixed: Bool = false) {
         self.rating = rating; self.assisted = assisted; self.misconceptionTags = misconceptionTags; self.day = day; self.at = at
+        self.mixed = mixed
     }
 }
 
@@ -79,6 +97,10 @@ public func updateConceptStateAfterReceipt(_ state: ConceptState, _ receipt: Con
         if success && jsCompareCodeUnits(receipt.day, state.lastSuccessDay ?? "") > 0 {
             next.successfulSessions += 1
             next.lastSuccessDay = receipt.day
+        }
+        if receipt.mixed {
+            next.mixedN = (state.mixedN ?? 0) + 1
+            next.mixedPass = (state.mixedPass ?? 0) + (success ? 1 : 0)
         }
     }
     if !receipt.misconceptionTags.isEmpty {

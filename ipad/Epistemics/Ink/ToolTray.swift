@@ -10,9 +10,12 @@ enum Handedness: String, Codable, CaseIterable, Sendable {
 struct ToolTray: View {
     @Bindable var tools: InkToolState
     var showsLasso = true
+    @Environment(\.railAxis) private var axis
 
     var body: some View {
-        VStack(spacing: 4) {
+        // Vertical in the side rail (and by default, beside an inline ink area); a row in the bottom bar.
+        let layout = axis == .horizontal && inBottomBar ? AnyLayout(HStackLayout(spacing: 4)) : AnyLayout(VStackLayout(spacing: 4))
+        layout {
             toolButton(.pen, "pencil.tip", "Pen")
             toolButton(.eraser, "eraser", "Eraser")
             if showsLasso { toolButton(.lasso, "lasso", "Lasso, to move ink") }
@@ -32,7 +35,15 @@ struct ToolTray: View {
             // Squeeze cycles pen ↔ eraser, as the system palette would; it never hands in (§2).
             tools.tool = tools.tool == .pen ? .eraser : .pen
         }
+        .layoutProbe("Tools")
+        .onPencilDoubleTap { _ in
+            // Second-generation Pencil: the same switch (UX-AUDIT §1).
+            tools.tool = tools.tool == .pen ? .eraser : .pen
+        }
     }
+
+    /// Only a WritingPage's bottom bar lays the tray out as a row; inline trays elsewhere stay vertical.
+    @Environment(\.inBottomBar) private var inBottomBar
 
     private func toolButton(_ tool: InkTool, _ symbol: String, _ label: String) -> some View {
         let selected = tools.tool == tool
@@ -47,26 +58,5 @@ struct ToolTray: View {
         .buttonStyle(.plain)
         .accessibilityLabel(label)
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-/// Lays out a writing page with the tray and the hand-in controls on the free-hand side.
-struct FreeHandLayout<Tray: View, Page: View>: View {
-    let handedness: Handedness
-    @ViewBuilder var tray: () -> Tray
-    @ViewBuilder var page: () -> Page
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            if handedness == .right { side }
-            page().frame(maxWidth: .infinity)
-            if handedness == .left { side }
-        }
-    }
-
-    private var side: some View {
-        VStack { tray() }
-            .frame(width: 84)
-            .padding(.top, 16)
     }
 }

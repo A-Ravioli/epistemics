@@ -51,8 +51,10 @@ final class LessonSessionModel {
     var error: String?
     var activeArea = InkAreaModel(paper: .ruled)
     var lastGrade: Graded?
-    var showsConcept = false
     let isRemediation: Bool
+    /// The learner's completion of each concept's faded worked example, and which have been compared.
+    private(set) var workedAreas: [String: InkAreaModel] = [:]
+    private(set) var workedRevealed: Set<String> = []
 
     private let service: CourseService
     private let reading: ReadingService
@@ -91,6 +93,36 @@ final class LessonSessionModel {
 
     /// Unaided phases fold away everything above the current question (DESIGN §3).
     var foldsPage: Bool { phase.isUnaided }
+
+    // MARK: The concept card and the worked example (UX-AUDIT §3.2, AUDIT #6)
+
+    /// The card is on the page while help is allowed, never while the learner answers alone or restates the idea.
+    var showsConceptCard: Bool { concept != nil && conceptCardAllowed(phase) && inputMode != .done }
+
+    /// How the current concept's worked example is shown: whole to study, or faded with the rest to write.
+    var workedPlan: WorkedExamplePlan? {
+        guard let s = state, let c = concept else { return nil }
+        return workedExamplePlan(scaffolding: s.scaffolding, conceptIndex: s.conceptIndex, stepCount: c.script.workedExample.steps.count)
+    }
+
+    /// The learner has had a go at the tutor's question in this phase (an advanced learner's example opens then).
+    var hasAttempted: Bool { (state?.attemptsThisPhase ?? 0) > 0 || (state?.hintLevel ?? 0) > 0 }
+
+    func workedArea(for conceptId: String) -> InkAreaModel {
+        if let a = workedAreas[conceptId] { return a }
+        let a = InkAreaModel(paper: .ruled, minHeight: InkAreaModel.defaultHeight(for: .ruled, lines: 3))
+        workedAreas[conceptId] = a
+        return a
+    }
+
+    /// Show the steps the learner was completing, beside what they wrote. The ink goes in the notebook.
+    func revealWorkedSteps(conceptId: String) async {
+        workedRevealed.insert(conceptId)
+        guard let area = workedAreas[conceptId], !area.isEmpty else { return }
+        area.isEditable = false
+        let ink = area.record(courseId: ctx.course.id, owner: .workedExample, ownerId: sessionId, itemId: nil)
+        try? await app.store.saveInk(ink)
+    }
 
     var phaseLine: String {
         guard let s = state else { return "" }
@@ -132,7 +164,8 @@ final class LessonSessionModel {
             guard let concept = ctx.curriculum.concept(conceptId) else { throw ServiceError("Concept not found") }
             unitId = ctx.curriculum.unit(containingConcept: conceptId)?.id
             let cs = try await app.store.conceptStates(course: ctx.course.id)[conceptId]
-            let plan = composeRemediation(concept, sessionId: "", courseId: ctx.course.id, scaffolding: ctx.course.scaffolding,
+            // Going back over something that didn't hold: full support, the worked example first.
+            let plan = composeRemediation(concept, sessionId: "", courseId: ctx.course.id, scaffolding: .novice,
                                           learnerMisconceptions: cs?.misconceptions)
             lessonValue = plan.lesson
             fresh = plan.state
@@ -143,8 +176,10 @@ final class LessonSessionModel {
             let states = try await app.store.conceptStates(course: ctx.course.id)
             var misconceptions: [String: [String]] = [:]
             for c in l.concepts { if let m = states[c.id]?.misconceptions, !m.isEmpty { misconceptions[c.id] = m } }
+            // Support for this lesson comes from how secure what it builds on is (AUDIT #6), not one course-wide level.
+            let scaffolding = lessonScaffolding(l, ctx.curriculum, states.mapValues(\.mastery), courseDefault: ctx.course.scaffolding)
             fresh = createLessonState(CreateLessonStateInput(sessionId: "", courseId: ctx.course.id, lesson: l,
-                                                             scaffolding: ctx.course.scaffolding, learnerMisconceptions: misconceptions))
+                                                             scaffolding: scaffolding, learnerMisconceptions: misconceptions))
         }
         lesson = lessonValue
 
@@ -410,9 +445,13 @@ final class LessonSessionModel {
         }
         busy = .tutor
         streaming = ""
+        // iPad: the concept card and the worked example are on the learner's page in these phases.
+        let pageNote = conceptCardAllowed(control.phase)
+            ? " The concept card and the worked example (numbered steps) are on the learner's page beside this dialogue: point to a step by its number rather than restating the example."
+            : ""
         let input = TutorInput(curriculumContext: context, learnerModelText: learnerModelText, transcript: transcriptMessages(),
                                control: TutorTurnControl(phase: control.phase, conceptId: control.conceptId, hintLevel: control.hintLevel,
-                                                         maxWords: control.maxWords, instruction: control.instruction,
+                                                         maxWords: control.maxWords, instruction: control.instruction + pageNote,
                                                          allowHintContent: control.allowHintContent != nil,
                                                          objectiveId: control.objectiveIds.first),
                                metadata: RequestMetadata(sessionId: sessionId, courseId: ctx.course.id))

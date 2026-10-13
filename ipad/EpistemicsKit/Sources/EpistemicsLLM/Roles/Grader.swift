@@ -58,6 +58,11 @@ public enum Grader {
         "misconceptionTags": .array(.string),
         "feedback": .string,
         "confidence": JSONSchema.number.described("0 to 1"),
+        "firstError": JSONSchema.nullable(.object([
+            "quote": JSONSchema.string.described("Shortest span of the first wrong line, verbatim from the answer"),
+            "why": JSONSchema.string.described("One sentence: what is wrong with that line, never the corrected line"),
+            "misconceptionTag": JSONSchema.nullable(.string),
+        ])),
     ])
 
     public static func buildRequest(_ input: GradeInput) -> LlmRequest {
@@ -76,7 +81,7 @@ public enum Grader {
                 OrderedJSON.object([("tag", .string($0.tag)), ("description", .string($0.description))])
             })),
         ])
-        return LlmRequest(role: .grader, model: input.model, system: [CacheableBlock(Prompts.grader, cache: true)],
+        return LlmRequest(role: .grader, model: input.model, system: [CacheableBlock(Prompts.graderWithInk, cache: true)],
                           messages: [.user(RoleInput.encode(payload))], maxTokens: 4096, effort: .medium, metadata: input.metadata)
     }
 
@@ -147,8 +152,13 @@ public enum Grader {
         var closest = samples[0]
         for s in samples.dropFirst() where abs(s.score - score) < abs(closest.score - score) { closest = s }
         let confidence = samples.map(\.confidence).reduce(0, +) / Double(samples.count)
+        // The first wrong step: only when most samples found one, quoted from the sample nearest the median.
+        let withError = samples.filter { $0.firstError != nil }
+        let firstError = withError.count >= need
+            ? (closest.firstError ?? withError.min { abs($0.score - score) < abs($1.score - score) }?.firstError)
+            : nil
         return GradeResult(criteria: criteria, score: score, misconceptionTags: tags, feedback: closest.feedback,
-                           confidence: confidence, samples: samples.count)
+                           confidence: confidence, samples: samples.count, firstError: firstError)
     }
 
     /// Rating band map (DESIGN §6.2): < 0.4 Again, < 0.75 Hard, < 0.95 Good, else Easy when confidence ≥ 0.8.
@@ -164,8 +174,10 @@ public enum Grader {
         Set(samples.map { rating(score: $0.score, confidence: $0.confidence) }).count > 1
     }
 
-    /// Keep only rubric ids (missing ones become unmet) and known tags; clamp numbers to 0...1.
-    public static func sanitise(_ g: GradeResult, rubric: [RubricCriterion], misconceptionTags known: [String]) -> GradeResult {
+    /// Keep only rubric ids (missing ones become unmet) and known tags; clamp numbers to 0...1. A first error
+    /// is kept only if its quote is really in the answer (it is what the mark is drawn on), and only its known tag.
+    public static func sanitise(_ g: GradeResult, rubric: [RubricCriterion], misconceptionTags known: [String],
+                                answer: String? = nil) -> GradeResult {
         let tags = Set(known)
         var out = g
         if !rubric.isEmpty {
@@ -178,7 +190,20 @@ public enum Grader {
         out.score = clamp(g.score)
         out.confidence = clamp(g.confidence)
         out.misconceptionTags = TextUtil.unique(g.misconceptionTags.filter { tags.contains($0) })
+        if var e = g.firstError {
+            e.quote = e.quote.trimmingCharacters(in: .whitespacesAndNewlines)
+            e.why = e.why.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let tag = e.misconceptionTag, !tags.contains(tag) { e.misconceptionTag = nil }
+            let inAnswer = answer.map { quoteAppears(e.quote, in: $0) } ?? true
+            out.firstError = e.quote.isEmpty || e.why.isEmpty || !inAnswer ? nil : e
+        }
         return out
+    }
+
+    /// Whether a quoted span is in the answer, ignoring case, spacing and punctuation differences.
+    public static func quoteAppears(_ quote: String, in answer: String) -> Bool {
+        let q = TextUtil.normalise(quote)
+        return !q.isEmpty && TextUtil.normalise(answer).contains(q)
     }
 
     public static func grade(_ provider: any LLMProvider, _ input: GradeInput) async throws -> GradeOutcome {
@@ -202,7 +227,7 @@ public enum Grader {
         func draw() async throws {
             let r: Structured<GradeResult> = try await provider.structured(req, schema: schema, name: "GradeResult")
             usage = usage + r.usage
-            samples.append(sanitise(r.value, rubric: input.rubric, misconceptionTags: input.misconceptions.map(\.tag)))
+            samples.append(sanitise(r.value, rubric: input.rubric, misconceptionTags: input.misconceptions.map(\.tag), answer: input.answer))
         }
         let forced = Swift.max(1, input.samples ?? 1)
         for _ in 0..<forced { try await draw() }

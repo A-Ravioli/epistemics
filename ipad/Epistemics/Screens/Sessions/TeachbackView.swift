@@ -188,55 +188,47 @@ struct TeachbackView: View {
         VStack(spacing: 0) {
             SessionHeader(title: "Explain \(model.concept?.name ?? "it")", subtitle: "To a student who has read nothing",
                           closeLabel: "Leave", onClose: { app.dismissSession() })
-            ScrollViewReader { proxy in
-                ScrollView {
-                    FreeHandLayout(handedness: app.settings.handedness) {
-                        if model.canWrite { ToolTray(tools: app.tools) }
-                    } page: {
-                        PageColumn {
-                            ForEach(model.entries) { e in
-                                if e.isStudent {
-                                    MaterialText(e.text)
-                                } else if let area = e.area {
-                                    InkSnapshot(drawing: area.drawing, paper: area.paper, maxHeight: 420, showsPaper: false)
-                                        .accessibilityLabel("Your explanation, read as: \(e.text)")
-                                }
-                            }
-                            if let s = model.streaming { MaterialText(s.isEmpty ? "…" : s) }
-                            if let error = model.error {
-                                Banner(text: error, actionTitle: "Try again") { Task { await model.retry() } }
-                            } else if model.busy && model.streaming == nil {
-                                WorkingLine(text: model.state?.grading == true ? "Grading your explanation…" : "Reading…")
-                            }
-                            if model.canWrite {
-                                InkArea(area: model.activeArea, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing)
-                                    .onChange(of: model.activeArea.revision) { model.inkChanged() }
-                                HStack(spacing: 12) {
-                                    Button("Hand in") { Task { await model.handIn(finished: false) } }
-                                        .buttonStyle(.primary).disabled(model.activeArea.isEmpty)
-                                    Button("That's everything") { Task { await model.handIn(finished: true) } }
-                                        .buttonStyle(.ghost)
-                                    Spacer()
-                                }
-                            }
-                            if model.done, let g = model.graded, let concept = model.concept {
-                                VStack(alignment: .leading, spacing: 14) {
-                                    Text(g.rating.label).font(.title2x).foregroundStyle(Theme.graphite)
-                                    CriteriaList(rubric: concept.items.first { $0.type == .teachback }?.rubric.nonEmpty
-                                                 ?? concept.objectives.map { RubricCriterion(id: $0.id, text: $0.text) },
-                                                 grade: g.grade, marks: [])
-                                    MaterialText(g.grade.feedback, font: .readingSmall)
-                                    Button("Done") { app.dismissSession() }.buttonStyle(.primaryLarge)
-                                }
-                                .padding(.top, 10)
-                            }
-                            Color.clear.frame(height: 1).id("bottom")
-                        }
-                        .padding(.top, 8).padding(.bottom, 60)
+            // The student's questions are the material, your whiteboard the paper; the rail never scrolls
+            // away (UX-AUDIT B1).
+            WritingPage(handedness: app.settings.handedness, pinsMaterial: false,
+                        scrollToken: model.entries.count &* 1000 &+ (model.streaming?.count ?? 0) / 60) {
+                ForEach(model.entries) { e in
+                    if e.isStudent {
+                        MaterialText(e.text)
+                    } else if let area = e.area {
+                        InkSnapshot(drawing: area.drawing, paper: area.paper, maxHeight: 420, showsPaper: false)
+                            .accessibilityLabel("Your explanation, read as: \(e.text)")
                     }
-                    .padding(.horizontal, 20)
                 }
-                .onChange(of: model.entries.count) { withAnimation { proxy.scrollTo("bottom") } }
+                if let s = model.streaming { MaterialText(s.isEmpty ? "…" : s) }
+            } paper: {
+                if let error = model.error {
+                    Banner(text: error, actionTitle: "Try again") { Task { await model.retry() } }
+                } else if model.busy && model.streaming == nil {
+                    WorkingLine(text: model.state?.grading == true ? "Grading your explanation…" : "Reading…")
+                }
+                if model.canWrite {
+                    InkArea(area: model.activeArea, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing)
+                        .onChange(of: model.activeArea.revision) { model.inkChanged() }
+                }
+                if model.done, let g = model.graded, let concept = model.concept {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text(g.rating.label).font(.title2x).foregroundStyle(Theme.graphite)
+                        CriteriaList(rubric: concept.items.first { $0.type == .teachback }?.rubric.nonEmpty
+                                     ?? concept.objectives.map { RubricCriterion(id: $0.id, text: $0.text) },
+                                     grade: g.grade, marks: [])
+                        MaterialText(g.grade.feedback, font: .readingSmall)
+                        Button("Done") { app.dismissSession() }.buttonStyle(.primaryLarge)
+                    }
+                    .padding(.top, 10)
+                }
+            } rail: {
+                if model.canWrite {
+                    ToolTray(tools: app.tools)
+                    HandInButton(enabled: !model.activeArea.isEmpty) { Task { await model.handIn(finished: false) } }
+                    Button("That's everything") { Task { await model.handIn(finished: true) } }
+                        .buttonStyle(RailButtonStyle())
+                }
             }
         }
         .background(Theme.paper.ignoresSafeArea())

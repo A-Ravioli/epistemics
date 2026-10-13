@@ -84,6 +84,8 @@ struct NotebookView: View {
         switch ink.ownerKind {
         case .firstRun: return "What you knew on day one"
         case .placement: return "Placement"
+        case .progressCheck: return "Progress check"
+        case .workedExample: return "Finishing a worked example" + (session?.lessonId.flatMap { ctx.curriculum.lesson($0)?.title }.map { ": \($0)" } ?? "")
         case .warmup: return "Warm-up" + (session?.lessonId.flatMap { ctx.curriculum.lesson($0)?.title }.map { ": \($0)" } ?? "")
         case .review: return "Reviews"
         case .lessonTurn, .lessonSummary:

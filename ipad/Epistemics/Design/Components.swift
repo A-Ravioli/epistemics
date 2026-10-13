@@ -46,25 +46,58 @@ struct ConfidenceHandIn: View {
     var showsDontKnow = true
     let onHandIn: (Confidence) -> Void
     var onDontKnow: (() -> Void)? = nil
+    @Environment(\.railAxis) private var axis
+    @Environment(\.inBottomBar) private var inBottomBar
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text("Hand in. How sure are you?")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.graphite)
-                .padding(.trailing, 6)
-            ForEach(Confidence.allCases, id: \.self) { c in
-                Button(c.label) { onHandIn(c) }
-                    .buttonStyle(.secondaryLarge)
-                    .disabled(!enabled)
-                    .accessibilityHint("Hands in your answer and records your confidence")
-            }
-            Spacer(minLength: 0)
-            if showsDontKnow, let onDontKnow {
-                Button("I don't know", action: onDontKnow).buttonStyle(.ghost)
+        Group {
+            if axis == .vertical {
+                // The side rail: the question, then the three answers stacked under the free hand.
+                VStack(spacing: 8) {
+                    Text("Hand in.\nHow sure?")
+                        .font(.system(size: 13, weight: .semibold)).multilineTextAlignment(.center)
+                        .foregroundStyle(Theme.graphite)
+                        .padding(.bottom, 2)
+                    ForEach(Confidence.allCases, id: \.self) { c in
+                        Button(c.label) { onHandIn(c) }
+                            .buttonStyle(RailButtonStyle())
+                            .disabled(!enabled)
+                            .accessibilityHint("Hands in your answer and records your confidence")
+                    }
+                    if showsDontKnow, let onDontKnow {
+                        Button("I don't know", action: onDontKnow)
+                            .font(.system(size: 15)).foregroundStyle(Theme.graphite)
+                            .lineLimit(1).minimumScaleFactor(0.85)
+                            .frame(minHeight: 44)
+                            .buttonStyle(.plain)
+                            .padding(.top, 4)
+                    }
+                }
+            } else {
+                HStack(spacing: 10) {
+                    Text(inBottomBar ? "How sure?" : "Hand in. How sure are you?")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.graphite)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.trailing, 4)
+                    ForEach(Confidence.allCases, id: \.self) { c in
+                        Button(c.label) { onHandIn(c) }
+                            .buttonStyle(inBottomBar ? SecondaryButtonStyle() : .secondaryLarge)
+                            .lineLimit(1)
+                            .fixedSize()
+                            .disabled(!enabled)
+                            .accessibilityHint("Hands in your answer and records your confidence")
+                    }
+                    Spacer(minLength: 0)
+                    if showsDontKnow, let onDontKnow {
+                        Button("I don't know", action: onDontKnow).buttonStyle(.ghost).lineLimit(1).fixedSize()
+                    }
+                }
             }
         }
         .opacity(enabled ? 1 : 0.5)
+        .layoutProbe("Hand in with confidence")
     }
 }
 

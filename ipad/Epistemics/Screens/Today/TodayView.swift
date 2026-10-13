@@ -66,7 +66,7 @@ struct TodayView: View {
         .padding(.top, 36)
     }
 
-    private enum Kind { case resume, warmup, reviews, remediation, checkpoint, lesson, map, done }
+    private enum Kind { case resume, warmup, reviews, remediation, progressCheck, checkpoint, lesson, map, done }
 
     private struct NextStep {
         var kind: Kind
@@ -92,8 +92,12 @@ struct TodayView: View {
                             button: "Start reviewing") { app.present(.review) }
         }
         if let r = t.remediation.first {
-            return NextStep(kind: .remediation, sentence: "The checkpoint showed \(r.name) needs another pass. A short lesson goes back over it.",
+            return NextStep(kind: .remediation, sentence: "\(r.name) didn't hold up when it was checked, so it needs another pass. A short lesson goes back over it.",
                             button: "Go back over it") { app.present(.lesson(lessonId: LessonService.remediationPrefix + r.conceptId)) }
+        }
+        if t.progressCheckDue {
+            return NextStep(kind: .progressCheck, sentence: "Time for a progress check: a few questions from everything so far, mixed together, no help. What holds up counts towards mastered; what slips goes back.",
+                            button: "Take the check") { app.present(.progressCheck) }
         }
         if let c = t.checkpoint, c.ready {
             return NextStep(kind: .checkpoint, sentence: "\(c.unit.title) is taught and practised. Time for its checkpoint: a paper, no help, handed in once.",

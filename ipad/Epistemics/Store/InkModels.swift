@@ -4,7 +4,7 @@ import EpistemicsCore
 
 /// What an ink area belongs to.
 enum InkOwner: String, Codable, Sendable {
-    case firstRun, placement, warmup, review, lessonTurn, lessonSummary, checkpoint, map, teachback
+    case firstRun, placement, progressCheck, workedExample, warmup, review, lessonTurn, lessonSummary, checkpoint, map, teachback
 }
 
 /// One ink area as stored: the PencilKit drawing is the source of truth; everything else is derived.

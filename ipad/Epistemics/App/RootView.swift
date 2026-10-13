@@ -5,7 +5,9 @@ import EpistemicsCore
 /// taking the whole screen over both.
 struct RootView: View {
     @Environment(AppModel.self) private var app
-    @State private var columns: NavigationSplitViewVisibility = .doubleColumn
+    /// The learner's own sidebar choice, and the width class it was made in.
+    @State private var columnsChoice: (wide: Bool, visibility: NavigationSplitViewVisibility)?
+    static let sidebarMinWidth: CGFloat = 1000
 
     var body: some View {
         @Bindable var app = app
@@ -15,14 +17,23 @@ struct RootView: View {
             } else if !app.settings.onboarded || app.context == nil {
                 FirstRunView()
             } else {
-                NavigationSplitView(columnVisibility: $columns) {
-                    Sidebar()
-                        .navigationSplitViewColumnWidth(300)
-                } detail: {
-                    detail
-                        .toolbar(.hidden, for: .navigationBar)
+                // The sidebar sits beside the page only when there is room for both (1000 points or more), and
+                // otherwise waits behind its button instead of covering Today on iPad mini (UX-AUDIT B4). The
+                // width decides at render time; the learner's own toggle holds until the width class changes.
+                GeometryReader { geo in
+                    let wide = geo.size.width >= Self.sidebarMinWidth
+                    NavigationSplitView(columnVisibility: Binding(
+                        get: { columnsChoice.flatMap { $0.wide == wide ? $0.visibility : nil } ?? (wide ? .doubleColumn : .detailOnly) },
+                        set: { columnsChoice = (wide, $0) })) {
+                        Sidebar()
+                            .navigationSplitViewColumnWidth(300)
+                    } detail: {
+                        detail
+                            .toolbarBackground(.hidden, for: .navigationBar)
+                            .navigationBarTitleDisplayMode(.inline)
+                    }
+                    .navigationSplitViewStyle(.balanced)
                 }
-                .navigationSplitViewStyle(.balanced)
             }
         }
         .tint(Theme.graphite)
@@ -98,6 +109,7 @@ struct SessionHost: View {
                 case .map(let id): MapFromMemoryView(model: MapSessionModel(app: app, ctx: ctx, unitId: id))
                 case .teachback(let id): TeachbackView(model: TeachbackSessionModel(app: app, ctx: ctx, conceptId: id))
                 case .placement: PlacementSessionView(model: PlacementModel(app: app, ctx: ctx))
+                case .progressCheck: ProgressCheckView(model: ProgressCheckModel(app: app, ctx: ctx))
                 }
             }
         }

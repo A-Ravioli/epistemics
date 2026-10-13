@@ -113,7 +113,7 @@ final class PlacementModel {
                                                         metadata: RequestMetadata(sessionId: sessionId, courseId: ctx.course.id))
             try await service.recordReceipt(sessionId: sessionId, itemId: item.id, conceptId: probe.conceptId, answer: r.gradedText,
                                             confidence: confidence, grade: graded.grade, rating: graded.rating, assisted: false,
-                                            inkId: inkId)
+                                            inkId: inkId, mixed: true)
             // A lucky guess is not knowing: the confidence-adjusted rating has to be Good or better.
             state = recordPlacementResult(state, probe.conceptId, isCorrect(graded.rating))
             await showNext()
@@ -126,7 +126,7 @@ final class PlacementModel {
     func dontKnow() async {
         guard let item, let probe else { return }
         try? await service.recordReceipt(sessionId: sessionId, itemId: item.id, conceptId: probe.conceptId, answer: "(I don't know)",
-                                         confidence: nil, grade: nil, rating: .again, assisted: false)
+                                         confidence: nil, grade: nil, rating: .again, assisted: false, mixed: true)
         state = recordPlacementResult(state, probe.conceptId, false)
         await showNext()
     }
@@ -174,11 +174,21 @@ struct PlacementView: View {
     @Bindable var model: PlacementModel
     var onDone: () -> Void
 
+    /// The intro and result read as a page; questions use the writing page, so the placement manages its
+    /// own scrolling and must not sit inside a scroll view.
     var body: some View {
         switch model.phase {
-        case .intro: intro
-        case .result: result
+        case .intro: scrolling { intro }
+        case .result: scrolling { result }
         default: question
+        }
+    }
+
+    private func scrolling(@ViewBuilder _ content: () -> some View) -> some View {
+        let built = content()
+        return ScrollView {
+            PageColumn { built }
+                .padding(.horizontal, 32).padding(.top, 16).padding(.bottom, 60)
         }
     }
 
@@ -196,31 +206,26 @@ struct PlacementView: View {
     }
 
     private var question: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        WritingPage(handedness: app.settings.handedness) {
             Text("Placement · question \(model.questionNumber)\(model.state.estimatedRemaining > 0 ? " · about \(model.state.estimatedRemaining) to go" : "")")
                 .font(.secondary).foregroundStyle(Theme.muted)
-            if let item = model.item {
-                MaterialText(item.prompt, font: .readingLarge)
-                HStack(alignment: .top, spacing: 16) {
-                    if model.phase == .answering {
-                        ToolTray(tools: app.tools, showsLasso: model.area.paper != .short)
-                    }
-                    InkArea(area: model.area, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing)
-                        .onChange(of: model.area.revision) { model.inkChanged() }
-                }
-                .environment(\.layoutDirection, app.settings.handedness == .left ? .rightToLeft : .leftToRight)
-            }
+            if let item = model.item { MaterialText(item.prompt, font: .readingLarge) }
+        } paper: {
+            InkArea(area: model.area, tools: app.tools, allowsFingerDrawing: app.settings.allowFingerDrawing)
+                .onChange(of: model.area.revision) { model.inkChanged() }
             switch model.phase {
-            case .answering:
-                ConfidenceHandIn(enabled: !model.area.isEmpty,
-                                 onHandIn: { c in Task { await model.handIn(c) } },
-                                 onDontKnow: { Task { await model.dontKnow() } })
-                    .environment(\.layoutDirection, app.settings.handedness == .left ? .rightToLeft : .leftToRight)
             case .reading: WorkingLine(text: "Reading your answer…")
             case .grading: WorkingLine(text: "Marking it…")
             case .confirming(let r): ConfirmReadingView(reading: r) { text in Task { await model.confirm(r, text: text) } }
             case .failed(let m): Banner(text: m, actionTitle: "Try again") { Task { await model.retry() } }
             default: EmptyView()
+            }
+        } rail: {
+            if model.phase == .answering {
+                ToolTray(tools: app.tools, showsLasso: model.area.paper != .short)
+                ConfidenceHandIn(enabled: !model.area.isEmpty,
+                                 onHandIn: { c in Task { await model.handIn(c) } },
+                                 onDontKnow: { Task { await model.dontKnow() } })
             }
         }
     }
@@ -259,10 +264,7 @@ struct PlacementSessionView: View {
     var body: some View {
         VStack(spacing: 0) {
             SessionHeader(title: "Placement test", closeLabel: "Leave", onClose: { app.dismissSession() })
-            ScrollView {
-                PageColumn { PlacementView(model: model) { app.dismissSession() } }
-                    .padding(.horizontal, 32).padding(.top, 16).padding(.bottom, 60)
-            }
+            PlacementView(model: model) { app.dismissSession() }
         }
         .background(Theme.paper.ignoresSafeArea())
     }

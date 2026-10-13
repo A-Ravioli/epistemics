@@ -11,7 +11,9 @@ final class CheckpointSessionModel {
 
     struct Question: Identifiable {
         var id: String { item.id }
+        /// As served: the item or one of its variants (docs/AUDIT.md #3).
         var item: Item
+        var variantId: String?
         var area: InkAreaModel
         var confidence: Confidence?
         var reading: InkReading?
@@ -59,12 +61,16 @@ final class CheckpointSessionModel {
                 state = createCheckpointState(sessionId: s.id, courseId: ctx.course.id, unitId: unit.id, items: items)
                 try await app.store.saveSessionState(s.id, state!)
             }
-            questions = (state?.items ?? []).compactMap { ref in
-                ctx.curriculum.item(ref.itemId).map { item in
-                    let paper = inkPaper(for: item)
-                    return Question(item: item, area: InkAreaModel(paper: paper.paper, minHeight: InkAreaModel.defaultHeight(for: paper.paper, lines: paper.lines)))
-                }
+            // Nothing is recorded until the paper is handed in, so a resumed paper gets the same versions.
+            var built: [Question] = []
+            for ref in state?.items ?? [] {
+                guard let base = ctx.curriculum.item(ref.itemId) else { continue }
+                let served = await service.serving(base)
+                let paper = inkPaper(for: served.item)
+                built.append(Question(item: served.item, variantId: served.variantId,
+                                      area: InkAreaModel(paper: paper.paper, minHeight: InkAreaModel.defaultHeight(for: paper.paper, lines: paper.lines))))
             }
+            questions = built
             phase = .writing
         } catch {
             phase = .failed("Couldn't set the paper: \(error)")
@@ -131,9 +137,10 @@ final class CheckpointSessionModel {
                         questions[i].graded = graded
                         events.insert(.grade(itemId: itemId, grade: graded.grade, rating: graded.rating), at: 0)
                     case let .recordReceipt(itemId, conceptId, answer, confidence, grade, rating):
-                        let inkId = questions.first { $0.item.id == itemId }?.inkId
+                        let question = questions.first { $0.item.id == itemId }
                         try await service.recordReceipt(sessionId: sessionId, itemId: itemId, conceptId: conceptId, answer: answer,
-                                                        confidence: confidence, grade: grade, rating: rating, assisted: false, inkId: inkId)
+                                                        confidence: confidence, grade: grade, rating: rating, assisted: false,
+                                                        inkId: question?.inkId, mixed: true, variantId: question?.variantId)
                         // The checkpoint answer is a real unaided retrieval of the item: log it as a review.
                         if let card = try await app.store.card(course: ctx.course.id, item: itemId), card.state != .new {
                             _ = try await service.applyReview(card: card, rating: rating, source: .checkpoint, assisted: false,
