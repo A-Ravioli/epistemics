@@ -1,0 +1,352 @@
+import Foundation
+import EpistemicsCore
+
+/// Course-level persistence, ported from web/apps/web/src/lib/services/{courses,queue,receipts}.ts.
+/// Pure decisions live in EpistemicsCore; this file only moves state between the core and the store.
+struct CourseService {
+    let ctx: CourseContext
+    let store: Store
+
+    var course: Course { ctx.course }
+    var now: EpochMs { ctx.now() }
+
+    // MARK: Activation
+
+    /// Cards are created at enrolment far in the future and "activated" when their concept is taught,
+    /// exactly as the web schema does it, so the two can sync.
+    static let unactivatedOffsetMs = Int(100 * 365.25 * 86_400_000)
+    static let unactivatedThresholdMs = Int(50 * 365.25 * 86_400_000)
+
+    static func isActivated(_ card: Card, now: EpochMs) -> Bool { card.due < now + unactivatedThresholdMs }
+
+    var dayConfig: DayConfig { DayConfig(timezone: course.settings.timezone, dayStartHour: course.settings.dayStartHour) }
+
+    func studyDayKey(_ at: EpochMs? = nil) -> String {
+        studyDay(at ?? now, dayConfig)
+    }
+
+    func dayStart() -> EpochMs {
+        studyDayStart(now, dayConfig)
+    }
+
+    // MARK: Queue
+
+    struct LoadedQueue {
+        var queue: Queue
+        var cards: [Card]
+        var items: [String: Item]
+        var reviewsDoneToday: Int
+        /// Cards to answer, in order: learning, then reviews, with warm-up misses first.
+        var order: [Card]
+        var minutes: Int
+    }
+
+    func itemIndex() -> [String: Item] {
+        Dictionary(ctx.curriculum.allItems.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+    }
+
+    func countReviewsToday() async throws -> Int {
+        try await store.reviewLog(course: course.id, since: dayStart())
+            .filter { $0.source == .review && $0.stateBefore == .review }.count
+    }
+
+    func loadQueue(recentlyShown: Set<String> = [], queueFirst: [String] = []) async throws -> LoadedQueue {
+        let n = now
+        let items = itemIndex()
+        let cards = try await store.cards(course: course.id).filter { Self.isActivated($0, now: n) && items[$0.itemId] != nil }
+        var info: [String: QueueItemInfo] = [:]
+        for c in cards { if let it = items[c.itemId] { info[c.id] = QueueItemInfo(conceptId: it.conceptId, type: it.type) } }
+        let done = try await countReviewsToday()
+        let scheduler = ctx.scheduler
+        var rng = SystemRandomNumberGenerator()
+        let queue = buildQueue(BuildQueueInput(
+            cards: cards, now: n, settings: course.settings, itemsByCard: info,
+            retrievability: { scheduler.retrievability($0, n) },
+            recentlyShownConceptIds: recentlyShown,
+            rng: { Double.random(in: 0..<1, using: &rng) },
+            reviewsDoneToday: done))
+        var order = queue.learning + queue.reviews
+        if !queueFirst.isEmpty {
+            let first = Set(queueFirst)
+            order = order.filter { first.contains($0.conceptId) } + order.filter { !first.contains($0.conceptId) }
+        }
+        // Everything due today, including siblings held back to a later pass, at measured-by-hand speeds.
+        let due = queue.learning + queue.reviews + queue.buried
+        let minutes = Int((due.reduce(0.0) { $0 + (info[$1.id].map { secondsByHand($0.type) } ?? DEFAULT_SECONDS_PER_ITEM) } / 60).rounded(.up))
+        return LoadedQueue(queue: queue, cards: cards, items: items, reviewsDoneToday: done, order: order, minutes: minutes)
+    }
+
+    // MARK: Reviews
+
+    struct AppliedReview {
+        var card: Card
+        var log: ReviewLogEntry
+        var receipt: Receipt?
+        var leech: Bool
+    }
+
+    struct ReceiptInput {
+        var sessionId: String
+        var answer: String
+        var grade: GradeResult?
+        var inkId: String?
+        var modality: AnswerModality?
+        var variantId: String? = nil
+    }
+
+    /// Where an answer counts as mixed evidence (docs/AUDIT.md #4): out of context, nothing on the page
+    /// naming the idea. Lesson checks and warm-ups come right after or about one lesson, so they don't.
+    static func isMixed(_ source: ReviewSource) -> Bool { [.review, .checkpoint, .diagnostic].contains(source) }
+
+    /// scheduler.applyRating → cards + review log → receipt + concept state → implicit credit (DESIGN §5.3-5.6).
+    func applyReview(card: Card, rating: Rating, source: ReviewSource, assisted: Bool, confidence: Confidence?,
+                     durationMs: Int?, receipt: ReceiptInput?, implicitCredit allowImplicit: Bool = true) async throws -> AppliedReview {
+        let n = now
+        let outcome = ctx.scheduler.applyRating(card, rating, n,
+                                                ReviewContext(source: source, assisted: assisted, confidence: confidence, durationMs: durationMs))
+        var next = outcome.card
+        let leech = isLeech(next)
+        if leech { next.suspended = true }
+        try await store.saveCards([next])
+        try await store.appendReviewLog([outcome.log])
+        var saved: Receipt?
+        if let receipt {
+            saved = try await recordReceipt(sessionId: receipt.sessionId, itemId: card.itemId, conceptId: card.conceptId,
+                                            answer: receipt.answer, confidence: confidence, grade: receipt.grade, rating: rating,
+                                            assisted: assisted, inkId: receipt.inkId, modality: receipt.modality,
+                                            mixed: Self.isMixed(source), variantId: receipt.variantId)
+        }
+        if allowImplicit && !assisted && isCorrect(rating) {
+            try await grantImplicitCredit(passedConceptId: card.conceptId)
+        }
+        return AppliedReview(card: next, log: outcome.log, receipt: saved, leech: leech)
+    }
+
+    /// FIRe-lite (DESIGN §5.6): synthetic partial reviews on encompassed concepts' cards.
+    func grantImplicitCredit(passedConceptId: String) async throws {
+        let n = now
+        let all = try await store.cards(course: course.id).filter { Self.isActivated($0, now: n) }
+        let byConcept = Dictionary(grouping: all, by: \.conceptId)
+        let outcomes = implicitCredit(ImplicitCreditInput(passedConceptId: passedConceptId, edges: ctx.curriculum.edges,
+                                                          cardsByConcept: byConcept, now: n, scheduler: ctx.scheduler))
+        guard !outcomes.isEmpty else { return }
+        try await store.saveCards(outcomes.map(\.card))
+        try await store.appendReviewLog(outcomes.map(\.log))
+    }
+
+    /// Lesson wrap-up (DESIGN §3.3): a concept's cards enter FSRS with the CHECK result as their first review.
+    @discardableResult
+    func activateConcept(_ conceptId: String, firstRating: Rating) async throws -> [Card] {
+        let n = now
+        let mine = try await store.cards(course: course.id).filter {
+            $0.conceptId == conceptId && $0.state == .new && !$0.suspended
+        }
+        guard !mine.isEmpty else { return [] }
+        let activated = mine.map { c -> Card in var c = c; c.due = n; return c }
+        let outs = activated.map {
+            ctx.scheduler.applyRating($0, firstRating, n, ReviewContext(source: .lesson, assisted: false))
+        }
+        try await store.saveCards(outs.map(\.card))
+        try await store.appendReviewLog(outs.map(\.log))
+        return outs.map(\.card)
+    }
+
+    /// Reschedule a concept's activated cards with Again (a failed checkpoint concept).
+    func rescheduleConceptAgain(_ conceptId: String, source: ReviewSource = .checkpoint) async throws {
+        let n = now
+        let mine = try await store.cards(course: course.id).filter {
+            $0.conceptId == conceptId && Self.isActivated($0, now: n) && $0.state != .new && !$0.suspended
+        }
+        guard !mine.isEmpty else { return }
+        let outs = mine.map { ctx.scheduler.applyRating($0, .again, n, ReviewContext(source: source, assisted: false)) }
+        try await store.saveCards(outs.map(\.card))
+        try await store.appendReviewLog(outs.map(\.log))
+    }
+
+    // MARK: Receipts and concept state
+
+    @discardableResult
+    func recordReceipt(sessionId: String, itemId: String, conceptId: String, answer: String, confidence: Confidence?,
+                       grade: GradeResult?, rating: Rating, assisted: Bool, inkId: String? = nil,
+                       modality: AnswerModality? = nil, mixed: Bool = false, variantId: String? = nil) async throws -> Receipt {
+        let n = now
+        let receipt = Receipt(id: uuidv7(n), sessionId: sessionId, courseId: course.id, itemId: itemId, conceptId: conceptId,
+                              answer: answer, confidence: confidence, grade: grade, rating: rating, assisted: assisted,
+                              createdAt: n, inkId: inkId, modality: modality ?? (inkId == nil ? nil : .ink), variantId: variantId)
+        try await store.saveReceipt(receipt)
+        try await foldReceipt(receipt, mixed: mixed)
+        return receipt
+    }
+
+    func foldReceipt(_ r: Receipt, mixed: Bool = false) async throws {
+        let states = try await store.conceptStates(course: course.id)
+        let prev = states[r.conceptId] ?? ConceptState(courseId: course.id, conceptId: r.conceptId, updatedAt: r.createdAt)
+        let next = updateConceptStateAfterReceipt(prev, ConceptReceipt(
+            rating: r.rating, assisted: r.assisted, misconceptionTags: r.grade?.misconceptionTags ?? [],
+            day: studyDayKey(r.createdAt), at: r.createdAt, mixed: mixed))
+        try await recomputeMastery(next)
+    }
+
+    // MARK: Variants (docs/AUDIT.md #3)
+
+    /// The version of `item` to serve now: each of the item and its variants once, then the one seen longest ago.
+    func serving(_ item: Item) async -> (item: Item, variantId: String?) {
+        guard !(item.variants ?? []).isEmpty else { return (item, nil) }
+        let history = ((try? await store.receipts(course: course.id)) ?? [])
+            .filter { $0.itemId == item.id }
+            .map { VariantUse(variantId: $0.variantId, at: $0.createdAt) }
+        let id = nextVariant(item, history: history)
+        return (item.serving(id), id)
+    }
+
+    // MARK: Demotion (docs/AUDIT.md #4)
+
+    /// A concept that failed out of context goes back: its spaced successes drop to one, so its mastery
+    /// falls under the availability threshold and what depends on it waits. A placed-out concept is no longer
+    /// placed, so its lesson is taught; a taught one gets a remediation lesson.
+    func demote(_ conceptId: String) async throws {
+        let states = try await store.conceptStates(course: course.id)
+        var s = states[conceptId] ?? ConceptState(courseId: course.id, conceptId: conceptId, updatedAt: now)
+        s.successfulSessions = min(s.successfulSessions, 1)
+        try await recomputeMastery(s)
+        let placed = await placedConcepts()
+        if placed.contains(conceptId) {
+            try await store.setSetting(key("placed"), placed.filter { $0 != conceptId })
+        } else {
+            await addPendingRemediation(conceptId)
+        }
+    }
+
+    /// mastery = retention × min(1, sessions/3), persisted.
+    func recomputeMastery(_ state: ConceptState) async throws {
+        let n = now
+        let cards = try await store.cards(course: course.id).filter { $0.conceptId == state.conceptId && Self.isActivated($0, now: n) }
+        let scheduler = ctx.scheduler
+        let retention = conceptRetention(cards, n) { scheduler.retrievability($0, $1) }
+        var next = state
+        next.mastery = conceptMastery(retention, state.successfulSessions)
+        next.updatedAt = max(state.updatedAt, n)
+        try await store.saveConceptStates([next])
+    }
+
+    func refreshAllMastery() async throws {
+        let states = try await store.conceptStates(course: course.id)
+        for s in states.values { try await recomputeMastery(s) }
+    }
+
+    // MARK: Per-course flags (settings rows, as on the web)
+
+    private func key(_ name: String) -> String { "\(name):\(course.id)" }
+
+    func pendingRemediation() async -> [String] { (try? await store.setting(key("remediation"), as: [String].self)) ?? [] }
+    func addPendingRemediation(_ conceptId: String) async {
+        var list = await pendingRemediation()
+        if !list.contains(conceptId) { list.append(conceptId) }
+        try? await store.setSetting(key("remediation"), list)
+    }
+    func removePendingRemediation(_ conceptId: String) async {
+        try? await store.setSetting(key("remediation"), await pendingRemediation().filter { $0 != conceptId })
+    }
+
+    func queueFirst() async -> [String] { (try? await store.setting(key("queueFirst"), as: [String].self)) ?? [] }
+    func setQueueFirst(_ ids: [String]) async { try? await store.setSetting(key("queueFirst"), ids) }
+
+    func warmupDay() async -> String? { try? await store.setting(key("warmupDay"), as: String.self) }
+    func setWarmupDay(_ day: String) async { try? await store.setSetting(key("warmupDay"), day) }
+
+    func clearedDays() async -> [String] { (try? await store.setting(key("clearedDays"), as: [String].self)) ?? [] }
+    func markDayCleared(_ day: String) async {
+        var days = await clearedDays()
+        if !days.contains(day) { days.append(day); try? await store.setSetting(key("clearedDays"), days.suffix(400).map { $0 }) }
+    }
+
+    func gateOverrideDay() async -> String? { try? await store.setting(key("gateOverride"), as: String.self) }
+    func overrideGateToday() async { try? await store.setSetting(key("gateOverride"), studyDayKey()) }
+
+    /// Lessons finished (not remediation mini-lessons).
+    func completedLessons() async throws -> Set<String> {
+        let sessions = try await store.sessions(course: course.id, type: .lesson)
+        var out = Set<String>()
+        for s in sessions where s.endedAt != nil {
+            guard let id = s.lessonId, !id.hasPrefix(LessonService.remediationPrefix), s.summary?["remediation"]?.boolValue != true else { continue }
+            out.insert(id)
+        }
+        // Lessons placed out of are done: placement skips their teaching (DESIGN §6.1).
+        let placed = Set(await placedConcepts())
+        for lesson in lessonsPlacedOut(ctx.curriculum, knownConceptIds: placed) { out.insert(lesson.id) }
+        return out
+    }
+
+    // MARK: Placement
+
+    /// Concepts settled as known by placement.
+    func placedConcepts() async -> [String] { (try? await store.setting(key("placed"), as: [String].self)) ?? [] }
+    /// Whether placement was taken or declined for this course.
+    func placementDecided() async -> Bool { (try? await store.setting(key("placementDone"), as: Bool.self)) ?? false }
+    func markPlacementDecided() async { try? await store.setSetting(key("placementDone"), true) }
+
+    /// Seeds known concepts as a conservative, provisional memory (web DESIGN §6.4, ported from the web
+    /// DiagnosticRunner): cards in Review with stability 21 days, due when that says, demoted on their first
+    /// miss; concept state with three spaced successes so their dependents unlock.
+    func applyPlacement(knownConceptIds: [String]) async throws {
+        let n = now
+        let known = Set(knownConceptIds)
+        let cards = try await store.cards(course: course.id).filter { known.contains($0.conceptId) && $0.state == .new && !$0.suspended }
+        let seeded = cards.map { c -> Card in
+            var c = c
+            c.due = n
+            return ctx.scheduler.seedKnownCard(c, n)
+        }
+        try await store.saveCards(seeded)
+        let states = try await store.conceptStates(course: course.id)
+        for id in knownConceptIds {
+            var s = states[id] ?? ConceptState(courseId: course.id, conceptId: id, updatedAt: n)
+            s.successfulSessions = max(s.successfulSessions, 3)
+            s.lastSuccessDay = studyDayKey()
+            try await recomputeMastery(s)
+        }
+        let previous = await placedConcepts()
+        try await store.setSetting(key("placed"), Array(Set(previous).union(known)).sorted())
+        await markPlacementDecided()
+    }
+}
+
+extension AppModel {
+    /// Enrol in a pack: a course with derived settings and one unactivated card per item (ONBOARDING §5).
+    func enroll(pack: Curriculum, recall: String, minutesPerDay: Int, recallDrawing: InkAreaModel?) async throws {
+        let n = Self.now()
+        let derived = schedulingFor(minutesPerDay)
+        let background = recall.trimmingCharacters(in: .whitespacesAndNewlines)
+        var settings = CourseSettings()
+        settings.reviewsPerDay = derived.reviewsPerDay
+        settings.desiredRetention = derived.desiredRetention
+        let course = Course(id: uuidv7(n), curriculumId: pack.manifest.id, curriculumVersion: pack.manifest.version,
+                            title: pack.manifest.title,
+                            goals: CourseGoals(purpose: .understand, weeklyMinutes: derived.weeklyMinutes,
+                                               background: background.isEmpty ? nil : background),
+                            settings: settings,
+                            scaffolding: scaffoldingFromBackground(background.isEmpty ? nil : background, .working),
+                            createdAt: n, updatedAt: n)
+        try await store.saveCurriculum(pack)
+        try await store.saveCourse(course)
+        var cards: [Card] = []
+        for concept in pack.allConcepts {
+            for item in concept.items {
+                cards.append(Card(id: uuidv7(n), courseId: course.id, itemId: item.id, conceptId: concept.id,
+                                  due: n + CourseService.unactivatedOffsetMs))
+            }
+        }
+        try await store.saveCards(cards)
+        if let recallDrawing {
+            try await store.saveInk(InkRecord(id: uuidv7(n), courseId: course.id, ownerKind: .firstRun, ownerId: course.id,
+                                              itemId: nil, paper: recallDrawing.paper, drawing: recallDrawing.drawing.dataRepresentation(),
+                                              width: Theme.readingWidth, height: recallDrawing.height,
+                                              strokeCount: recallDrawing.drawing.strokes.count, writingMs: recallDrawing.writingMs,
+                                              firstStrokeMs: recallDrawing.firstStrokeMs, createdAt: n, updatedAt: n))
+        }
+        courses = try await store.courses()
+        try await open(courseId: course.id)
+    }
+
+    var service: CourseService? { context.map { CourseService(ctx: $0, store: store) } }
+}

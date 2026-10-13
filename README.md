@@ -1,79 +1,90 @@
-# Epistemics
+<h1 align="center">Epistemics</h1>
 
-Learning how to learn.
+<p align="center"><b>Learning how to learn.</b><br>
+Structured courses, taught Socratically by an AI tutor, with spaced retrieval enforced before anything new is taught.</p>
 
-Epistemics is a local-first web and desktop app (one React build, browser + Tauri 2) that teaches a subject Socratically with an LLM, structures it into a dependency-ordered curriculum, checks you without help at every step, and enforces spaced review before it lets you learn anything new.
+<p align="center">
+  <img src="docs/screenshots/web/today.png" width="49%" alt="The web app: Today, with three reviews due before the next lesson">
+  <img src="docs/screenshots/ipad/review-fixed.png" width="49%" alt="The iPad app: a handwritten answer with its first wrong line marked, then rewritten">
+</p>
+<p align="center"><sub>Left: the web and desktop app. Right: the iPad app, where every answer is written by hand.</sub></p>
 
-## Principles in one breath
+---
 
-Retrieve before you are taught and again after; space every review on a memory model (FSRS-6); a concept counts as learned only after three successful spaced retrievals without help; the tutor asks, hints, and withholds answers by rule in code, not by prompt wording; curricula are generated once, versioned, and shelved for reuse.
+Most study apps optimise for the feeling of learning: re-reading, highlighting, a tutor that hands you the answer. Epistemics is built around the things that actually make knowledge stick:
 
-## Status
+- **You try before you're taught.** Every lesson opens with a question you can't answer yet, because a failed attempt makes the explanation land.
+- **The tutor asks; it doesn't tell.** Hints come on a ladder, and the rule against giving answers lives in code, not in prompt wording.
+- **Reviews come first.** A memory model (FSRS-6) schedules each idea just before you'd forget it, and the next lesson stays locked until today's reviews are done.
+- **"Learned" means proven.** An idea counts as mastered only after unaided, mixed retrievals on separate days, never because you finished the lesson.
+- **Questions change.** Reviews serve fresh versions of each problem, so passing means the skill rather than remembering one answer.
 
-Implemented and tested (320 unit tests, 13 Playwright flows, Rust crate compiles in CI):
+## Two apps, one way of learning
 
-- **Core** (`packages/core`): FSRS-6 scheduler wrapper, review queue with the review-debt gate and recovery mode, sibling burying, concept mastery with successive relearning, prerequisite gating, fractional implicit credit, load simulator, calibration; the lesson state machine (PRIME → PROBE → DEVELOP → CONSOLIDATE → EXTEND → CHECK → WRAP) with an enforced hint ladder, checkpoint composer, adaptive diagnostic, teach-back, learner model.
-- **LLM** (`packages/llm`): Anthropic provider on the official SDK (streaming, structured outputs, prompt caching, effort), Ollama provider, deterministic mock provider; tutor, observer, blind grader with consensus deferral, teach-back student, answer-leak detector, warm-up grader; versioned prompt files; usage ledger and budget guard.
-- **Data** (`packages/db`, `packages/platform`): Drizzle schema, migrations, repositories; executors for Node (`node:sqlite`), the browser (sqlite-wasm on OPFS in a worker, single-owner lock), and Tauri; web and Tauri platform adapters (keychain secrets, streaming `llm_fetch` transport).
-- **Ingest and Architect** (`packages/ingest`, `packages/architect`): PDF, EPUB, DOCX and Markdown parsing, structure-aware chunking, embeddings; the curriculum-generation pipeline (outline → concepts → prerequisite/encompassing graph → lesson scripts → items → item self-check) with content-hash caching, DAG validation, and lazy per-unit building.
-- **Content** (`content/`): a hand-authored probability pack (2 units, 8 lessons, 29 concepts, 179 items, all numeric references machine-checked) and the prompt files.
-- **Web app** (`apps/web`): a macOS-style window — toolbar with a command palette (`⌘K`), a grouped sidebar, and a per-screen inspector — holding the first run (subject → what you already know → tutor → time), Today, Review, Lesson, Checkpoint, Diagnostic, Teach-back, Course map, Shelf, Setup, Progress, Settings.
-- **Desktop** (`apps/desktop`): Tauri 2 shell with OS-keychain secrets and a Rust `llm_fetch` command so the API key never enters the webview; on macOS the title bar is hidden and the app's own toolbar takes its place.
-- **Server** (`apps/server`): Hono passthrough proxy for the browser build with a per-day USD budget.
-- **Sync** (`packages/sync`, `supabase/`): optional cross-device sync through Supabase. Sign in on the Account screen and every review, lesson, course and generated curriculum syncs between the web app and the desktop app with last-writer-wins per row; the app keeps working offline. A Supabase edge function can hold the Anthropic key and enforce a per-user daily budget. Setup in [supabase/README.md](supabase/README.md); protocol in [docs/SYNC.md](docs/SYNC.md).
+| | What it is | Status |
+|---|---|---|
+| **[Web and desktop](web)** | One React app, in the browser and as a Tauri desktop app. You type your answers. Local-first, with optional sync. | Built and tested. [Read more →](web/README.md) |
+| **[iPad](ipad)** | A native SwiftUI app where every answer is written or drawn with Apple Pencil, because writing by hand makes retrieval harder and learning stick. | Built; runs in the iPad simulator. [Read more →](ipad/README.md) |
 
-See [docs/ONBOARDING.md](docs/ONBOARDING.md) for the first-run design, [docs/UX-AUDIT.md](docs/UX-AUDIT.md) for the screen-by-screen UX audit, [docs/DESIGN.md](docs/DESIGN.md) for the design, [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) for the visual system (tokens, components and the rules that hold them together), [docs/PLAN.md](docs/PLAN.md) for the phased plan, and [docs/research/](docs/research/) for the evidence base.
+They share the course format and the bundled course (`web/content/packs`), the prompts (`web/content/prompts`), and the learning design ([web/docs/DESIGN.md](web/docs/DESIGN.md)) with its evidence base ([web/docs/research](web/docs/research)). They don't share code.
 
-## Run it
+### The web app
 
-Prerequisites: Node 22+, pnpm 10.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/web/lesson.png" alt="A lesson in progress"><br><sub><b>A lesson.</b> The tutor asks; you answer in your own words.</sub></td>
+    <td width="50%"><img src="docs/screenshots/web/review.png" alt="A blind-graded review"><br><sub><b>A review.</b> Graded blind against a rubric, criterion by criterion.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/web/course-map.png" alt="The course map"><br><sub><b>The course map.</b> Every idea, prerequisites to the left, coloured by how well you know it.</sub></td>
+    <td><img src="docs/screenshots/web/teachback.png" alt="Teach-back"><br><sub><b>Teach-back.</b> Explain the idea to a student who has read nothing.</sub></td>
+  </tr>
+</table>
+
+### The iPad app
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/ipad/lesson-landscape.png" alt="A handwritten lesson with the worked example beside it"><br><sub><b>A lesson, in landscape.</b> The concept and a worked example on the left; your page on the right. You finish the last step of the example by hand.</sub></td>
+    <td width="50%"><img src="docs/screenshots/ipad/map-from-memory.png" alt="A concept map drawn from memory"><br><sub><b>Map from memory.</b> Draw every idea in a unit and how they connect, then see what you left out.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/ipad/placement-portrait.png" alt="The handwritten placement test"><br><sub><b>The placement test.</b> A short adaptive test, by hand, that skips the lessons you don't need.</sub></td>
+    <td><img src="docs/screenshots/ipad/notebook.png" alt="The notebook"><br><sub><b>The notebook.</b> Everything you've written, kept as you wrote it.</sub></td>
+  </tr>
+</table>
+
+## Design
+
+Both apps follow the same rule: **nothing on the screen may hold the answer to the question being asked.** Help is on the page while you're being taught and folded away while you answer alone.
+
+- **Web:** a macOS-style window on a blurred colour wallpaper. All the colour lives behind the UI, the interface itself stays neutral, and the one saturated element on a screen is the action you take. See the [design system](web/docs/DESIGN-SYSTEM.md).
+- **iPad:** the screen is paper. The serif is the material you're learning, graphite is your ink, and blue belongs to the tutor and nothing else. In portrait it's a single notebook page; in landscape it opens like a notebook, the question on one page and your writing on the other. See the [iPad design](ipad/docs/DESIGN.md).
+
+<p align="center">
+  <img src="docs/screenshots/design/ipad-sizes.png" alt="The same iPad review page at five window sizes">
+  <br><sub>One writing page, five windows: 11-inch landscape and portrait, 13-inch, iPad mini, and Split View. The paper keeps a fixed width and scales to fit, so rotating never moves your ink.</sub>
+</p>
+
+## Try it
+
+**Web** (Node 22+, pnpm 10):
 
 ```bash
-pnpm install
-pnpm dev                     # web app on http://localhost:5173
+cd web && pnpm install && pnpm dev
 ```
 
-The app opens on the first run ([docs/ONBOARDING.md](docs/ONBOARDING.md)): pick the bundled probability pack, a subject to generate, or your own files; write down whatever you already know about it; pick a tutor; say how much time you have most days. It ends on a Today with a lesson ready.
+Then open http://localhost:5173. It starts with a demo tutor that needs no API key; add an Anthropic key in Settings for the real one.
 
-The tutor choice, also on Settings afterwards:
+**iPad** (Xcode 27, iPadOS 27 simulator): open `ipad/Epistemics.xcodeproj` and run the **Epistemics** scheme on an iPad simulator. Details in [ipad/README.md](ipad/README.md).
 
-- **Demo (mock)**: default, no key; a deterministic stand-in so every flow works offline, though it cannot really teach.
-- **Anthropic, bring your own key**: the key is stored in the browser (IndexedDB) and sent directly to the API from the page.
-- **Anthropic via proxy**: run `ANTHROPIC_API_KEY=... pnpm --filter @epistemics/server dev` and the app talks to `/api/anthropic` with a daily budget.
-- **Ollama**: a local model at `http://localhost:11434` (reduced quality).
+## Where to read more
 
-To sync between devices: create a Supabase project, apply `supabase/migrations`, and enter the project URL and anon key on the Account screen (or set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`). See [supabase/README.md](supabase/README.md).
-
-Desktop:
-
-```bash
-pnpm tauri dev               # needs Rust and the Tauri system libraries, see apps/desktop/README.md
-```
-
-Checks:
-
-```bash
-pnpm -r --if-present typecheck
-pnpm -r --if-present test
-pnpm --filter @epistemics/web build
-pnpm --filter @epistemics/web e2e   # Playwright, Chromium
-```
-
-## Layout
-
-```
-apps/web        React SPA (the single frontend build; Tauri loads its dist/)
-apps/desktop    Tauri 2 shell (Rust commands: secrets, llm_fetch)
-apps/server     Hono proxy with budget
-packages/core   domain types, scheduler, session engine (pure TypeScript)
-packages/db     Drizzle schema, executors, repositories
-packages/platform  web / Tauri adapters behind one interface
-packages/llm    providers, roles, prompts, usage
-packages/ingest document parsing, chunking, embeddings
-packages/architect  curriculum generation pipeline
-packages/ui     shared components
-packages/sync   Supabase push/pull engine
-supabase/       Postgres schema with RLS, edge-function LLM proxy
-content/        starter packs and prompt files
-docs/           design, plan, research
-```
+| | |
+|---|---|
+| [web/docs/DESIGN.md](web/docs/DESIGN.md) | The learning design: the lesson loop, scheduling, mastery, grading |
+| [web/docs/research](web/docs/research) | The evidence behind each choice |
+| [ipad/docs/DESIGN.md](ipad/docs/DESIGN.md) | How the iPad app reads handwriting and what each session looks like on paper |
+| [ipad/docs/RESEARCH.md](ipad/docs/RESEARCH.md) | The evidence on handwriting and drawing, including where it doesn't support the idea |
+| [ipad/docs/AUDIT.md](ipad/docs/AUDIT.md) | The design measured against Khan Academy, ALEKS, Math Academy and the research |
+| [ipad/docs/UX-AUDIT.md](ipad/docs/UX-AUDIT.md) | Every iPad screen at five sizes, and what each orientation is for |
