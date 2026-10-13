@@ -98,6 +98,12 @@ conversations". What sits on the page:
   stay on the page as part of the conversation and are read-only once handed in.
 - **Tutor marks**, in blue, anchored to strokes in the ink areas (§5.5).
 
+**The page fits the window** ([UX-AUDIT.md](UX-AUDIT.md) §2). In portrait it is one column, with the tools
+and hand-in pinned in the margin on the side of the hand you don't write with. In landscape it opens like a
+notebook: the material on the free hand's page, your paper on the writing hand's page, so the question never
+scrolls away while you write. In Split View it is one column with the controls along the bottom. The paper
+has a fixed logical width and is scaled to fit, never reflowed, so rotating the iPad never moves your ink.
+
 **The paper says what kind of answer is expected.** The app picks the background and the starting size from
 the item type, the same way an exam paper's answer space hints at how long an answer should be. The
 learner never picks one.
@@ -274,6 +280,11 @@ handwritten activity with the best evidence: *"Start with a blank page. Write do
 from Tuesday's lesson."* Then the quiet lines: reviews due with a time estimate *by hand* (§8), the next
 lesson and whether it is locked, a map from memory if one is due, and reviews cleared in a row.
 
+After reviews, Today may offer a **progress check**: six mixed questions from everything learned or placed
+out of, unaided and unlabelled. Passes are the only evidence that earns "mastered"; a wrong answer sends the
+concept back (a placed-out concept's lesson returns, a taught one gets a remediation lesson). Details and
+reasons in [AUDIT.md](AUDIT.md) #4.
+
 ### 6.3 A lesson
 
 The state machine is unchanged. What ink changes in each phase:
@@ -287,6 +298,18 @@ The state machine is unchanged. What ink changes in each phase:
 | EXTEND | Transfer question, with the paper chosen by the question |
 | CHECK | Unaided. Page above folded away, no marks, confidence hand-in, confirmed reading |
 | Wrap | A 3–5 sentence summary, handwritten, then the delayed judgement of learning |
+
+**The concept card.** While help is allowed (DEVELOP, EXTEND, remediation), the concept card and the
+concept's worked example are on the page:
+- **landscape:** on the left page, above the dialogue;
+- **portrait:** a pull-down above it.
+
+It is never a modal sheet, and it's put away while the learner answers alone or restates the idea in their
+own words.
+
+The worked example fades: a novice studies the first one whole, and each later concept leaves one more step
+for the learner to write by hand and then compare. A lesson's support level comes from how secure its
+prerequisites are ([AUDIT.md](AUDIT.md) #6, [UX-AUDIT.md](UX-AUDIT.md) §6).
 
 The tutor's charter gains one rule: **when a concept's objective names a representation (a tree, a graph, a
 diagram, a table), the tutor asks the learner to draw it rather than describe it.** The probability pack
@@ -304,6 +327,18 @@ answer before the retrieval.
 
 Self-graded types (`recall`, `cloze`, `predict`) put the reference beside your ink after hand-in, and you
 rate Again / Hard / Good / Easy with a finger tap.
+
+**The first wrong line.** When the working has a wrong step, the grader names the first one. It gets a wavy
+blue underline on your ink and one sentence on what is wrong, never the fix. A wrong answer then offers
+**Fix it from here** *before* the answer is shown: you rewrite from that line on fresh paper, and *I'm stuck*
+brings up to three tutor questions about that line. The fix is practice with help: it is logged as
+assisted and never changes the schedule or mastery. **Show me the answer** is always there, and closes the
+fix. ([AUDIT.md](AUDIT.md) #1–#2.)
+
+**A fresh problem each time.** Items can carry variants: the same skill with new numbers and a new context.
+Reviews serve the item, then each variant, then the one seen longest ago, so passing means the skill rather
+than remembering one question. The earlier attempt shown on the receipt says *"You did one like this"* when
+it was a different version. ([AUDIT.md](AUDIT.md) #3.)
 
 ### 6.5 A checkpoint
 
