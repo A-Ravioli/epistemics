@@ -54,7 +54,10 @@ function TeachbackView({ runner }: { runner: TeachbackRunner }) {
   const [text, setText] = useState('');
   const bottom = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => bottom.current?.scrollIntoView({ block: 'end' }), [v.state.turns.length, v.streaming]);
+  // A block body: in current Chrome scrollIntoView returns a Promise, which React would call as a cleanup.
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: 'end' });
+  }, [v.state.turns.length, v.streaming]);
   const disabled = v.busy || v.done || v.state.grading;
   useEffect(() => {
     if (!disabled) input.current?.focus();
