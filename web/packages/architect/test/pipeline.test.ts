@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CurriculumSchema } from '@epistemics/core';
+import { canonicalJson, CurriculumSchema, sha256 } from '@epistemics/core';
 import type { ConceptEdge } from '@epistemics/core';
 import { ingest } from '@epistemics/ingest';
 import {
   assumedReferencesFromDescription, buildCurriculum, buildUnit, generateOutline, isUnitBuilt, MemoryGenCache, type ProgressEvent,
 } from '../src/index.js';
-import { createMockProvider } from './mockProvider.js';
+import { createMockProvider, mockVariant } from './mockProvider.js';
 
 const base = { subject: 'Probability', level: 'intro undergraduate', goals: 'understand', now: () => 1_700_000_000_000 };
 
@@ -46,8 +46,10 @@ describe('buildCurriculum (subject only)', () => {
       'Introduction to Probability, Blitzstein & Hwang', 'A First Course in Probability, Ross',
     ]);
     expect(cur.sources).toEqual([]);
-    // Call accounting: 1 outline + 4 concepts + 1 graph + 8 scripts + 8 items + 8 checks.
-    expect(provider.count()).toBe(1 + 4 + 1 + 8 + 8 + 8);
+    // Call accounting: 1 outline + 4 concepts + 1 graph + 8 scripts + 8 items + 8 checks
+    // + per concept (one apply item): 1 variants call + 2 independent solves (exact answers: no judge).
+    expect(provider.count()).toBe(1 + 4 + 1 + 8 + 8 + 8 + 8 * 3);
+    expect(provider.count('variantjudge')).toBe(0);
     expect(events.filter((e) => e.stage === 'freeze' && e.status === 'done')).toHaveLength(1);
 
     // Determinism: a fresh provider + cache yields identical ids and content hash.
@@ -93,8 +95,8 @@ describe('buildCurriculum (subject only)', () => {
     expect(isUnitBuilt(next.units[2]!)).toBe(false);
     expect(next.units[0]).toEqual(cur.units[0]); // untouched
     expect(cur.units[1]!.lessons[0]!.concepts).toHaveLength(0); // input not mutated
-    // Outline came from the cache; 2 concepts + 1 graph + 4 scripts + 4 items + 4 checks.
-    expect(provider.count() - before).toBe(2 + 1 + 4 + 4 + 4);
+    // Outline came from the cache; 2 concepts + 1 graph + 4 scripts + 4 items + 4 checks + 4 × (variants + 2 solves).
+    expect(provider.count() - before).toBe(2 + 1 + 4 + 4 + 4 + 4 * 3);
     // Incremental graph: the edge from the last known concept into the new unit is kept, old edges preserved.
     const oldEdges = cur.edges;
     for (const e of oldEdges) expect(next.edges).toContainEqual(e);
@@ -146,6 +148,131 @@ describe('buildCurriculum (subject only)', () => {
       buildCurriculum({ ...base, provider, cache: new MemoryGenCache(), signal: ac.signal, onProgress: () => { if (++n === 3) ac.abort(); } }),
     ).rejects.toThrow(/aborted/);
     expect(provider.count()).toBeLessThan(5);
+  });
+});
+
+describe('buildCurriculum: problem variants', () => {
+  const one = { units: 1, lessonsPerUnit: 1, conceptsPerLesson: 1 } as const;
+  const build = async (provider: ReturnType<typeof createMockProvider>, extra: { variants?: boolean; onProgress?: (e: ProgressEvent) => void } = {}) => {
+    const cur = await buildCurriculum({ ...base, provider, cache: new MemoryGenCache(), unitsToBuild: 'all', ...extra });
+    expect(CurriculumSchema.safeParse(cur).success).toBe(true);
+    return cur.units[0]!.lessons[0]!.concepts[0]!;
+  };
+
+  it('writes two verified variants for each apply item and attaches them; non-apply items get none', async () => {
+    const provider = createMockProvider(one);
+    const events: ProgressEvent[] = [];
+    const concept = await build(provider, { onProgress: (e) => events.push(e) });
+    const apply = concept.items.find((it) => it.type === 'apply')!;
+    expect(apply.variants).toHaveLength(2);
+    expect(apply.variants!.map((v) => v.id)).toEqual([`${apply.id}~v1`, `${apply.id}~v2`]);
+    expect(apply.variants![0]).toEqual({
+      id: `${apply.id}~v1`,
+      prompt: 'Variant 1: in a new setting, combine 5 and 6',
+      reference: { answer: '5 + 6 = 11', exact: '11' },
+      rubric: [{ id: 'c1', text: 'c1 (with 5 and 6)' }, { id: 'c2', text: 'c2 (with 5 and 6)', evidenceHint: 'e' }, { id: 'c3', text: 'c3 (with 5 and 6)' }],
+    });
+    for (const it of concept.items.filter((x) => x.type !== 'apply')) expect(it.variants).toBeUndefined();
+    // Variants do not change the item hash (prompt + reference + rubric of the item itself).
+    expect(apply.hash).toBe(await sha256(canonicalJson({ prompt: apply.prompt, reference: apply.reference, rubric: apply.rubric })));
+    const without = await build(createMockProvider(one), { variants: false });
+    expect(without.items.find((it) => it.type === 'apply')!.hash).toBe(apply.hash);
+    // One variants call, then each variant was solved independently without its reference.
+    expect(provider.count('variants')).toBe(1);
+    expect(provider.count('variantsolve')).toBe(2);
+    for (const { req } of provider.calls.filter((c) => c.stage === 'variantsolve')) {
+      expect(req.messages[0]!.content).not.toContain('reference');
+      expect(req.messages[0]!.content).not.toContain('5 + 6 = 11');
+    }
+    const variantsReq = provider.calls.find((c) => c.stage === 'variants')!.req;
+    expect(variantsReq.messages[0]!.content).toContain('mixes-things-up'); // concept misconceptions are given
+    const done = events.find((e) => e.stage === 'variantcheck' && e.status === 'done')!;
+    expect(done.message).toMatch(/^kept 2 variant\(s\) for 1 apply item\(s\)$/);
+  });
+
+  it('drops a variant whose independent solve disagrees with its exact answer', async () => {
+    const provider = createMockProvider({
+      ...one,
+      variants: (item) => [mockVariant(item, 1, 5, 6), { ...mockVariant(item, 2, 10, 12), reference: { answer: '10 + 12 = 23', exact: '23' } }],
+    });
+    const events: ProgressEvent[] = [];
+    const concept = await build(provider, { onProgress: (e) => events.push(e) });
+    const apply = concept.items.find((it) => it.type === 'apply')!;
+    expect(apply.variants!.map((v) => v.id)).toEqual([`${apply.id}~v1`]);
+    expect(provider.count('variantsolve')).toBe(2);
+    const done = events.find((e) => e.stage === 'variantcheck' && e.status === 'done')!;
+    expect(done.message).toContain(`dropped ${apply.id}~v2: independent solve gave "22", reference exact is "23"`);
+  });
+
+  it('drops a variant with mismatched rubric ids without solving it, and one missing its exact answer', async () => {
+    const provider = createMockProvider({
+      ...one,
+      variants: (item) => {
+        const bad = mockVariant(item, 1, 5, 6);
+        bad.rubric[2] = { ...bad.rubric[2]!, id: 'c4' };
+        const noExact = mockVariant(item, 2, 10, 12);
+        delete noExact.reference.exact;
+        return [bad, noExact];
+      },
+    });
+    const events: ProgressEvent[] = [];
+    const concept = await build(provider, { onProgress: (e) => events.push(e) });
+    expect(concept.items.find((it) => it.type === 'apply')!.variants).toBeUndefined();
+    expect(provider.count('variantsolve')).toBe(0);
+    const message = events.find((e) => e.stage === 'variantcheck' && e.status === 'done')!.message!;
+    expect(message).toContain('kept 0 variant(s)');
+    expect(message).toContain("rubric ids [c1, c2, c4] do not match the original's [c1, c2, c3]");
+    expect(message).toContain('missing an exact answer');
+  });
+
+  it('accepts a reordered rubric (same ids) and restores the original order; drops a prompt identical to the original', async () => {
+    const provider = createMockProvider({
+      ...one,
+      variants: (item) => {
+        const shuffled = mockVariant(item, 1, 5, 6);
+        shuffled.rubric.reverse();
+        return [shuffled, { ...mockVariant(item, 2, 3, 4), prompt: item.prompt }];
+      },
+    });
+    const concept = await build(provider);
+    const apply = concept.items.find((it) => it.type === 'apply')!;
+    expect(apply.variants).toHaveLength(1);
+    expect(apply.variants![0]!.rubric.map((r) => r.id)).toEqual(['c1', 'c2', 'c3']);
+  });
+
+  it('uses a judge for variants without an exact answer and drops the ones it rejects', async () => {
+    const provider = createMockProvider({ ...one, applyExact: false, judge: (prompt) => !prompt.startsWith('Variant 2') });
+    const concept = await build(provider);
+    const apply = concept.items.find((it) => it.type === 'apply')!;
+    expect(apply.reference.exact).toBeUndefined();
+    expect(apply.variants!.map((v) => v.id)).toEqual([`${apply.id}~v1`]);
+    expect(apply.variants![0]!.reference.exact).toBeUndefined();
+    expect(provider.count('variantsolve')).toBe(2);
+    expect(provider.count('variantjudge')).toBe(2);
+    const judgeReq = provider.calls.find((c) => c.stage === 'variantjudge')!.req;
+    expect(judgeReq.messages[0]!.content).toContain('independentSolution');
+  });
+
+  it('never fails the build because of variants, and can be skipped', async () => {
+    const failing = createMockProvider({ ...one, failVariants: true });
+    const events: ProgressEvent[] = [];
+    const concept = await build(failing, { onProgress: (e) => events.push(e) });
+    expect(concept.items.every((it) => it.variants === undefined)).toBe(true);
+    expect(events.find((e) => e.stage === 'variantcheck' && e.status === 'done')!.message).toContain('mock: variants stage unavailable');
+
+    const skipped = createMockProvider(one);
+    const plain = await build(skipped, { variants: false });
+    expect(plain.items.every((it) => it.variants === undefined)).toBe(true);
+    expect(skipped.count('variants') + skipped.count('variantsolve') + skipped.count('variantjudge')).toBe(0);
+  });
+
+  it('caches variant calls: a rebuild over the same cache makes no provider calls and yields identical variants', async () => {
+    const cache = new MemoryGenCache();
+    const a = await buildCurriculum({ ...base, provider: createMockProvider(one), cache, unitsToBuild: 'all' });
+    const again = createMockProvider(one);
+    const b = await buildCurriculum({ ...base, provider: again, cache, unitsToBuild: 'all' });
+    expect(again.count()).toBe(0);
+    expect(b).toEqual(a);
   });
 });
 

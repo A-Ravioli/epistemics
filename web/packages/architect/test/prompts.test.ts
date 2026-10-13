@@ -10,6 +10,9 @@ const REQUIRED: Record<string, string[]> = {
   scripts: ['pretest', 'isomorph', '3-6 questions', 'probesMisconception', 'faded', 'transfer', 'three hint levels', 'partial worked example', 'ever states the answer'],
   items: ['6-10 items', '3-6 binary criteria', 'reference', 'discriminate', 'VERBATIM'],
   itemcheck: ['reference answers are withheld', 'ambiguous', 'rubric'],
+  variants: ['isomorphs', 'same criterion `id`s', 'same step count', 'misconception', '`exact`', 'solved again independently'],
+  variantsolve: ['reference answer is withheld', 'finalAnswer', 'solvable'],
+  variantjudge: ['independentSolution', 'agrees', 'in substance'],
 };
 
 describe('architect prompts', () => {

@@ -64,8 +64,11 @@ describe('CurriculumBuilder', () => {
     expect(isUnitBuilt(cur.units[1]!)).toBe(true);
     expect(isUnitBuilt(cur.units[2]!)).toBe(false);
     expect(isFullyBuilt(cur)).toBe(false);
-    // 1 outline (cached) + 4 concepts + 1 graph + 8 scripts + 8 items + 8 checks
-    expect(provider.calls).toHaveLength(1 + 4 + 1 + 8 + 8 + 8);
+    // 1 outline (cached) + 4 concepts + 1 graph + 8 scripts + 8 items + 8 checks + 8 × (1 variants + 2 independent solves)
+    expect(provider.calls).toHaveLength(1 + 4 + 1 + 8 + 8 + 8 + 8 * 3);
+    // every apply item carries two verified variants; variants are not cards
+    const applyItems = cur.units.slice(0, 2).flatMap((u) => u.lessons.flatMap((l) => l.concepts.flatMap((c) => c.items))).filter((i) => i.type === 'apply');
+    expect(applyItems.every((i) => i.variants?.length === 2)).toBe(true);
     // progress events reached the store: the outline stage was reported as cached, the rest ran
     const last = events[events.length - 1]!;
     expect(last.phase).toBe('done');
@@ -99,10 +102,12 @@ describe('CurriculumBuilder', () => {
     expect(cur2.manifest.contentHash).toBe(cur.manifest.contentHash);
     expect(cur2).toEqual(cur);
     // every stage of the build was a cache hit (the store is reset when a build starts, so the proposal's event is not counted)
-    expect(builder2.store.get().cached).toBe(1 + 4 + 1 + 8 + 8 + 8);
-    // only the code-level stages (graph validate, freeze) ran; no provider-backed stage started
-    expect(builder2.store.get().started).toBe(2);
-    expect(builder2.store.get().log.filter((e) => e.event.status === 'start').map((e) => e.event.stage)).toEqual(['validate', 'freeze']);
+    expect(builder2.store.get().cached).toBe(1 + 4 + 1 + 8 + 8 + 8 + 8 * 3);
+    // only the code-level stages (graph validate, per-concept variant check, freeze) ran; no provider-backed stage started
+    expect(builder2.store.get().started).toBe(2 + 8);
+    expect(builder2.store.get().log.filter((e) => e.event.status === 'start').map((e) => e.event.stage)).toEqual([
+      'validate', ...Array<string>(8).fill('variantcheck'), 'freeze',
+    ]);
   });
 
   it('ensureUnitsAhead builds the missing unit lazily, saves it and adds its cards; buildNextUnit then has nothing to do', async () => {
@@ -119,8 +124,8 @@ describe('CurriculumBuilder', () => {
     ]);
     expect(a).toBeDefined();
     expect(b?.manifest.contentHash).toBe(a?.manifest.contentHash);
-    // 2 concepts + 1 graph + 4 scripts + 4 items + 4 checks, once (no outline call: the stored outline was passed in)
-    expect(provider.calls.length - calls).toBe(2 + 1 + 4 + 4 + 4);
+    // 2 concepts + 1 graph + 4 scripts + 4 items + 4 checks + 4 × (variants + 2 solves), once (no outline call: the stored outline was passed in)
+    expect(provider.calls.length - calls).toBe(2 + 1 + 4 + 4 + 4 + 4 * 3);
     const full = await getCurriculum(db, cur.manifest.id, 1);
     expect(full && full.units.every(isUnitBuilt)).toBe(true);
     expect(CurriculumSchema.safeParse(full).success).toBe(true);
@@ -132,7 +137,7 @@ describe('CurriculumBuilder', () => {
     expect(await addCardsForUnit(db, course, full!.units[2]!, T0)).toBe(0);
     expect(await builder.buildNextUnit(course.id)).toBeUndefined();
     expect(await builder.ensureUnitsAhead(course, cur.units[0]!.ordinal)).toBeUndefined();
-    expect(provider.calls.length - calls).toBe(2 + 1 + 4 + 4 + 4);
+    expect(provider.calls.length - calls).toBe(2 + 1 + 4 + 4 + 4 + 4 * 3);
   });
 
   it('ingests material, stores chunks and embeddings, and builds a sourced curriculum with retrieval', async () => {

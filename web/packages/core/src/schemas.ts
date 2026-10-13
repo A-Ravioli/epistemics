@@ -10,6 +10,14 @@ export const ExampleSchema = z.object({ title: z.string(), body: z.string(), dom
 export const SourceSpanSchema = z.object({ chunkId: z.string(), quote: z.string(), page: z.number().optional(), heading: z.string().optional() });
 export const RubricCriterionSchema = z.object({ id: z.string(), text: z.string().min(1), evidenceHint: z.string().optional() });
 
+/** Mirrors ItemVariant in types.ts: an isomorph of an item, id `<itemId>~v<n>`, with its own rubric. */
+export const ItemVariantSchema = z.object({
+  id: z.string(),
+  prompt: z.string().min(1),
+  reference: z.object({ answer: z.string().min(1), exact: z.string().optional(), notes: z.string().optional() }),
+  rubric: z.array(RubricCriterionSchema),
+});
+
 export const ItemSchema = z.object({
   id: z.string(),
   conceptId: z.string(),
@@ -22,6 +30,7 @@ export const ItemSchema = z.object({
   tags: z.array(z.string()).optional(),
   generatorVersion: z.string(),
   hash: z.string(),
+  variants: z.array(ItemVariantSchema).optional(),
 });
 
 export const GuidingQuestionSchema = z.object({ question: z.string(), expected: z.string(), probesMisconception: z.string().optional() });

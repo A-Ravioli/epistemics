@@ -2,15 +2,17 @@
 import type { z } from 'zod';
 import type { LlmProvider, LlmRequest, StreamEvent, Usage } from '@epistemics/llm';
 
-export type Stage = 'outline' | 'concepts' | 'graph' | 'scripts' | 'items' | 'itemcheck';
+export type Stage = 'outline' | 'concepts' | 'graph' | 'scripts' | 'items' | 'itemcheck' | 'variants' | 'variantsolve' | 'variantjudge';
 
 const usage: Usage = { inputTokens: 1, cacheRead: 0, cacheWrite: 0, outputTokens: 1, costUsd: 0, latencyMs: 0, model: 'mock' };
 
 export function stageOf(req: LlmRequest): Stage {
   const head = req.system[0]?.text.split('\n')[0] ?? '';
   const m = /^# Architect: (\w+)/.exec(head);
-  const map: Record<string, Stage> = { outline: 'outline', concepts: 'concepts', graph: 'graph', lesson: 'scripts', item: 'items' };
+  const map: Record<string, Stage> = { outline: 'outline', concepts: 'concepts', graph: 'graph', lesson: 'scripts', item: 'items', variants: 'variants' };
   if (head.includes('self-check')) return 'itemcheck';
+  if (head.includes('variant solver')) return 'variantsolve';
+  if (head.includes('variant judge')) return 'variantjudge';
   const key = m?.[1] ?? '';
   const stage = map[key];
   if (!stage) throw new Error(`mock: unknown stage header "${head}"`);
@@ -35,6 +37,37 @@ export interface MockOptions {
   flagOne?: boolean;
   /** Custom graph edges given the new concept ids (in order). */
   edges?: (newIds: string[], knownIds: string[]) => unknown[];
+  /** Whether the apply item carries `reference.exact` (default true). */
+  applyExact?: boolean;
+  /** Custom variants-stage output given the original item (default: two well-formed, correct isomorphs). */
+  variants?: (item: VariantInputItem) => unknown[];
+  /** The variants stage throws instead of answering. */
+  failVariants?: boolean;
+  /** Judge verdict for a variant prompt (default: agrees). */
+  judge?: (prompt: string) => boolean;
+}
+
+export interface VariantInputItem {
+  prompt: string;
+  reference: { answer: string; exact?: string };
+  rubric: { id: string; text: string; evidenceHint?: string }[];
+}
+
+/** The mock "apply" problems end in "<a> and <b>"; the answer is a + b. */
+export function mockSolve(prompt: string): string | undefined {
+  const m = /(\d+) and (\d+)\s*$/.exec(prompt);
+  return m ? String(Number(m[1]) + Number(m[2])) : undefined;
+}
+
+/** A well-formed variant of a mock apply item, adding a and b. */
+export function mockVariant(item: VariantInputItem, n: number, a: number, b: number) {
+  const reference: { answer: string; exact?: string } = { answer: `${a} + ${b} = ${a + b}` };
+  if (item.reference.exact) reference.exact = String(a + b);
+  return {
+    prompt: `Variant ${n}: in a new setting, combine ${a} and ${b}`,
+    reference,
+    rubric: item.rubric.map((r) => ({ ...r, text: `${r.text} (with ${a} and ${b})` })),
+  };
 }
 
 export interface MockProvider extends LlmProvider {
@@ -127,7 +160,7 @@ export function createMockProvider(opts: MockOptions = {}): MockProvider {
           { type: 'recall', bloom: 'remember', prompt: `Define ${concept.name}`, reference: { answer: 'def' }, rubric: [{ text: 'ignored' }], spans },
           { type: 'cloze', bloom: 'remember', prompt: `${concept.name} is ___.`, reference: { answer: 'x' }, rubric: [], spans },
           { type: 'explain', bloom: 'understand', prompt: `Explain ${concept.name}`, reference: { answer: 'e' }, rubric, spans, tags: ['mixes-things-up'] },
-          { type: 'apply', bloom: 'apply', prompt: `Apply ${concept.name} to 3 and 4`, reference: { answer: '7', exact: '7' }, rubric, spans },
+          { type: 'apply', bloom: 'apply', prompt: `Apply ${concept.name} to 3 and 4`, reference: opts.applyExact === false ? { answer: '7' } : { answer: '7', exact: '7' }, rubric, spans },
           { type: 'teachback', bloom: 'apply', prompt: `Teach ${concept.name}`, reference: { answer: 't' }, rubric, spans },
           { type: 'predict', bloom: 'understand', prompt: `Predict ${concept.name}`, reference: { answer: 'p' }, rubric: [], spans },
         ];
@@ -145,6 +178,23 @@ export function createMockProvider(opts: MockOptions = {}): MockProvider {
             issues: it.prompt.startsWith('AMBIG') ? ['two readings'] : [],
           })),
         };
+      }
+      case 'variants': {
+        if (opts.failVariants) throw new Error('mock: variants stage unavailable');
+        const item = section<VariantInputItem>(req, 'item')!;
+        const count = Number(section<string>(req, 'count') ?? 2);
+        if (opts.variants) return { variants: opts.variants(item) };
+        return { variants: Array.from({ length: count }, (_, i) => mockVariant(item, i + 1, 5 * (i + 1), 6 * (i + 1))) };
+      }
+      case 'variantsolve': {
+        const prompt = section<string>(req, 'prompt') ?? '';
+        const answer = mockSolve(prompt);
+        return answer === undefined ? { work: 'cannot parse', finalAnswer: '?', solvable: false } : { work: `sum is ${answer}`, finalAnswer: answer, solvable: true };
+      }
+      case 'variantjudge': {
+        const prompt = section<string>(req, 'prompt') ?? '';
+        const agrees = opts.judge ? opts.judge(prompt) : true;
+        return { agrees, reason: agrees ? 'same result' : 'different result' };
       }
     }
   };

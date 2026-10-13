@@ -7,7 +7,7 @@
  */
 import type { LlmRequest } from '@epistemics/llm';
 
-export type ArchitectMockStage = 'outline' | 'concepts' | 'graph' | 'scripts' | 'items' | 'itemcheck';
+export type ArchitectMockStage = 'outline' | 'concepts' | 'graph' | 'scripts' | 'items' | 'itemcheck' | 'variants' | 'variantsolve' | 'variantjudge';
 
 export interface ArchitectMockOptions {
   units?: number;
@@ -16,7 +16,7 @@ export interface ArchitectMockOptions {
 }
 
 const STAGE_HEADERS: Record<string, ArchitectMockStage> = {
-  outline: 'outline', concepts: 'concepts', graph: 'graph', lesson: 'scripts', item: 'items',
+  outline: 'outline', concepts: 'concepts', graph: 'graph', lesson: 'scripts', item: 'items', variants: 'variants',
 };
 
 /** The architect stage a request belongs to, or undefined when it is not an architect call. */
@@ -25,6 +25,8 @@ export function architectStageOf(req: LlmRequest): ArchitectMockStage | undefine
   const m = /^# Architect: (\w+)/.exec(head);
   if (!m) return undefined;
   if (head.includes('self-check')) return 'itemcheck';
+  if (head.includes('variant solver')) return 'variantsolve';
+  if (head.includes('variant judge')) return 'variantjudge';
   return STAGE_HEADERS[m[1] ?? ''];
 }
 
@@ -145,6 +147,34 @@ export function createArchitectMockResponder(opts: ArchitectMockOptions = {}) {
         const items = promptSection<{ index: number; prompt: string }[]>(req, 'items') ?? [];
         return { results: items.map((it) => ({ index: it.index, attemptedAnswer: 'attempt', answerable: true, ambiguous: false, issues: [] })) };
       }
+      case 'variants': {
+        type Rubric = { id: string; text: string; evidenceHint?: string }[];
+        const item = promptSection<{ reference: { exact?: string }; rubric: Rubric }>(req, 'item') ?? { reference: {}, rubric: [] };
+        const concept = promptSection<{ name: string }>(req, 'concept') ?? { name: 'the concept' };
+        const count = Number(promptSection(req, 'count') ?? 2);
+        const settings = ['a recipe that scales', 'a train timetable', 'a small shop\'s stock count', 'a garden plot'];
+        return {
+          variants: Array.from({ length: count }, (_, i) => {
+            const [a, b] = [5 + 4 * i, 6 + 3 * i];
+            const reference: { answer: string; exact?: string } = { answer: `Substitute into the defining relation: ${a} + ${b} = ${a + b}.` };
+            if (item.reference.exact) reference.exact = String(a + b);
+            return {
+              prompt: `In ${settings[i % settings.length]}, use ${concept.name} on the case of ${a} and ${b}.`,
+              reference,
+              rubric: item.rubric.map((r) => ({ ...r, text: `${r.text} (for ${a} and ${b})` })),
+            };
+          }),
+        };
+      }
+      case 'variantsolve': {
+        // The demo "apply" problems combine two numbers: the answer is their sum.
+        const m = /case of (\d+) and (\d+)/.exec(promptSection<string>(req, 'prompt') ?? '');
+        return m
+          ? { work: `${m[1]} + ${m[2]} = ${Number(m[1]) + Number(m[2])}`, finalAnswer: String(Number(m[1]) + Number(m[2])), solvable: true }
+          : { work: 'The problem does not give two quantities to combine.', finalAnswer: '?', solvable: false };
+      }
+      case 'variantjudge':
+        return { agrees: true, reason: 'The independent solution reaches the reference result.' };
     }
   };
 }
