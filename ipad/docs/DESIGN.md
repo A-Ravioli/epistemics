@@ -322,6 +322,14 @@ Reviews serve the item, then each variant, then the one seen longest ago, so pas
 than remembering one question. The earlier attempt shown on the receipt says *"You did one like this"* when
 it was a different version. ([AUDIT.md](AUDIT.md) #3.)
 
+**Everything due, in passes.** A review session serves everything due today, so the number Today gives
+(*"18 questions are due back"*), the header (*"Review · 1 of 18"*) and the end of the session agree. Sibling
+burying (web DESIGN §5.1) is applied per pass: each pass holds one card per concept, and a concept's other due
+cards wait for the next pass, after every other concept has had its turn. A new pass never opens with the
+concept just answered; two of one concept come in a row only when nothing else is left. The session ends
+when nothing is due, which is when the review gate opens. Reviews beyond today's cap (the debt, web §5.4) are
+not counted; they wait for tomorrow, and the locked-lesson line on Today and the end of the session say so.
+
 ### 6.5 A checkpoint
 
 A real exam paper: white sheet, numbered questions in the serif, an answer space sized to each question,

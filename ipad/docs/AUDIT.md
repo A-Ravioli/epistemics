@@ -22,7 +22,7 @@ earn mastery on mixed questions, and put the tutor *at the mistake* instead of b
 | Course challenge, ALEKS knowledge check | Adaptive placement on the prerequisite graph, by hand | `Session/Placement.swift`, DESIGN §6.1 |
 | Skill levels and prerequisites | Mastery = retention × spaced sessions; a concept unlocks at 0.7 prerequisite mastery; "mastered" needs ≥ 0.85 and an 80% unaided pass rate | `Scheduler/Mastery.swift` |
 | Mastery Challenges (spaced re-practice) | FSRS-6 reviews every day, gated before new lessons. Khan's version is weaker: 6 questions every 12 hours, maths only | `Scheduler/Queue.swift` |
-| Interleaving | Sibling burying gives at most one card per concept per session, and review pages never name the concept | `Queue.swift`, `ReviewView` |
+| Interleaving | Sibling burying gives at most one card per concept per pass, a concept's other due cards come back only after every other concept has had its turn (never two in a row while anything else is due), and review pages never name the concept | `Queue.swift`, `ReviewSessionModel` |
 | Unit test | Checkpoint paper: mixed and unaided. A missed concept gets a remediation lesson | `CheckpointView`, `Checkpoint.swift` |
 | Math Academy's FIRe | FIRe-lite: passing a concept gives implicit credit to what it encompasses | `Scheduler/Implicit.swift` |
 | Eedi's misconception diagnosis | Misconception catalogue per concept; the grader tags errors; lessons are told the learner's recent misconceptions | `GradingService`, `LessonSessionModel` |

@@ -67,14 +67,17 @@ final class ReviewSessionModel {
     var order: [Card] = []
     var index = 0
     var answered = 0
-    var minutesLeft = 0
     var confidence: Confidence?
     /// "Fix it from here", once started on the current receipt.
     var fix: FixIt?
     private var inkId: String?
     private var sessionId = ""
+    /// Concepts answered in this pass; their siblings wait for the next one.
     private var shownConcepts = Set<String>()
+    private var lastConcept: String?
     private var reasked = Set<String>()
+    /// Confident misses that ended a pass, asked again in the next one.
+    private var reaskNextPass: [Card] = []
 
     init(app: AppModel, ctx: CourseContext) {
         self.app = app
@@ -83,9 +86,17 @@ final class ReviewSessionModel {
         self.reading = ReadingService(provider: ctx.provider, onDevice: app.onDevice)
     }
 
-    /// Everything due when the session opened, plus confident misses asked again.
-    private(set) var dueAtStart = 0
-    var total: Int { max(dueAtStart + reasked.count, answered) }
+    /// At the last queue build: answers so far and everything due today (the Today count, on the first build).
+    private var answeredAtLoad = 0
+    private var dueAtLoad = 0
+    /// Answers since then that bring their card back today: a confident miss asked again, a short learning step.
+    private var comingBack = 0
+    private var secondsEach = DEFAULT_SECONDS_PER_ITEM
+    /// Reviews due today beyond the daily cap (`Queue.debt`); they wait for tomorrow.
+    private(set) var pastCap = 0
+    var total: Int { max(answeredAtLoad + dueAtLoad + comingBack, answered) }
+    /// The cards still to answer, the one on the page included, by hand.
+    var minutesLeft: Int { phase == .done ? 0 : CourseService.minutes(max(0, total - answered), secondsEach: secondsEach) }
     /// The number of the item on screen (the receipt still belongs to the item just answered).
     var position: Int {
         if case .receipt = phase { return answered }
@@ -111,12 +122,27 @@ final class ReviewSessionModel {
         }
     }
 
+    /// Builds the next pass. Sibling burying holds a concept's other cards back while it has been answered in
+    /// this pass; once every concept due has had its turn they come back in a new pass, which never opens with
+    /// the concept just answered (ipad DESIGN §6.4). The session ends only when nothing is due today.
     private func loadQueue() async throws {
-        let q = try await service.loadQueue(recentlyShown: shownConcepts, queueFirst: await service.queueFirst())
-        order = q.order
+        let first = await service.queueFirst()
+        var q = try await service.loadQueue(recentlyShown: shownConcepts, queueFirst: first, after: lastConcept)
+        if q.order.isEmpty && q.dueCount > 0 {
+            shownConcepts = []
+            q = try await service.loadQueue(queueFirst: first, after: lastConcept)
+        }
+        // A re-ask the queue doesn't already hold (its step is longer than the learn-ahead window) goes last.
+        let queued = Set((q.order + q.queue.buried).map(\.id))
+        let reasks = reaskNextPass.filter { !queued.contains($0.id) }
+        reaskNextPass = []
+        order = q.order + reasks
         index = 0
-        if dueAtStart == 0 { dueAtStart = q.queue.dueToday }
-        minutesLeft = q.minutes
+        answeredAtLoad = answered
+        dueAtLoad = q.dueCount + reasks.count
+        comingBack = 0
+        secondsEach = q.secondsEach
+        pastCap = q.queue.debt
         await showCurrent()
     }
 
@@ -241,12 +267,17 @@ final class ReviewSessionModel {
         }
         let previous = await previousAttempt(item: cur.item, variantId: cur.variantId, before: applied.receipt?.createdAt ?? ctx.now())
         if hypercorrection && !reasked.contains(cur.card.id) {
-            // A confident miss is asked again today (DESIGN §3.4).
+            // A confident miss is asked again today (DESIGN §3.4): at the end of this pass, or in the next one
+            // when it would follow itself.
             reasked.insert(cur.card.id)
-            order.append(applied.card)
+            if index + 1 < order.count { order.append(applied.card) } else { reaskNextPass.append(applied.card) }
+            comingBack += 1
+        } else if comesBackToday(applied.card) {
+            comingBack += 1
         }
         answered += 1
         shownConcepts.insert(cur.item.conceptId)
+        lastConcept = cur.item.conceptId
         // Only ink can be rewritten from a marked line.
         let firstError = typedMode || inkId == nil ? nil : graded?.grade.firstError
         let result = ReviewResult(reading: r, graded: graded, rating: rating, marks: marks,
@@ -311,6 +342,12 @@ final class ReviewSessionModel {
         } else {
             do { try await loadQueue() } catch { phase = .failed("\(error)") }
         }
+    }
+
+    /// A learning step short enough that the card falls due again in this sitting (the queue's learn-ahead window).
+    private func comesBackToday(_ card: Card) -> Bool {
+        (card.state == .learning || card.state == .relearning) && card.scheduledDays == 0 && !card.suspended
+            && card.due <= ctx.now() + DEFAULT_LEARN_AHEAD_MS
     }
 
     func retry() async {

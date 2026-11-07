@@ -36,8 +36,14 @@ struct CourseService {
         var cards: [Card]
         var items: [String: Item]
         var reviewsDoneToday: Int
-        /// Cards to answer, in order: learning, then reviews, with warm-up misses first.
+        /// Cards to answer now, in order: learning, then reviews, with warm-up misses first. One per concept.
         var order: [Card]
+        /// Everything a review session serves today: `order`, then the siblings burying held back, in later
+        /// passes (ipad DESIGN §6.4). The backlog beyond today's cap (`queue.debt`) is not in it.
+        var dueCount: Int
+        /// By-hand seconds per card, averaged over what is due.
+        var secondsEach: Double
+        /// `dueCount` cards at `secondsEach`, in whole minutes.
         var minutes: Int
     }
 
@@ -50,7 +56,8 @@ struct CourseService {
             .filter { $0.source == .review && $0.stateBefore == .review }.count
     }
 
-    func loadQueue(recentlyShown: Set<String> = [], queueFirst: [String] = []) async throws -> LoadedQueue {
+    /// `after`: the concept just answered. The order never opens with it, unless nothing else is due.
+    func loadQueue(recentlyShown: Set<String> = [], queueFirst: [String] = [], after lastConcept: String? = nil) async throws -> LoadedQueue {
         let n = now
         let items = itemIndex()
         let cards = try await store.cards(course: course.id).filter { Self.isActivated($0, now: n) && items[$0.itemId] != nil }
@@ -70,10 +77,25 @@ struct CourseService {
             let first = Set(queueFirst)
             order = order.filter { first.contains($0.conceptId) } + order.filter { !first.contains($0.conceptId) }
         }
-        // Everything due today, including siblings held back to a later pass, at measured-by-hand speeds.
-        let due = queue.learning + queue.reviews + queue.buried
-        let minutes = Int((due.reduce(0.0) { $0 + (info[$1.id].map { secondsByHand($0.type) } ?? DEFAULT_SECONDS_PER_ITEM) } / 60).rounded(.up))
-        return LoadedQueue(queue: queue, cards: cards, items: items, reviewsDoneToday: done, order: order, minutes: minutes)
+        // A pass holds one card per concept, so moving any other concept to the front keeps them all apart.
+        func concept(_ c: Card) -> String { info[c.id]?.conceptId ?? c.conceptId }
+        if let lastConcept, let head = order.first, concept(head) == lastConcept,
+           let i = order.firstIndex(where: { concept($0) != lastConcept }) {
+            order.insert(order.remove(at: i), at: 0)
+        }
+        // Everything due today, including siblings held back to a later pass, at measured-by-hand speeds. Later
+        // passes take every learning card and reviews up to the cap, so the count is the due cards less the debt.
+        let dueCount = queue.dueToday - queue.debt
+        let learning = queue.learning + queue.buried.filter { $0.state == .learning || $0.state == .relearning }
+        let reviews = (queue.reviews + queue.buried.filter { $0.state == .review }).prefix(max(0, dueCount - learning.count))
+        let known = (learning + reviews).map { info[$0.id].map { secondsByHand($0.type) } ?? DEFAULT_SECONDS_PER_ITEM }
+        let secondsEach = known.isEmpty ? DEFAULT_SECONDS_PER_ITEM : known.reduce(0, +) / Double(known.count)
+        return LoadedQueue(queue: queue, cards: cards, items: items, reviewsDoneToday: done, order: order, dueCount: dueCount,
+                           secondsEach: secondsEach, minutes: Self.minutes(dueCount, secondsEach: secondsEach))
+    }
+
+    static func minutes(_ cards: Int, secondsEach: Double) -> Int {
+        Int((Double(cards) * secondsEach / 60).rounded(.up))
     }
 
     // MARK: Reviews

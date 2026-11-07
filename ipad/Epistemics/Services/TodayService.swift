@@ -24,7 +24,8 @@ struct TodayState {
     var offersPlacement: Bool
     /// A mixed progress check is due (docs/AUDIT.md #4).
     var progressCheckDue: Bool
-    var dueCount: Int { queue.queue.dueToday }
+    /// What the review session will serve today (CourseService.LoadedQueue.dueCount).
+    var dueCount: Int { queue.dueCount }
 }
 
 extension CourseService {
@@ -44,8 +45,11 @@ extension CourseService {
             reason = "Recovery mode: the backlog is \(queue.queue.overdueDays) days old. About \(queue.queue.daysToClear) day\(queue.queue.daysToClear == 1 ? "" : "s") to clear at \(course.settings.reviewsPerDay) reviews a day."
         } else if !queue.queue.gateOpen && !overrideUsedToday {
             locked = true
-            let n = queue.queue.dueToday
-            reason = "\(n) review\(n == 1 ? "" : "s") to go, about \(queue.minutes) minutes by hand."
+            let n = queue.dueCount, debt = queue.queue.debt
+            var why = n > 0 ? "\(n) review\(n == 1 ? "" : "s") to go, about \(queue.minutes) minutes by hand."
+                : "Today's \(course.settings.reviewsPerDay) reviews are done."
+            if debt > 0 { why += " \(debt) more \(debt == 1 ? "is" : "are") past today's cap and wait for tomorrow." }
+            reason = why
         }
 
         if queue.queue.dueToday == 0 && queue.cards.contains(where: { $0.state != .new }) { await markDayCleared(day) }

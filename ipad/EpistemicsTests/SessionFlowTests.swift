@@ -114,6 +114,56 @@ import EpistemicsLLM
         #expect(second.entries.contains { $0.kind == .learner && $0.area != nil }, "the learner's ink comes back from the store")
     }
 
+    /// A learner who writes each item's reference answer, read back as written and graded right. On a frozen
+    /// clock a card answered wrong falls due again within the learn-ahead window every time, so a review session
+    /// driven with the demo tutor's scribbles would never run out.
+    static func rightAnswers() -> (StepProvider, MockProvider) {
+        let writes = StepProvider(readings: [])
+        return (writes, MockProvider(.init(respond: { req in
+            switch req.role {
+            case .reader: return .value(ReaderOutput(text: writes.written))
+            case .grader: return .value(GradeResult(criteria: [], score: 1, feedback: "Right.", confidence: 1))
+            default: return nil
+            }
+        })))
+    }
+
+    /// Answers a review session by hand until it ends (starting it, if it isn't already). Returns the cards
+    /// served, in order.
+    @discardableResult
+    static func runReviews(_ review: ReviewSessionModel, writes: StepProvider, confidence: Confidence = .fairlySure,
+                           onReceipt: (ReviewSessionModel.ReviewResult) -> Void = { _ in }) async throws -> [(card: String, concept: String)] {
+        await review.start()
+        var served: [(card: String, concept: String)] = []
+        for i in 0..<400 {
+            switch review.phase {
+            case .answering:
+                let cur = try #require(review.current)
+                served.append((cur.card.id, cur.item.conceptId))
+                writes.written = cur.item.reference.exact ?? cur.item.reference.answer
+                cur.area.drawing = scribble(i)
+                await review.handIn(confidence)
+            case .confirming(let r):
+                await review.confirm(r, text: r.text)
+            case .reveal(let r):
+                await review.selfRate(.good, reading: r)
+            case .receipt(let result):
+                #expect(review.position <= review.total)
+                onReceipt(result)
+                await review.next()
+            case .done:
+                return served
+            case .failed(let m):
+                Issue.record("review failed: \(m)")
+                return served
+            case .loading, .reading, .grading:
+                try await Task.sleep(for: .milliseconds(20))
+            }
+        }
+        Issue.record("the review session did not end after \(served.count) cards")
+        return served
+    }
+
     @Test(.timeLimit(.minutes(8))) func reviewsAfterALessonAreAnsweredGradedAndRescheduled() async throws {
         let app = try await Self.enrolledApp()
         var ctx = try #require(app.context)
@@ -123,32 +173,14 @@ import EpistemicsLLM
         // Learning steps are minutes long: look at the queue from an hour later.
         let later = AppModel.now() + 3_600_000
         ctx.now = { later }
+        let (writes, provider) = Self.rightAnswers()
+        ctx.provider = provider
         let review = ReviewSessionModel(app: app, ctx: ctx)
-        await review.start()
         var answered = 0
         var sawReceiptMarksOrReference = false
-        for i in 0..<300 {
-            switch review.phase {
-            case .answering:
-                review.current?.area.drawing = Self.scribble(i)
-                await review.handIn(.certain)
-            case .confirming(let r):
-                await review.confirm(r, text: r.text)
-            case .reveal(let r):
-                await review.selfRate(.good, reading: r)
-            case .receipt(let result):
-                answered += 1
-                if result.graded != nil || result.previous == nil { sawReceiptMarksOrReference = true }
-                await review.next()
-            case .done:
-                break
-            case .failed(let m):
-                Issue.record("review failed: \(m)")
-                return
-            case .loading, .reading, .grading:
-                try await Task.sleep(for: .milliseconds(50))
-            }
-            if review.phase == .done { break }
+        try await Self.runReviews(review, writes: writes, confidence: .certain) { result in
+            answered += 1
+            if result.graded != nil || result.previous == nil { sawReceiptMarksOrReference = true }
         }
         #expect(review.phase == .done)
         #expect(answered > 0, "the lesson's items come back as reviews")
@@ -157,6 +189,42 @@ import EpistemicsLLM
         #expect(log.filter { $0.source == .review }.count >= answered)
         let receipts = try await app.store.receipts(course: ctx.course.id).filter { $0.modality == .ink }
         #expect(!receipts.isEmpty, "review receipts record that they were answered in ink")
+    }
+
+    /// Today's count, the header and the end of the session agree. Several of a concept's cards fall due
+    /// together; sibling burying holds all but one back per pass, and later passes serve the rest.
+    @Test(.timeLimit(.minutes(8))) func aReviewSessionServesEverythingTodaySaysIsDue() async throws {
+        let app = try await Self.enrolledApp()
+        var ctx = try #require(app.context)
+        let lesson = try #require(ctx.curriculum.allLessons.first)
+        try await Self.runLesson(LessonSessionModel(app: app, ctx: ctx, lessonId: lesson.id))
+
+        // A month on, everything the lesson activated is due. Every answer is right, so the only cards that come
+        // back today are learning cards taking their next step.
+        let later = AppModel.now() + 30 * 86_400_000
+        ctx.now = { later }
+        let (writes, provider) = Self.rightAnswers()
+        ctx.provider = provider
+        let today = try await CourseService(ctx: ctx, store: app.store).loadToday()
+        let conceptsDue = Set(today.queue.order.map(\.conceptId))
+        #expect(today.queue.queue.debt == 0)
+        #expect(today.dueCount == today.queue.queue.dueToday)
+        #expect(today.dueCount > conceptsDue.count, "several cards of one concept are due, so some wait for a later pass")
+
+        let review = ReviewSessionModel(app: app, ctx: ctx)
+        await review.start()
+        #expect(review.position == 1 && review.total == today.dueCount, "the header counts what Today counted")
+        #expect(review.minutesLeft == today.queue.minutes)
+        let served = try await Self.runReviews(review, writes: writes)
+        #expect(review.phase == .done)
+        #expect(Set(served.map(\.card)).count == today.dueCount, "every card Today counted is answered, not just one per concept")
+        #expect(review.answered == served.count && review.total == review.answered, "the header ends on the last card")
+        for i in served.indices.dropLast() where served[i].concept == served[i + 1].concept {
+            #expect(served[(i + 1)...].allSatisfy { $0.concept == served[i].concept },
+                    "two cards of one concept in a row only once nothing else is left (at \(i + 1) of \(served.count))")
+        }
+        let after = try await CourseService(ctx: ctx, store: app.store).loadToday()
+        #expect(after.dueCount == 0, "the session ends with nothing due: \(after.dueCount) left")
     }
 
     @Test(.timeLimit(.minutes(2))) func todaySaysWhatToDoFirst() async throws {
@@ -376,6 +444,12 @@ import EpistemicsLLM
             set { lock.lock(); _stage = newValue; lock.unlock() }
         }
         func nextReading() -> String { readings[min(stage, readings.count - 1)] }
+        private var _written = ""
+        /// What the learner writes next, when a test sets it rather than staging `readings`.
+        var written: String {
+            get { lock.lock(); defer { lock.unlock() }; return _written }
+            set { lock.lock(); _written = newValue; lock.unlock() }
+        }
         func provider(right: String, wrongLine: String) -> MockProvider {
             MockProvider(.init(respond: { req in
                 switch req.role {

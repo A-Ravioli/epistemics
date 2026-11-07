@@ -94,9 +94,13 @@ struct ReviewView: View {
     private var done: some View {
         VStack(spacing: 18) {
             Spacer()
-            Text("That's everything due.").font(.display).foregroundStyle(Theme.graphite)
+            Text(model.pastCap > 0 ? "That's today's reviews." : "That's everything due.").font(.display).foregroundStyle(Theme.graphite)
             Text("\(model.answered) answered by hand. They will come back when you're about to forget them.")
                 .font(.body15).foregroundStyle(Theme.muted)
+            if model.pastCap > 0 {
+                Text("\(model.pastCap) more \(model.pastCap == 1 ? "is" : "are") past today's cap and wait for tomorrow.")
+                    .font(.body15).foregroundStyle(Theme.muted)
+            }
             Button("Back to Today") { app.dismissSession() }.buttonStyle(.primaryLarge)
             Spacer()
         }
